@@ -679,12 +679,23 @@ async function callGemini(apiKey, contents) {
 
     const data = await response.json();
 
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        const parts = data.candidates[0].content.parts;
-        if (parts && parts[0] && parts[0].text) {
-            return parts[0].text;
+    // 檢查是否有 candidates
+    if (data.candidates && data.candidates[0]) {
+        const candidate = data.candidates[0];
+
+        // 檢查是否被安全過濾器阻擋
+        if (candidate.finishReason === 'SAFETY') {
+            console.log('Response blocked by safety filter');
+            return '抱歉，我無法回答這個問題。如有產品相關問題，歡迎透過[聯絡表單](https://www.liqui-moly-tw.com/contact)與我們聯繫。';
+        }
+
+        // 正常回應
+        if (candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) {
+            return candidate.content.parts[0].text;
         }
     }
 
-    throw new Error('Invalid response from Gemini API');
+    // 如果沒有正常回應，記錄詳細錯誤並返回友善訊息
+    console.error('Unexpected Gemini response:', JSON.stringify(data));
+    return '抱歉，我暫時無法處理這個問題。您可以換個方式詢問，或透過[聯絡表單](https://www.liqui-moly-tw.com/contact)與我們聯繫。';
 }
