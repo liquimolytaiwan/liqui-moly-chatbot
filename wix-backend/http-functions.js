@@ -471,7 +471,7 @@ async function searchProducts(query) {
         }
 
         // 若無結果，根據查詢類型判斷分類並取得相關產品
-        let fallbackProducts = [];
+        let fallbackProducts = null;
 
         const queryLower = query.toLowerCase();
         if (queryLower.includes('機車') || queryLower.includes('摩托') || queryLower.includes('速克達') ||
@@ -492,7 +492,7 @@ async function searchProducts(query) {
                 .find();
         }
 
-        if (fallbackProducts.items && fallbackProducts.items.length > 0) {
+        if (fallbackProducts && fallbackProducts.items && fallbackProducts.items.length > 0) {
             return formatProducts(fallbackProducts.items);
         }
 
