@@ -93,35 +93,35 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 - 添加劑（油精、燃油添加劑）
 - 化學品（清潔劑、保養品）
 
-## 🚨 產品推薦規則（最高優先級 - 違反將導致嚴重錯誤）
+## 🚨 產品推薦規則（最高優先級）
 
 ### 核心原則
-**你只能推薦「可用產品資料庫」區塊中列出的產品！**
+**推薦產品時，只能使用「可用產品資料庫」區塊中的資訊！**
 
-### 驗證清單（推薦產品前必須確認）
-推薦任何產品前，你必須在「可用產品資料庫」中找到：
-✅ 產品名稱（標題欄位的完整文字）
-✅ 產品編號（如 LM21764、LM20753）
-✅ 產品連結（如 https://www.liqui-moly-tw.com/products/lm21764）
+### 智慧推薦
+當用戶問「推薦CBR1100鏈條油」，你應該：
+1. 查看「可用產品資料庫」中有哪些鏈條相關產品
+2. 從中選擇適合的產品推薦
+3. 使用資料庫中的完整產品名稱、編號和連結
 
-### 正確範例
+### ✅ 正確範例
+用戶問「推薦摩托車鏈條油」
 資料庫中有：
 \`\`\`
 ### 1. Motorbike Chain Spray Race 摩托車競技型陶瓷鏈條油
 - 產品編號: LM21764
 - 產品連結: https://www.liqui-moly-tw.com/products/lm21764
 \`\`\`
-正確回覆：[Motorbike Chain Spray Race 摩托車競技型陶瓷鏈條油](https://www.liqui-moly-tw.com/products/lm21764)
+回覆：「為您推薦 [Motorbike Chain Spray Race 摩托車競技型陶瓷鏈條油](https://www.liqui-moly-tw.com/products/lm21764)，適合高性能摩托車使用。」
 
-### ❌ 絕對禁止
-- 禁止編造產品編號（如編造 LM3012、LM9999）
-- 禁止編造產品名稱（如編造「Chain Lube Racing」）
-- 禁止使用你記憶中的 LIQUI MOLY 產品知識
-- 禁止推測產品編號或連結
+### ❌ 絕對禁止（會導致嚴重錯誤）
+- 禁止編造產品編號（如 LM3012 不存在就不能用）
+- 禁止編造產品名稱（只能用資料庫中的完整名稱）
+- 禁止自己記憶中的產品知識覆蓋資料庫資訊
 
-### 找不到產品時的處理
-如果「可用產品資料庫」中沒有相關產品，請回覆：
-「很抱歉，目前我的產品資料庫中沒有找到相關產品。建議您瀏覽我們的[產品目錄](https://www.liqui-moly-tw.com/catalogue)或透過[聯絡表單](https://www.liqui-moly-tw.com/contact)詢問。」
+### 找不到相關產品時
+如果「可用產品資料庫」中確實沒有相關產品，回覆：
+「目前資料庫中沒有找到相關產品。建議瀏覽[產品目錄](https://www.liqui-moly-tw.com/catalogue)查看更多產品。」
 
 ## 標準回覆範本
 
@@ -530,12 +530,23 @@ async function searchProducts(query) {
 
         // 沒有匹配結果時，根據關鍵字判斷類別（搜尋多個相關分類）
         const categories = [];
+        const searchKeywords = [];
 
+        // 鏈條油相關 → 搜尋化學品和摩托車
+        if (lowerQuery.includes('鏈條') || lowerQuery.includes('chain') || lowerQuery.includes('鍊條')) {
+            categories.push('化學品', '摩托車');
+            searchKeywords.push('chain', '鏈條');
+        }
         // 清潔劑相關 → 同時搜尋化學品和添加劑
-        if (lowerQuery.includes('清潔') || lowerQuery.includes('cleaner') || lowerQuery.includes('clean') ||
+        else if (lowerQuery.includes('清潔') || lowerQuery.includes('cleaner') || lowerQuery.includes('clean') ||
             lowerQuery.includes('噴嘴') || lowerQuery.includes('噴油嘴') || lowerQuery.includes('積碳') ||
             lowerQuery.includes('引擎') || lowerQuery.includes('燃燒室') || lowerQuery.includes('直噴')) {
             categories.push('添加劑', '化學品');
+        }
+        // 齒輪油相關
+        else if (lowerQuery.includes('齒輪') || lowerQuery.includes('gear') || lowerQuery.includes('變速箱')) {
+            categories.push('機油', '化學品');
+            searchKeywords.push('gear', '齒輪');
         }
         // 化學品相關
         else if (lowerQuery.includes('化學') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
@@ -556,6 +567,20 @@ async function searchProducts(query) {
         // 預設：機油和添加劑
         else {
             categories.push('機油', '添加劑');
+        }
+
+        // 如果有特定搜尋關鍵字，優先用關鍵字搜尋
+        if (searchKeywords.length > 0) {
+            for (const keyword of searchKeywords) {
+                const keywordResults = await wixData.query('products')
+                    .contains('title', keyword)
+                    .or(wixData.query('products').contains('content', keyword))
+                    .limit(15)
+                    .find();
+                if (keywordResults.items.length > 0) {
+                    return formatProducts(keywordResults.items);
+                }
+            }
         }
 
         // 搜尋所有相關分類的產品
