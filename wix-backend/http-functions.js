@@ -403,35 +403,58 @@ async function searchProducts(query) {
             return formatProducts(results.items);
         }
 
-        // 沒有匹配結果時，根據關鍵字判斷類別
-        let category = '';
+        // 沒有匹配結果時，根據關鍵字判斷類別（搜尋多個相關分類）
+        const categories = [];
 
-        if (lowerQuery.includes('化學') || lowerQuery.includes('清潔') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
-            category = '化學品';
-        } else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精') || lowerQuery.includes('燃油')) {
-            category = '添加劑';
-        } else if (lowerQuery.includes('自行車') || lowerQuery.includes('腳踏車')) {
-            category = '自行車';
-        } else if (lowerQuery.includes('美容') || lowerQuery.includes('洗車') || lowerQuery.includes('打蠟')) {
-            category = '美容';
-        } else {
-            category = '機油'; // 預設分類
+        // 清潔劑相關 → 同時搜尋化學品和添加劑
+        if (lowerQuery.includes('清潔') || lowerQuery.includes('cleaner') || lowerQuery.includes('clean') ||
+            lowerQuery.includes('噴嘴') || lowerQuery.includes('噴油嘴') || lowerQuery.includes('積碳') ||
+            lowerQuery.includes('引擎') || lowerQuery.includes('燃燒室') || lowerQuery.includes('直噴')) {
+            categories.push('添加劑', '化學品');
+        }
+        // 化學品相關
+        else if (lowerQuery.includes('化學') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
+            categories.push('化學品');
+        }
+        // 添加劑相關
+        else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精') || lowerQuery.includes('燃油') || lowerQuery.includes('保護')) {
+            categories.push('添加劑');
+        }
+        // 自行車相關
+        else if (lowerQuery.includes('自行車') || lowerQuery.includes('腳踏車')) {
+            categories.push('自行車');
+        }
+        // 美容相關
+        else if (lowerQuery.includes('美容') || lowerQuery.includes('洗車') || lowerQuery.includes('打蠟')) {
+            categories.push('美容');
+        }
+        // 預設：機油和添加劑
+        else {
+            categories.push('機油', '添加劑');
         }
 
-        const categoryProducts = await wixData.query('products')
-            .contains('sort', category)
-            .limit(15)
-            .find();
-
-        // 如果還是沒有結果，取得任意產品
-        if (categoryProducts.items.length === 0) {
-            const anyProducts = await wixData.query('products')
+        // 搜尋所有相關分類的產品
+        let allProducts = [];
+        for (const cat of categories) {
+            const catProducts = await wixData.query('products')
+                .contains('sort', cat)
                 .limit(20)
                 .find();
-            return formatProducts(anyProducts.items);
+            allProducts = allProducts.concat(catProducts.items);
         }
 
-        return formatProducts(categoryProducts.items);
+        // 去除重複並限制數量
+        const uniqueProducts = [...new Map(allProducts.map(p => [p._id, p])).values()].slice(0, 30);
+
+        if (uniqueProducts.length > 0) {
+            return formatProducts(uniqueProducts);
+        }
+
+        // 如果還是沒有結果，取得任意產品
+        const anyProducts = await wixData.query('products')
+            .limit(30)
+            .find();
+        return formatProducts(anyProducts.items);
     } catch (error) {
         console.error('Product search error:', error);
         return '無法取得產品資料';
