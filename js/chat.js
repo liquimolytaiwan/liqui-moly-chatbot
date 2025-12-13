@@ -290,18 +290,32 @@ class LiquiMolyChatbot {
      * 格式化訊息內容
      */
     formatMessage(text) {
-        // 轉義 HTML
-        let formatted = this.escapeHTML(text);
-
-        // 轉換 Markdown 連結 [text](url)
-        formatted = formatted.replace(
+        // 先處理 Markdown 連結 [text](url) - 在轉義前處理
+        // 保存連結為暫存標記
+        const links = [];
+        let formatted = text.replace(
             /\[([^\]]+)\]\(([^)]+)\)/g,
-            '<a href="$2" target="_blank" rel="noopener">$1</a>'
+            (match, linkText, url) => {
+                const index = links.length;
+                links.push({ text: linkText, url: url });
+                return `__LINK_PLACEHOLDER_${index}__`;
+            }
         );
 
-        // 轉換 URL 為連結
+        // 轉義 HTML 特殊字元
+        formatted = this.escapeHTML(formatted);
+
+        // 還原連結（使用 HTML 格式）
+        links.forEach((link, index) => {
+            formatted = formatted.replace(
+                `__LINK_PLACEHOLDER_${index}__`,
+                `<a href="${link.url}" target="_blank" rel="noopener">${this.escapeHTML(link.text)}</a>`
+            );
+        });
+
+        // 轉換獨立的 URL 為連結（排除已經在 <a> 標籤內的）
         formatted = formatted.replace(
-            /(https?:\/\/[^\s<]+)/g,
+            /(?<!href="|">)(https?:\/\/[^\s<]+)(?![^<]*<\/a>)/g,
             '<a href="$1" target="_blank" rel="noopener">$1</a>'
         );
 
@@ -311,9 +325,13 @@ class LiquiMolyChatbot {
         // 轉換粗體 **text**
         formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-        // 轉換列表
+        // 轉換列表項目
         formatted = formatted.replace(/^- (.+)$/gm, '<li>$1</li>');
-        formatted = formatted.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+
+        // 包裝連續的列表項目
+        formatted = formatted.replace(/(<li>.*?<\/li>)(\s*<br>\s*<li>.*?<\/li>)*/gs, (match) => {
+            return '<ul>' + match.replace(/<br>/g, '') + '</ul>';
+        });
 
         return formatted;
     }
