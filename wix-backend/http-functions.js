@@ -638,9 +638,8 @@ async function callGemini(apiKey, contents) {
 
     const requestBody = {
         contents: contents,
-        // 注意：Google Search Grounding 需要額外付費設定，暫時停用
-        // 如需啟用，請確認 API 金鑰已開啟此功能
-        // tools: [{ google_search: {} }],
+        // 啟用 Google Search Grounding - 讓 AI 可以搜尋網路取得最新資訊
+        tools: [{ google_search: {} }],
         generationConfig: {
             temperature: 0.7,
             topK: 40,
