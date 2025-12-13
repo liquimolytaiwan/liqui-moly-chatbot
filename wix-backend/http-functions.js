@@ -59,7 +59,7 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 ### 步驟 2：機車機油通用規格對照表（適用所有台灣機車）
 | 車型類別 | 建議黏度 | 認證規格 |
 |----------|----------|----------|
-| 速克達（CUXI、勁戰、曼巴、JOG、迪爵等）| 10W40 | JASO MA/MA2、API SL |
+| 速克達（CUXI、勁戰、曼巴、JOG、迪爵等）| 10W40 | JASO MB、API SL |
 | 檔車（野狼、KTR、金勇、追風等）| 10W40 或 15W40 | JASO MA、API SL |
 | 重機（大型重機、黃牌、紅牌）| 10W40 或 10W50 | JASO MA2、API SN |
 
@@ -71,10 +71,10 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 
 ### 步驟 4：推薦產品
 **範例回覆格式**：
-> 曼巴是 SYM 的速克達車款，建議使用 10W40 機油，符合 JASO MA2 認證。
+> 曼巴是 SYM 的速克達車款，建議使用 10W40 機油，符合 JASO MB 認證。
 > 
 > 推薦產品：
-> - [Motorbike 4T 10W-40 Street](產品連結) - 符合 JASO MA2，適合速克達
+> - [Motorbike 4T 10W-40 Street](產品連結) - 符合 JASO MB，適合速克達
 > 
 > 👉 點擊產品頁面「這哪裡買」查詢店家
 
