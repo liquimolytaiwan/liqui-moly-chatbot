@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIQUI MOLY Taiwan 產品諮詢助理</title>
+    <meta name="description" content="LIQUI MOLY Taiwan 力魔機油智能產品諮詢助理，為您推薦最適合的機油產品">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-logo">
+                <img src="assets/liqui-moly-logo.svg" alt="LIQUI MOLY" class="logo">
+            </div>
+            <div class="header-text">
+                <h1>產品諮詢助理</h1>
+                <span class="status-indicator">
+                    <span class="status-dot"></span>
+                    線上服務中
+                </span>
+            </div>
+        </header>
+
+        <!-- Chat Messages Area -->
+        <main class="chat-messages" id="chatMessages">
+            <!-- Welcome Message -->
+            <div class="message bot-message">
+                <div class="message-avatar">
+                    <img src="assets/bot-avatar.svg" alt="助理">
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <p>您好！我是 LIQUI MOLY Taiwan 的產品諮詢助理 🛢️</p>
+                        <p>我可以協助您：</p>
+                        <ul>
+                            <li>根據您的車型推薦適合的機油產品</li>
+                            <li>解答產品使用方式與應用情境</li>
+                            <li>提供購買管道資訊</li>
+                        </ul>
+                        <p>請問有什麼可以為您服務的嗎？</p>
+                    </div>
+                    <span class="message-time">剛剛</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="quick-action-btn" data-message="我想找適合我車型的機油">
+                    🚗 車型機油推薦
+                </button>
+                <button class="quick-action-btn" data-message="請問哪裡可以買到 LIQUI MOLY 產品？">
+                    📍 購買管道
+                </button>
+                <button class="quick-action-btn" data-message="請問機油添加劑怎麼使用？">
+                    ❓ 產品使用說明
+                </button>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="chat-input-area">
+            <div class="input-container">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="輸入您的問題..." 
+                    rows="1"
+                    maxlength="1000"
+                ></textarea>
+                <button id="sendButton" class="send-btn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="input-hint">按 Enter 發送，Shift + Enter 換行</p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html>

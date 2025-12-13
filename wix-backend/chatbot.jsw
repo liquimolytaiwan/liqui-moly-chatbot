@@ -1,0 +1,454 @@
+/**
+ * LIQUI MOLY Chatbot - Wix Velo Backend
+ * 
+ * 此檔案需要複製到 Wix Velo 的 Backend 資料夾中
+ * 檔案路徑: backend/chatbot.jsw
+ * 
+ * 使用說明:
+ * 1. 在 Wix Editor 中啟用 Dev Mode (Velo)
+ * 2. 在左側面板找到 Backend & Public 資料夾
+ * 3. 在 Backend 資料夾中建立此檔案
+ * 4. 將 API Key 儲存到 Wix Secrets Manager
+ */
+
+import { fetch } from 'wix-fetch';
+import { getSecret } from 'wix-secrets-backend';
+import wixData from 'wix-data';
+
+// ============================================
+// 常數定義
+// ============================================
+
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+// 產品頁面基礎 URL
+const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
+
+// 系統提示詞
+const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的產品諮詢助理。
+
+## 你的身份
+- 你代表台灣總代理宜福工業提供客戶服務
+- 你專業、友善、有耐心
+- 你只回答與 LIQUI MOLY 產品相關的問題
+
+## 核心職責
+1. 根據消費者車型推薦合適的機油產品
+2. 解答產品使用方式與應用情境問題
+3. 引導消費者購買正品公司貨
+
+## 回覆規則
+
+### 車型機油推薦流程
+1. 詢問車型資訊（年份、品牌、型號）
+2. 若資訊不足，追問具體版本（如排氣量、引擎類型、動力版本如 Hybrid、Diesel 等）
+3. 查詢車主手冊所需的認證規格（如 MB 229.52, BMW LL-04, VW 504.00/507.00）
+4. 從產品資料庫匹配符合規格的產品
+5. 提供產品名稱、適用原因，並附上產品連結
+
+### 購買管道問題
+當消費者詢問「哪裡買」、「怎麼購買」、「哪邊有賣」時，回覆：
+「您可以使用產品頁面上方的『這哪裡買』功能，系統會顯示您所在位置 50 公里內有販售的店家資訊。
+或者前往『聯絡我們』(https://www.liqui-moly-tw.com/contact) 填寫線上表單，我們會以簡訊回覆店家資訊。」
+
+### 電商平台問題
+當消費者提到蝦皮、MOMO、PCHOME、Yahoo、露天等電商平台時，一律回覆：
+「網路電商平台（蝦皮、MOMO、PCHOME 等）上的 LIQUI MOLY 產品並非總代理公司貨。
+我們並沒有在網路平台販售機油與添加劑相關產品，因此無法提供上述電商平台產品的品質保證與售後服務。
+建議您透過官方管道購買公司貨，享有完整保固與服務。」
+
+### 產品使用說明
+- 參考產品資料庫中的使用說明
+- 如資料庫無資料，可參考 LIQUI MOLY 官方網站資訊
+- 添加劑類產品需提醒正確使用時機與方式
+
+### 回覆格式
+- 使用繁體中文回覆
+- 適時使用表情符號增加親和力
+- 產品推薦時提供連結格式：[產品名稱](產品頁面URL)
+- 保持回覆精簡但完整
+
+## 禁止事項
+- 不得推薦非 LIQUI MOLY 品牌產品
+- 不得提供與本公司無關的資訊
+- 不得批評其他品牌
+- 不得承諾價格或促銷活動（請消費者洽詢店家）`;
+
+// ============================================
+// 主要函數
+// ============================================
+
+/**
+ * 處理聊天請求
+ * @param {string} message - 用戶訊息
+ * @param {Array} conversationHistory - 對話歷史
+ * @returns {Promise<{success: boolean, response: string, error?: string}>} - AI 回覆
+ */
+export async function chat(message, conversationHistory = []) {
+    try {
+        // 取得 API Key
+        const apiKey = await getSecret('GEMINI_API_KEY');
+        
+        if (!apiKey) {
+            throw new Error('API Key not found');
+        }
+        
+        // 查詢相關產品資料
+        const productContext = await searchRelevantProducts(message);
+        
+        // 建構對話內容
+        const contents = buildConversationContents(message, conversationHistory, productContext);
+        
+        // 呼叫 Gemini API
+        const response = await callGeminiAPI(apiKey, contents);
+        
+        return {
+            success: true,
+            response: response
+        };
+        
+    } catch (error) {
+        console.error('Chat error:', error);
+        return {
+            success: false,
+            response: '抱歉，目前服務暫時無法使用，請稍後再試。如有緊急需求，請透過「聯絡我們」頁面與我們聯繫。',
+            error: error.message
+        };
+    }
+}
+
+/**
+ * 搜尋相關產品
+ * @param {string} query - 搜尋關鍵字
+ * @returns {Promise<string>} - 產品資訊文字
+ */
+async function searchRelevantProducts(query) {
+    try {
+        // 從 CMS 查詢產品資料
+        // Collection ID: products
+        // 欄位對照: title(產品名稱), partno(產品編號), word2(黏度), cert(認證/規格), sort(分類), use(使用方法), content(內容)
+        
+        const results = await wixData.query('products')
+            .contains('title', query)
+            .or(wixData.query('products').contains('content', query))
+            .or(wixData.query('products').contains('cert', query))
+            .or(wixData.query('products').contains('word2', query))
+            .or(wixData.query('products').contains('sort', query))
+            .limit(15)
+            .find();
+        
+        if (results.items.length === 0) {
+            // 如果沒有直接匹配，嘗試取得所有機油產品
+            const allProducts = await wixData.query('products')
+                .contains('sort', '機油')
+                .limit(20)
+                .find();
+            
+            return formatProductsForContext(allProducts.items);
+        }
+        
+        return formatProductsForContext(results.items);
+        
+    } catch (error) {
+        console.error('Product search error:', error);
+        return '無法取得產品資料';
+    }
+}
+
+/**
+ * 格式化產品資料供 AI 使用
+ * @param {Array} products - 產品列表
+ * @returns {string} - 格式化的產品資訊
+ */
+function formatProductsForContext(products) {
+    if (!products || products.length === 0) {
+        return '目前沒有匹配的產品資料';
+    }
+    
+    let context = '## 可用產品資料庫\n\n';
+    
+    products.forEach((product, index) => {
+        // 建構產品頁面 URL
+        const productUrl = product.partno 
+            ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}`
+            : 'https://www.liqui-moly-tw.com/catalogue';
+        
+        context += `### ${index + 1}. ${product.title || '未命名產品'}\n`;
+        context += `- 產品編號: ${product.partno || 'N/A'}\n`;
+        context += `- 黏度: ${product.word2 || 'N/A'}\n`;
+        context += `- 認證/規格: ${product.cert || 'N/A'}\n`;
+        context += `- 分類: ${product.sort || 'N/A'}\n`;
+        context += `- 使用方法: ${product.use || 'N/A'}\n`;
+        context += `- 產品連結: ${productUrl}\n`;
+        context += `- 產品說明: ${product.content || 'N/A'}\n\n`;
+    });
+    
+    return context;
+}
+
+/**
+ * 建構對話內容
+ * @param {string} message - 當前訊息
+ * @param {Array} history - 對話歷史
+ * @param {string} productContext - 產品資料上下文
+ * @returns {Array} - Gemini API 格式的內容陣列
+ */
+function buildConversationContents(message, history, productContext) {
+    const contents = [];
+    
+    // 系統提示詞與產品資料
+    const systemContext = `${SYSTEM_PROMPT}\n\n${productContext}\n\n請基於以上產品資料回答用戶問題。如果用戶詢問的產品不在資料庫中，請告知會協助查詢並建議用戶提供更多資訊。`;
+    
+    // 加入歷史對話
+    if (history && history.length > 0) {
+        history.forEach(msg => {
+            contents.push({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            });
+        });
+    }
+    
+    // 加入當前訊息（包含系統提示詞）
+    const currentMessage = contents.length === 0 
+        ? `${systemContext}\n\n用戶問題: ${message}`
+        : message;
+    
+    contents.push({
+        role: 'user',
+        parts: [{ text: currentMessage }]
+    });
+    
+    return contents;
+}
+
+/**
+ * 呼叫 Gemini API
+ * @param {string} apiKey - API 金鑰
+ * @param {Array} contents - 對話內容
+ * @returns {Promise<string>} - AI 回覆文字
+ */
+async function callGeminiAPI(apiKey, contents) {
+    const url = `${GEMINI_API_URL}?key=${apiKey}`;
+    
+    const requestBody = {
+        contents: contents,
+        generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+        },
+        safetySettings: [
+            {
+                category: 'HARM_CATEGORY_HARASSMENT',
+                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            },
+            {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+            }
+        ]
+    };
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Gemini API error:', errorText);
+        throw new Error(`Gemini API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // 解析回覆
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const parts = data.candidates[0].content.parts;
+        if (parts && parts[0] && parts[0].text) {
+            return parts[0].text;
+        }
+    }
+    
+    throw new Error('Invalid response format from Gemini API');
+}
+
+/**
+ * 取得所有產品列表
+ * @returns {Promise<{success: boolean, products: Array, error?: string}>} - 回應物件
+ */
+export async function getProducts() {
+    try {
+        const results = await wixData.query('products')
+            .ascending('title')
+            .find();
+        
+        // 格式化產品資料
+        const formattedProducts = results.items.map(product => ({
+            id: product._id,
+            title: product.title,
+            partno: product.partno,
+            viscosity: product.word2,
+            certifications: product.cert,
+            category: product.sort,
+            usage: product.use,
+            content: product.content,
+            url: product.partno ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}` : null
+        }));
+        
+        return {
+            success: true,
+            products: formattedProducts
+        };
+        
+    } catch (error) {
+        console.error('Get products error:', error);
+        return {
+            success: false,
+            products: [],
+            error: error.message
+        };
+    }
+}
+
+/**
+ * 根據車型搜尋適合的產品
+ * @param {Object} vehicleInfo - 車輛資訊
+ * @returns {Promise<{success: boolean, products: Array, error?: string}>} - 回應物件
+ */
+export async function searchProductsByVehicle(vehicleInfo) {
+    try {
+        const { brand, model, year, engineType } = vehicleInfo;
+        
+        // 根據車型查詢可能的認證規格
+        // 這裡可以擴展為查詢車型-規格對照表
+        let query = wixData.query('products')
+            .contains('sort', '機油');
+        
+        // 如果有特定認證需求，加入篩選
+        if (vehicleInfo.certification) {
+            query = query.contains('cert', vehicleInfo.certification);
+        }
+        
+        const results = await query.limit(15).find();
+        
+        // 格式化產品資料
+        const formattedProducts = results.items.map(product => ({
+            id: product._id,
+            title: product.title,
+            partno: product.partno,
+            viscosity: product.word2,
+            certifications: product.cert,
+            category: product.sort,
+            usage: product.use,
+            content: product.content,
+            url: product.partno ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}` : null
+        }));
+        
+        return {
+            success: true,
+            products: formattedProducts
+        };
+        
+    } catch (error) {
+        console.error('Search by vehicle error:', error);
+        return {
+            success: false,
+            products: [],
+            error: error.message
+        };
+    }
+}
+
+/**
+ * 根據認證規格搜尋產品
+ * @param {string} certification - 認證規格（如 MB 229.52, BMW LL-04）
+ * @returns {Promise<{success: boolean, products: Array, error?: string}>} - 回應物件
+ */
+export async function searchProductsByCertification(certification) {
+    try {
+        const results = await wixData.query('products')
+            .contains('cert', certification)
+            .limit(15)
+            .find();
+        
+        // 格式化產品資料
+        const formattedProducts = results.items.map(product => ({
+            id: product._id,
+            title: product.title,
+            partno: product.partno,
+            viscosity: product.word2,
+            certifications: product.cert,
+            category: product.sort,
+            usage: product.use,
+            content: product.content,
+            url: product.partno ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}` : null
+        }));
+        
+        return {
+            success: true,
+            products: formattedProducts
+        };
+        
+    } catch (error) {
+        console.error('Search by certification error:', error);
+        return {
+            success: false,
+            products: [],
+            error: error.message
+        };
+    }
+}
+
+/**
+ * 根據黏度搜尋產品
+ * @param {string} viscosity - 黏度（如 5W30, 5W40, 10W40）
+ * @returns {Promise<{success: boolean, products: Array, error?: string}>} - 回應物件
+ */
+export async function searchProductsByViscosity(viscosity) {
+    try {
+        const results = await wixData.query('products')
+            .contains('word2', viscosity)
+            .limit(15)
+            .find();
+        
+        // 格式化產品資料
+        const formattedProducts = results.items.map(product => ({
+            id: product._id,
+            title: product.title,
+            partno: product.partno,
+            viscosity: product.word2,
+            certifications: product.cert,
+            category: product.sort,
+            usage: product.use,
+            content: product.content,
+            url: product.partno ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}` : null
+        }));
+        
+        return {
+            success: true,
+            products: formattedProducts
+        };
+        
+    } catch (error) {
+        console.error('Search by viscosity error:', error);
+        return {
+            success: false,
+            products: [],
+            error: error.message
+        };
+    }
+}

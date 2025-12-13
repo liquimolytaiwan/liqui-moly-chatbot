@@ -1,0 +1,13 @@
+# Wix Backend 資料夾（需手動複製到 Wix）
+# wix-backend/
+
+# OS 檔案
+.DS_Store
+Thumbs.db
+
+# 編輯器設定
+.vscode/
+.idea/
+
+# 日誌
+*.log
