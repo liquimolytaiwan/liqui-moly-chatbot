@@ -269,7 +269,25 @@ export async function get_products(request) {
 
 async function searchProducts(query) {
     try {
-        // 搜尋所有相關欄位，包含分類、產品名稱、說明、認證、黏度
+        // 先判斷是否為摩托車/機車相關查詢（包含車型名稱）
+        const lowerQuery = query.toLowerCase();
+        const motorcycleKeywords = ['摩托車', '機車', '重機', '速克達', 'cuxi', 'cygnus', 'bws', 'force', 'smax', 'xmax', 'tmax', 'r3', 'r6', 'mt', 'gogoro', 'kymco', 'sym', 'yamaha', 'honda', 'kawasaki', 'suzuki', 'vespa', '勁戰', '四代戰', '五代戰', '六代戰', 'nmax', 'pcx', 'dio', 'jog', 'rs', 'fighter', 'jet', 'many', 'g6', 'racing', 'gp', '彪虎', '雷霆', 'duke'];
+
+        const isMotorcycleQuery = motorcycleKeywords.some(keyword => lowerQuery.includes(keyword));
+
+        // 如果是摩托車相關查詢，優先搜尋摩托車產品
+        if (isMotorcycleQuery) {
+            const motorcycleProducts = await wixData.query('products')
+                .contains('sort', '摩托車')
+                .limit(20)
+                .find();
+
+            if (motorcycleProducts.items.length > 0) {
+                return formatProducts(motorcycleProducts.items);
+            }
+        }
+
+        // 搜尋所有相關欄位
         const results = await wixData.query('products')
             .contains('title', query)
             .or(wixData.query('products').contains('content', query))
@@ -279,39 +297,39 @@ async function searchProducts(query) {
             .limit(20)
             .find();
 
-        if (results.items.length === 0) {
-            // 沒有匹配結果時，嘗試取得各類別的代表產品
-            // 根據常見的查詢關鍵字判斷類別
-            let category = '';
-            const lowerQuery = query.toLowerCase();
-
-            if (lowerQuery.includes('摩托車') || lowerQuery.includes('機車') || lowerQuery.includes('重機')) {
-                category = '摩托車';
-            } else if (lowerQuery.includes('化學') || lowerQuery.includes('清潔') || lowerQuery.includes('保養')) {
-                category = '化學品';
-            } else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精')) {
-                category = '添加劑';
-            } else {
-                category = '機油'; // 預設分類
-            }
-
-            const categoryProducts = await wixData.query('products')
-                .contains('sort', category)
-                .limit(15)
-                .find();
-
-            // 如果還是沒有結果，取得任意產品
-            if (categoryProducts.items.length === 0) {
-                const anyProducts = await wixData.query('products')
-                    .limit(20)
-                    .find();
-                return formatProducts(anyProducts.items);
-            }
-
-            return formatProducts(categoryProducts.items);
+        if (results.items.length > 0) {
+            return formatProducts(results.items);
         }
 
-        return formatProducts(results.items);
+        // 沒有匹配結果時，根據關鍵字判斷類別
+        let category = '';
+
+        if (lowerQuery.includes('化學') || lowerQuery.includes('清潔') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
+            category = '化學品';
+        } else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精') || lowerQuery.includes('燃油')) {
+            category = '添加劑';
+        } else if (lowerQuery.includes('自行車') || lowerQuery.includes('腳踏車')) {
+            category = '自行車';
+        } else if (lowerQuery.includes('美容') || lowerQuery.includes('洗車') || lowerQuery.includes('打蠟')) {
+            category = '美容';
+        } else {
+            category = '機油'; // 預設分類
+        }
+
+        const categoryProducts = await wixData.query('products')
+            .contains('sort', category)
+            .limit(15)
+            .find();
+
+        // 如果還是沒有結果，取得任意產品
+        if (categoryProducts.items.length === 0) {
+            const anyProducts = await wixData.query('products')
+                .limit(20)
+                .find();
+            return formatProducts(anyProducts.items);
+        }
+
+        return formatProducts(categoryProducts.items);
     } catch (error) {
         console.error('Product search error:', error);
         return '無法取得產品資料';
