@@ -71,7 +71,7 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 
 ### 步驟 4：推薦產品
 **範例回覆格式**：
-> 曼巴是 Kymco 的速克達車款，建議使用 10W40 機油，符合 JASO MA2 認證。
+> 曼巴是 SYM 的速克達車款，建議使用 10W40 機油，符合 JASO MA2 認證。
 > 
 > 推薦產品：
 > - [Motorbike 4T 10W-40 Street](產品連結) - 符合 JASO MA2，適合速克達
