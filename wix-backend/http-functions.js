@@ -276,14 +276,79 @@ export async function get_products(request) {
 
 async function searchProducts(query) {
     try {
-        // 先判斷是否為摩托車/機車相關查詢（包含車型名稱）
         const lowerQuery = query.toLowerCase();
-        const motorcycleKeywords = ['摩托車', '機車', '重機', '速克達', '檔車', '打檔車', '野狼', 'wolf', 'ktr', '金勇', '追風', '愛將', 'fz', 'fzr', 'fzs', 'cb', 'cbr', 'ninja', 'z400', 'mt-03', 'mt-07', 'mt-09', 'cuxi', 'cygnus', 'bws', 'force', 'smax', 'xmax', 'tmax', 'r3', 'r6', 'r15', 'mt', 'gogoro', 'kymco', 'sym', 'yamaha', 'honda', 'kawasaki', 'suzuki', 'vespa', '勁戰', '四代戰', '五代戰', '六代戰', 'nmax', 'pcx', 'dio', 'jog', 'rs', 'fighter', 'jet', 'many', 'g6', 'racing', 'gp', '彪虎', '雷霆', 'duke', '三陽', '光陽', 'aeon', 'pgo', 'ktm'];
+
+        // ============================================
+        // 台灣熱門摩托車關鍵字（近十年暢銷車型）
+        // ============================================
+        const motorcycleKeywords = [
+            // 通用關鍵字
+            '摩托車', '機車', '重機', '速克達', '檔車', '打檔車', '二行程', '四行程',
+            // SYM 三陽
+            'sym', '三陽', '迪爵', 'duke', 'jet', 'woo', '活力', 'clbcu', 'fiddle', 'mio', '悍將', 'fighter', 'z1', 'drgbt', 'drg',
+            // Kymco 光陽
+            'kymco', '光陽', '名流', 'many', 'gp', 'racing', '雷霆', 'g6', 'kru', 'romeo', '勁多利', 'g5', 'g3', 'a-going', '酷龍', 'nikita', 'ak550', 'downtown',
+            // Yamaha 山葉
+            'yamaha', '山葉', 'jog', 'cuxi', 'cygnus', '勁戰', '四代戰', '五代戰', '六代戰', 'bws', 'force', 'smax', 'xmax', 'tmax', 'nmax', 'r3', 'r6', 'r15', 'r1', 'mt-03', 'mt-07', 'mt-09', 'mt-15', 'yzf', 'fz', 'fzr', 'fzs', 'tricity', 'limi',
+            // Honda 本田
+            'honda', '本田', 'pcx', 'dio', 'vario', 'click', 'cb', 'cbr', 'cb650r', 'cb300r', 'nc750', 'adv', 'forza', 'goldwing', 'rebel',
+            // 其他品牌
+            'kawasaki', 'suzuki', 'vespa', 'piaggio', 'ktm', 'aeon', 'pgo', 'aprilia', 'ducati', 'bmw', 'harley', 'indian', 'triumph',
+            // Gogoro 電動車
+            'gogoro', 'jego', 'viva', 'supersport', 'delight', 'smartscooter', '電動機車',
+            // 經典檔車
+            '野狼', 'wolf', 'ktr', '金勇', '追風', '愛將', 'nsr', 'rgv', 'tzr', 'rz', 'ninja', 'z400', 'z650', 'z900', 'versys', 'z1000'
+        ];
+
+        // ============================================
+        // 台灣熱門汽車關鍵字（近十年暢銷車型）
+        // ============================================
+        const carKeywords = [
+            // 通用關鍵字
+            '汽車', '轎車', '休旅車', 'suv', '跑車', '房車', '掀背', 'mpv', '商用車',
+            // Toyota 豐田
+            'toyota', '豐田', 'corolla', 'altis', 'cross', 'rav4', 'camry', 'yaris', 'vios', 'sienna', 'sienta', 'prius', 'crown', 'supra', 'gr86', 'town ace', 'hiace', 'hilux', 'land cruiser',
+            // Lexus
+            'lexus', 'nx', 'rx', 'es', 'ux', 'ls', 'lc', 'is', 'ct', 'gx', 'lx',
+            // Honda 本田
+            'hr-v', 'cr-v', 'fit', 'city', 'civic', 'accord', 'odyssey', 'nsx',
+            // Mazda 馬自達
+            'mazda', '馬自達', 'mazda3', 'mazda6', 'cx-3', 'cx-30', 'cx-5', 'cx-60', 'cx-9', 'mx-5',
+            // Nissan 日產
+            'nissan', '日產', '裕隆', 'sentra', 'tiida', 'kicks', 'x-trail', 'juke', 'murano', 'leaf', 'gt-r', '370z',
+            // Mitsubishi 三菱
+            'mitsubishi', '三菱', 'outlander', 'eclipse', 'colt', 'delica', 'zinger', 'lancer', 'fortis',
+            // Hyundai 現代
+            'hyundai', '現代', 'tucson', 'santa fe', 'kona', 'venue', 'elantra', 'ioniq', 'custin',
+            // Kia 起亞
+            'kia', '起亞', 'sportage', 'picanto', 'stonic', 'ev6', 'carnival', 'sorento',
+            // Ford 福特
+            'ford', '福特', 'focus', 'kuga', 'escape', 'mondeo', 'ranger', 'mustang',
+            // Volkswagen 福斯
+            'volkswagen', 'vw', '福斯', 'golf', 'tiguan', 'touran', 'passat', 't-cross', 't-roc', 'arteon', 'id.4',
+            // BMW
+            'bmw', 'x1', 'x3', 'x5', 'x7', '3系列', '5系列', '7系列', 'm3', 'm4', 'm5', 'ix',
+            // Mercedes-Benz 賓士
+            'benz', 'mercedes', '賓士', 'a-class', 'c-class', 'e-class', 's-class', 'gla', 'glb', 'glc', 'gle', 'gls', 'amg', 'eqe', 'eqs',
+            // Audi 奧迪
+            'audi', '奧迪', 'a1', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'q2', 'q3', 'q5', 'q7', 'q8', 'e-tron',
+            // Porsche 保時捷
+            'porsche', '保時捷', 'cayenne', 'macan', 'panamera', '911', 'taycan', 'boxster', 'cayman',
+            // Volvo
+            'volvo', 'xc40', 'xc60', 'xc90', 's60', 's90', 'v60',
+            // 中華汽車
+            '中華', 'j space', 'zinger', 'veryca',
+            // Subaru 速霸陸
+            'subaru', '速霸陸', 'forester', 'outback', 'xv', 'wrx', 'brz', 'levorg',
+            // Tesla 特斯拉
+            'tesla', '特斯拉', 'model 3', 'model y', 'model s', 'model x'
+        ];
 
         const isMotorcycleQuery = motorcycleKeywords.some(keyword => lowerQuery.includes(keyword));
+        const isCarQuery = carKeywords.some(keyword => lowerQuery.includes(keyword));
 
         // 如果是摩托車相關查詢，優先搜尋摩托車產品
-        if (isMotorcycleQuery) {
+        if (isMotorcycleQuery && !isCarQuery) {
             const motorcycleProducts = await wixData.query('products')
                 .contains('sort', '摩托車')
                 .limit(20)
@@ -291,6 +356,19 @@ async function searchProducts(query) {
 
             if (motorcycleProducts.items.length > 0) {
                 return formatProducts(motorcycleProducts.items);
+            }
+        }
+
+        // 如果是汽車相關查詢，優先搜尋汽車機油
+        if (isCarQuery && !isMotorcycleQuery) {
+            const carProducts = await wixData.query('products')
+                .contains('sort', '汽車')
+                .contains('sort', '機油')
+                .limit(20)
+                .find();
+
+            if (carProducts.items.length > 0) {
+                return formatProducts(carProducts.items);
             }
         }
 
