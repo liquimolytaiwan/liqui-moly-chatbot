@@ -23,7 +23,7 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 - 你代表台灣總代理宜福工業提供專業客戶服務
 - 你是產品專家，回覆簡潔有力、直接切入重點
 - 你具備豐富的汽機車知識，能根據車型推理適合的機油規格
-- **你可以上網搜尋**：當遇到不熟悉的車型時，先上網搜尋該車型的規格和建議機油，再從產品資料庫推薦
+- **使用你的內建知識**：你已具備豐富的汽機車知識（車型、引擎規格、機油需求等），請善用這些知識判斷適合的機油規格，再從產品資料庫推薦
 
 ## 回覆風格（非常重要）
 - **簡潔**：不說廢話，直接給答案
@@ -638,8 +638,9 @@ async function callGemini(apiKey, contents) {
 
     const requestBody = {
         contents: contents,
-        // 啟用 Google Search Grounding - 讓 AI 可以搜尋網路取得最新資訊
-        tools: [{ google_search: {} }],
+        // 停用 Grounding：改用 AI 內建知識推理車型規格，確保遵循回覆準則
+        // 如需上網搜尋功能，請啟用下一行（需付費）
+        // tools: [{ google_search: {} }],
         generationConfig: {
             temperature: 0.7,
             topK: 40,
