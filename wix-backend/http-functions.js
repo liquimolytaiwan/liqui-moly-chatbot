@@ -425,214 +425,119 @@ export async function get_products(request) {
 
 async function searchProducts(query) {
     try {
-        const lowerQuery = query.toLowerCase();
+        // 提取查詢中的關鍵字
+        const keywords = extractKeywords(query);
 
-        // ============================================
-        // 台灣熱門摩托車關鍵字（近十年暢銷車型）
-        // ============================================
-        const motorcycleKeywords = [
-            // 通用關鍵字
-            '摩托車', '機車', '重機', '速克達', '檔車', '打檔車', '二行程', '四行程',
-            // SYM 三陽
-            'sym', '三陽', '迪爵', 'duke', 'jet', 'woo', '活力', 'clbcu', 'fiddle', 'mio', '悍將', 'fighter', 'z1', 'drgbt', 'drg', '曼巴', 'mmbcu', 'fnx', 'maxsym', 'joymax', 'cruisym', 'mio', 'gt', 'evo',
-            // Kymco 光陽
-            'kymco', '光陽', '名流', 'many', 'gp', 'racing', '雷霆', 'g6', 'kru', 'romeo', '勁多利', 'g5', 'g3', 'a-going', '酷龍', 'nikita', 'ak550', 'downtown',
-            // Yamaha 山葉
-            'yamaha', '山葉', 'jog', 'cuxi', 'cygnus', '勁戰', '四代戰', '五代戰', '六代戰', 'bws', 'force', 'smax', 'xmax', 'tmax', 'nmax', 'r3', 'r6', 'r15', 'r1', 'mt-03', 'mt-07', 'mt-09', 'mt-15', 'yzf', 'fz', 'fzr', 'fzs', 'tricity', 'limi',
-            // Honda 本田
-            'honda', '本田', 'pcx', 'dio', 'vario', 'click', 'cb', 'cbr', 'cb650r', 'cb300r', 'nc750', 'adv', 'forza', 'goldwing', 'rebel',
-            // 其他品牌
-            'kawasaki', 'suzuki', 'vespa', 'piaggio', 'ktm', 'aeon', 'pgo', 'aprilia', 'ducati', 'bmw', 'harley', 'indian', 'triumph',
-            // Gogoro 電動車
-            'gogoro', 'jego', 'viva', 'supersport', 'delight', 'smartscooter', '電動機車',
-            // 經典檔車
-            '野狼', 'wolf', 'ktr', '金勇', '追風', '愛將', 'nsr', 'rgv', 'tzr', 'rz', 'ninja', 'z400', 'z650', 'z900', 'versys', 'z1000'
-        ];
+        // 先嘗試精確搜尋（產品編號優先）
+        const partnoMatch = query.match(/lm\d+/i);
+        if (partnoMatch) {
+            const partnoResults = await wixData.query('products')
+                .contains('partno', partnoMatch[0])
+                .limit(10)
+                .find();
+            if (partnoResults.items.length > 0) {
+                return formatProducts(partnoResults.items);
+            }
+        }
 
-        // ============================================
-        // 台灣熱門汽車關鍵字（近十年暢銷車型）
-        // ============================================
-        const carKeywords = [
-            // 通用關鍵字
-            '汽車', '轎車', '休旅車', 'suv', '跑車', '房車', '掀背', 'mpv', '商用車',
-            // Toyota 豐田
-            'toyota', '豐田', 'corolla', 'altis', 'cross', 'rav4', 'camry', 'yaris', 'vios', 'sienna', 'sienta', 'prius', 'crown', 'supra', 'gr86', 'town ace', 'hiace', 'hilux', 'land cruiser',
-            // Lexus
-            'lexus', 'nx', 'rx', 'es', 'ux', 'ls', 'lc', 'is', 'ct', 'gx', 'lx',
-            // Honda 本田
-            'hr-v', 'cr-v', 'fit', 'city', 'civic', 'accord', 'odyssey', 'nsx',
-            // Mazda 馬自達
-            'mazda', '馬自達', 'mazda3', 'mazda6', 'cx-3', 'cx-30', 'cx-5', 'cx-60', 'cx-9', 'mx-5',
-            // Nissan 日產
-            'nissan', '日產', '裕隆', 'sentra', 'tiida', 'kicks', 'x-trail', 'juke', 'murano', 'leaf', 'gt-r', '370z',
-            // Mitsubishi 三菱
-            'mitsubishi', '三菱', 'outlander', 'eclipse', 'colt', 'delica', 'zinger', 'lancer', 'fortis',
-            // Hyundai 現代
-            'hyundai', '現代', 'tucson', 'santa fe', 'kona', 'venue', 'elantra', 'ioniq', 'custin',
-            // Kia 起亞
-            'kia', '起亞', 'sportage', 'picanto', 'stonic', 'ev6', 'carnival', 'sorento',
-            // Ford 福特
-            'ford', '福特', 'focus', 'kuga', 'escape', 'mondeo', 'ranger', 'mustang',
-            // Volkswagen 福斯
-            'volkswagen', 'vw', '福斯', 'golf', 'tiguan', 'touran', 'passat', 't-cross', 't-roc', 'arteon', 'id.4',
-            // BMW
-            'bmw', 'x1', 'x3', 'x5', 'x7', '3系列', '5系列', '7系列', 'm3', 'm4', 'm5', 'ix',
-            // Mercedes-Benz 賓士
-            'benz', 'mercedes', '賓士', 'a-class', 'c-class', 'e-class', 's-class', 'gla', 'glb', 'glc', 'gle', 'gls', 'amg', 'eqe', 'eqs',
-            // Audi 奧迪
-            'audi', '奧迪', 'a1', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'q2', 'q3', 'q5', 'q7', 'q8', 'e-tron',
-            // Porsche 保時捷
-            'porsche', '保時捷', 'cayenne', 'macan', 'panamera', '911', 'taycan', 'boxster', 'cayman',
-            // Volvo
-            'volvo', 'xc40', 'xc60', 'xc90', 's60', 's90', 'v60',
-            // 中華汽車
-            '中華', 'j space', 'zinger', 'veryca',
-            // Subaru 速霸陸
-            'subaru', '速霸陸', 'forester', 'outback', 'xv', 'wrx', 'brz', 'levorg',
-            // Tesla 特斯拉
-            'tesla', '特斯拉', 'model 3', 'model y', 'model s', 'model x'
-        ];
+        // 全文搜尋所有欄位
+        let allResults = [];
+        for (const keyword of keywords) {
+            const results = await wixData.query('products')
+                .contains('title', keyword)
+                .or(wixData.query('products').contains('content', keyword))
+                .or(wixData.query('products').contains('sort', keyword))
+                .or(wixData.query('products').contains('cert', keyword))
+                .or(wixData.query('products').contains('partno', keyword))
+                .limit(15)
+                .find();
+            allResults = allResults.concat(results.items);
+        }
 
-        const isMotorcycleQuery = motorcycleKeywords.some(keyword => lowerQuery.includes(keyword));
-        const isCarQuery = carKeywords.some(keyword => lowerQuery.includes(keyword));
+        // 去除重複
+        const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
 
-        // 如果是摩托車相關查詢，優先搜尋摩托車產品
-        if (isMotorcycleQuery && !isCarQuery) {
-            const motorcycleProducts = await wixData.query('products')
+        if (uniqueResults.length > 0) {
+            return formatProducts(uniqueResults.slice(0, 30));
+        }
+
+        // 若無結果，根據查詢類型判斷分類並取得相關產品
+        let fallbackProducts = [];
+
+        const queryLower = query.toLowerCase();
+        if (queryLower.includes('機車') || queryLower.includes('摩托') || queryLower.includes('速克達') ||
+            queryLower.includes('檔車') || queryLower.includes('重機') || queryLower.includes('motorbike')) {
+            fallbackProducts = await wixData.query('products')
                 .contains('sort', '摩托車')
                 .limit(20)
                 .find();
-
-            if (motorcycleProducts.items.length > 0) {
-                return formatProducts(motorcycleProducts.items);
-            }
-        }
-
-        // 如果是汽車相關查詢，優先搜尋汽車機油
-        if (isCarQuery && !isMotorcycleQuery) {
-            const carProducts = await wixData.query('products')
+        } else if (queryLower.includes('汽車') || queryLower.includes('轎車') || queryLower.includes('休旅')) {
+            fallbackProducts = await wixData.query('products')
                 .contains('sort', '汽車')
-                .contains('sort', '機油')
                 .limit(20)
                 .find();
-
-            if (carProducts.items.length > 0) {
-                return formatProducts(carProducts.items);
-            }
-        }
-
-        // 搜尋所有相關欄位（包含產品編號）
-        const results = await wixData.query('products')
-            .contains('title', query)
-            .or(wixData.query('products').contains('partno', query))
-            .or(wixData.query('products').contains('content', query))
-            .or(wixData.query('products').contains('cert', query))
-            .or(wixData.query('products').contains('word2', query))
-            .or(wixData.query('products').contains('sort', query))
-            .limit(20)
-            .find();
-
-        if (results.items.length > 0) {
-            return formatProducts(results.items);
-        }
-
-        // 沒有匹配結果時，根據關鍵字判斷類別（搜尋多個相關分類）
-        const categories = [];
-        const searchKeywords = [];
-
-        // 鏈條油相關 → 搜尋化學品和摩托車
-        if (lowerQuery.includes('鏈條') || lowerQuery.includes('chain') || lowerQuery.includes('鍊條')) {
-            categories.push('化學品', '摩托車');
-            searchKeywords.push('chain', '鏈條');
-        }
-        // 清潔劑相關 → 同時搜尋化學品和添加劑
-        else if (lowerQuery.includes('清潔') || lowerQuery.includes('cleaner') || lowerQuery.includes('clean') ||
-            lowerQuery.includes('噴嘴') || lowerQuery.includes('噴油嘴') || lowerQuery.includes('積碳') ||
-            lowerQuery.includes('引擎') || lowerQuery.includes('燃燒室') || lowerQuery.includes('直噴')) {
-            categories.push('添加劑', '化學品');
-        }
-        // 齒輪油相關
-        else if (lowerQuery.includes('齒輪') || lowerQuery.includes('gear') || lowerQuery.includes('變速箱')) {
-            categories.push('機油', '化學品');
-            searchKeywords.push('gear', '齒輪');
-        }
-        // 煞車油相關
-        else if (lowerQuery.includes('煞車') || lowerQuery.includes('剎車') || lowerQuery.includes('brake') ||
-            lowerQuery.includes('dot 3') || lowerQuery.includes('dot 4') || lowerQuery.includes('dot 5')) {
-            categories.push('化學品');
-            searchKeywords.push('brake', '煞車', 'dot');
-        }
-        // 冷卻液相關
-        else if (lowerQuery.includes('冷卻') || lowerQuery.includes('水箱') || lowerQuery.includes('coolant') || lowerQuery.includes('antifreeze')) {
-            categories.push('化學品');
-            searchKeywords.push('coolant', '冷卻');
-        }
-        // 方向機油、ATF 相關
-        else if (lowerQuery.includes('方向機') || lowerQuery.includes('atf') || lowerQuery.includes('power steering')) {
-            categories.push('化學品', '機油');
-            searchKeywords.push('atf', 'power', '方向');
-        }
-        // 化學品相關
-        else if (lowerQuery.includes('化學') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
-            categories.push('化學品');
-        }
-        // 添加劑相關
-        else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精') || lowerQuery.includes('燃油') || lowerQuery.includes('保護')) {
-            categories.push('添加劑');
-        }
-        // 自行車相關
-        else if (lowerQuery.includes('自行車') || lowerQuery.includes('腳踏車')) {
-            categories.push('自行車');
-        }
-        // 美容相關
-        else if (lowerQuery.includes('美容') || lowerQuery.includes('洗車') || lowerQuery.includes('打蠟')) {
-            categories.push('美容');
-        }
-        // 預設：機油和添加劑
-        else {
-            categories.push('機油', '添加劑');
-        }
-
-        // 如果有特定搜尋關鍵字，優先用關鍵字搜尋
-        if (searchKeywords.length > 0) {
-            for (const keyword of searchKeywords) {
-                const keywordResults = await wixData.query('products')
-                    .contains('title', keyword)
-                    .or(wixData.query('products').contains('content', keyword))
-                    .limit(15)
-                    .find();
-                if (keywordResults.items.length > 0) {
-                    return formatProducts(keywordResults.items);
-                }
-            }
-        }
-
-        // 搜尋所有相關分類的產品
-        let allProducts = [];
-        for (const cat of categories) {
-            const catProducts = await wixData.query('products')
-                .contains('sort', cat)
-                .limit(20)
+        } else {
+            // 取得所有產品讓 AI 自行選擇
+            fallbackProducts = await wixData.query('products')
+                .limit(50)
                 .find();
-            allProducts = allProducts.concat(catProducts.items);
         }
 
-        // 去除重複並限制數量
-        const uniqueProducts = [...new Map(allProducts.map(p => [p._id, p])).values()].slice(0, 30);
-
-        if (uniqueProducts.length > 0) {
-            return formatProducts(uniqueProducts);
+        if (fallbackProducts.items && fallbackProducts.items.length > 0) {
+            return formatProducts(fallbackProducts.items);
         }
 
-        // 如果還是沒有結果，取得任意產品
+        // 最終備援：取得任意產品
         const anyProducts = await wixData.query('products')
-            .limit(30)
+            .limit(50)
             .find();
         return formatProducts(anyProducts.items);
+
     } catch (error) {
         console.error('Product search error:', error);
         return '無法取得產品資料';
     }
+}
+
+// 從查詢中提取有意義的關鍵字
+function extractKeywords(query) {
+    // 移除常見無意義詞彙
+    const stopWords = ['的', '我', '我的', '你', '推薦', '用', '嗎', '可以', '什麼', '哪個', '有沒有', '一下', '請問', '想', '要', '需要'];
+
+    // 提取產品相關關鍵字
+    const productKeywords = [];
+
+    // 提取產品編號
+    const partnoMatch = query.match(/lm\d+/gi);
+    if (partnoMatch) {
+        productKeywords.push(...partnoMatch);
+    }
+
+    // 提取英文關鍵字
+    const englishWords = query.match(/[a-zA-Z]{2,}/g);
+    if (englishWords) {
+        productKeywords.push(...englishWords.map(w => w.toLowerCase()));
+    }
+
+    // 提取中文關鍵字（移除停用詞）
+    const cleanedQuery = query.replace(/[a-zA-Z0-9\s]+/g, '');
+    const chineseChars = cleanedQuery.split('').filter(char => !stopWords.some(sw => sw.includes(char)));
+
+    // 提取常見產品類型關鍵字
+    const productTypes = ['機油', '煞車油', '剎車油', '冷卻液', '水箱精', '鏈條油', '齒輪油', '添加劑', '油精', '清潔劑',
+        '方向機油', '變速箱油', '煞車', '機車', '汽車', '摩托車', '速克達', '檔車', '重機'];
+    for (const type of productTypes) {
+        if (query.includes(type)) {
+            productKeywords.push(type);
+        }
+    }
+
+    // 如果沒有找到關鍵字，使用原始查詢
+    if (productKeywords.length === 0) {
+        return [query];
+    }
+
+    return [...new Set(productKeywords)];
 }
 
 function formatProducts(products) {
