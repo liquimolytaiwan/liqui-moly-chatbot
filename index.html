@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div class="chat-container">
         <!-- Header -->
@@ -31,7 +33,7 @@
             <!-- Welcome Message -->
             <div class="message bot-message">
                 <div class="message-avatar">
-                    <img src="assets/bot-avatar.svg" alt="助理">
+                    <img src="assets/bot-avatar.jpg" alt="助理">
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">
@@ -65,16 +67,13 @@
         <!-- Input Area -->
         <footer class="chat-input-area">
             <div class="input-container">
-                <textarea 
-                    id="messageInput" 
-                    placeholder="輸入您的問題..." 
-                    rows="1"
-                    maxlength="1000"
-                ></textarea>
+                <textarea id="messageInput" placeholder="輸入您的問題..." rows="1" maxlength="1000"></textarea>
                 <button id="sendButton" class="send-btn" disabled>
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
             </div>
@@ -90,4 +89,5 @@
     <script src="js/config.js"></script>
     <script src="js/chat.js"></script>
 </body>
+
 </html>

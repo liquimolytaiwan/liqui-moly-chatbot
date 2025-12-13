@@ -154,7 +154,7 @@ class LiquiMolyChatbot {
         if (sender === 'bot') {
             messageDiv.innerHTML = `
                 <div class="message-avatar">
-                    <img src="assets/bot-avatar.svg" alt="助理">
+                    <img src="assets/bot-avatar.jpg" alt="助理">
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">${isHTML ? content : this.formatMessage(content)}</div>
@@ -184,7 +184,7 @@ class LiquiMolyChatbot {
         typingDiv.className = 'message bot-message typing-message';
         typingDiv.innerHTML = `
             <div class="message-avatar">
-                <img src="assets/bot-avatar.svg" alt="助理">
+                <img src="assets/bot-avatar.jpg" alt="助理">
             </div>
             <div class="message-content">
                 <div class="message-bubble">
