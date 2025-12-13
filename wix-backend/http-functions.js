@@ -556,6 +556,22 @@ async function searchProducts(query) {
             categories.push('機油', '化學品');
             searchKeywords.push('gear', '齒輪');
         }
+        // 煞車油相關
+        else if (lowerQuery.includes('煞車') || lowerQuery.includes('剎車') || lowerQuery.includes('brake') ||
+            lowerQuery.includes('dot 3') || lowerQuery.includes('dot 4') || lowerQuery.includes('dot 5')) {
+            categories.push('化學品');
+            searchKeywords.push('brake', '煞車', 'dot');
+        }
+        // 冷卻液相關
+        else if (lowerQuery.includes('冷卻') || lowerQuery.includes('水箱') || lowerQuery.includes('coolant') || lowerQuery.includes('antifreeze')) {
+            categories.push('化學品');
+            searchKeywords.push('coolant', '冷卻');
+        }
+        // 方向機油、ATF 相關
+        else if (lowerQuery.includes('方向機') || lowerQuery.includes('atf') || lowerQuery.includes('power steering')) {
+            categories.push('化學品', '機油');
+            searchKeywords.push('atf', 'power', '方向');
+        }
         // 化學品相關
         else if (lowerQuery.includes('化學') || lowerQuery.includes('噴劑') || lowerQuery.includes('油脂') || lowerQuery.includes('潤滑')) {
             categories.push('化學品');
