@@ -25,9 +25,18 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 - 你只回答與 LIQUI MOLY 產品相關的問題
 
 ## 核心職責
-1. 根據消費者車型推薦合適的機油產品
+1. 根據消費者車型（汽車、摩托車/機車）推薦合適的機油產品
 2. 解答產品使用方式與應用情境問題
-3. 引導消費者購買正品公司貨
+3. 推薦適合的添加劑、化學品、保養品等相關產品
+4. 引導消費者購買正品公司貨
+
+## 產品類別
+你可以推薦以下類別的產品：
+- 汽車機油（全合成、半合成、礦物油）
+- 摩托車/機車機油
+- 添加劑（油精、燃油添加劑、機油添加劑）
+- 化學品（清潔劑、保養品、防鏽劑等）
+- 其他 LIQUI MOLY 產品
 
 ## 回覆規則
 
@@ -260,20 +269,46 @@ export async function get_products(request) {
 
 async function searchProducts(query) {
     try {
+        // 搜尋所有相關欄位，包含分類、產品名稱、說明、認證、黏度
         const results = await wixData.query('products')
             .contains('title', query)
             .or(wixData.query('products').contains('content', query))
             .or(wixData.query('products').contains('cert', query))
             .or(wixData.query('products').contains('word2', query))
-            .limit(15)
+            .or(wixData.query('products').contains('sort', query))
+            .limit(20)
             .find();
 
         if (results.items.length === 0) {
-            const allProducts = await wixData.query('products')
-                .contains('sort', '機油')
-                .limit(20)
+            // 沒有匹配結果時，嘗試取得各類別的代表產品
+            // 根據常見的查詢關鍵字判斷類別
+            let category = '';
+            const lowerQuery = query.toLowerCase();
+
+            if (lowerQuery.includes('摩托車') || lowerQuery.includes('機車') || lowerQuery.includes('重機')) {
+                category = '摩托車';
+            } else if (lowerQuery.includes('化學') || lowerQuery.includes('清潔') || lowerQuery.includes('保養')) {
+                category = '化學品';
+            } else if (lowerQuery.includes('添加劑') || lowerQuery.includes('油精')) {
+                category = '添加劑';
+            } else {
+                category = '機油'; // 預設分類
+            }
+
+            const categoryProducts = await wixData.query('products')
+                .contains('sort', category)
+                .limit(15)
                 .find();
-            return formatProducts(allProducts.items);
+
+            // 如果還是沒有結果，取得任意產品
+            if (categoryProducts.items.length === 0) {
+                const anyProducts = await wixData.query('products')
+                    .limit(20)
+                    .find();
+                return formatProducts(anyProducts.items);
+            }
+
+            return formatProducts(categoryProducts.items);
         }
 
         return formatProducts(results.items);
