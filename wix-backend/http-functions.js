@@ -498,9 +498,10 @@ async function searchProducts(query) {
             }
         }
 
-        // 搜尋所有相關欄位
+        // 搜尋所有相關欄位（包含產品編號）
         const results = await wixData.query('products')
             .contains('title', query)
+            .or(wixData.query('products').contains('partno', query))
             .or(wixData.query('products').contains('content', query))
             .or(wixData.query('products').contains('cert', query))
             .or(wixData.query('products').contains('word2', query))
