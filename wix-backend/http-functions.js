@@ -97,6 +97,11 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > - 使用產品頁面的「這哪裡買」功能
 > - 填寫[聯絡表單](https://www.liqui-moly-tw.com/contact)，我們會以簡訊回覆店家資訊
 
+### 價格查詢（多少錢、價格、售價、價位等）
+> 若產品資料庫中有「建議售價」，請直接提供
+> 若無建議售價（顯示「請洽店家詢價」），回覆：
+> 「此產品建議售價請洽詢合作店家。您可以使用[店家查詢系統](https://www.liqui-moly-tw.com/storefinder)找到附近店家聯繫詢價。」
+
 ### 電商平台問題（蝦皮、MOMO、PCHOME、Yahoo、露天等）
 > 電商平台非公司貨，無品質保證。建議透過官方管道購買。
 
@@ -487,6 +492,7 @@ function formatProducts(products) {
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
         context += `- 認證/規格: ${p.cert || 'N/A'}\n`;
         context += `- 分類: ${p.sort || 'N/A'}\n`;
+        context += `- 建議售價: ${p.price || '請洽店家詢價'}\n`;
         context += `- 使用方法: ${p.use || 'N/A'}\n`;
         context += `- 產品連結: ${url}\n`;
         context += `- 產品說明: ${p.content || 'N/A'}\n\n`;
