@@ -509,7 +509,7 @@ class LiquiMolyChatbot {
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message bot-message typing-message';
         typingDiv.innerHTML = `
-            < div class="message-avatar" >
+            <div class="message-avatar">
                 <img src="assets/bot-avatar.jpg" alt="助理">
             </div>
             <div class="message-content">
