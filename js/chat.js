@@ -17,12 +17,19 @@ class LiquiMolyChatbot {
         this.sessionEndedOverlay = document.getElementById('sessionEndedOverlay');
         this.restartBtn = document.getElementById('restartBtn');
 
+        // Rating Elements
+        this.starRating = document.getElementById('starRating');
+        this.skipRatingBtn = document.getElementById('skipRatingBtn');
+        this.ratingStep = document.getElementById('ratingStep');
+        this.thankYouStep = document.getElementById('thankYouStep');
+
         // State
         this.conversationHistory = [];
         this.isLoading = false;
         this.sessionId = null;
         this.userInfo = null;
         this.idleTimer = null;
+        this.selectedRating = 0;
         this.IDLE_TIMEOUT = 10 * 60 * 1000; // 10 分鐘
 
         // Initialize
@@ -113,6 +120,77 @@ class LiquiMolyChatbot {
                 this.sendEndSessionBeacon();
             }
         });
+
+        // 星級評分事件
+        if (this.starRating) {
+            const stars = this.starRating.querySelectorAll('.star');
+            stars.forEach(star => {
+                // Hover 效果
+                star.addEventListener('mouseenter', () => {
+                    const rating = parseInt(star.dataset.rating);
+                    this.highlightStars(rating);
+                });
+
+                star.addEventListener('mouseleave', () => {
+                    this.highlightStars(this.selectedRating);
+                });
+
+                // 點擊選擇評分
+                star.addEventListener('click', () => {
+                    const rating = parseInt(star.dataset.rating);
+                    this.selectedRating = rating;
+                    this.highlightStars(rating);
+                    // 選擇後自動提交
+                    this.submitRating(rating);
+                });
+            });
+        }
+
+        // 略過評分按鈕
+        if (this.skipRatingBtn) {
+            this.skipRatingBtn.addEventListener('click', () => this.submitRating(0));
+        }
+    }
+
+    /**
+     * 高亮星星
+     */
+    highlightStars(rating) {
+        if (!this.starRating) return;
+        const stars = this.starRating.querySelectorAll('.star');
+        stars.forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            if (starRating <= rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * 提交評分
+     */
+    async submitRating(rating) {
+        try {
+            // 發送評分到後端
+            if (this.sessionId) {
+                await fetch(CONFIG.API_ENDPOINT + '/rateSession', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: this.sessionId,
+                        rating: rating
+                    })
+                });
+            }
+        } catch (e) {
+            console.error('Submit rating error:', e);
+        }
+
+        // 顯示感謝畫面
+        if (this.ratingStep) this.ratingStep.style.display = 'none';
+        if (this.thankYouStep) this.thankYouStep.style.display = 'block';
     }
 
     /**
@@ -242,6 +320,12 @@ class LiquiMolyChatbot {
     handleRestart() {
         // 隱藏結束畫面
         this.sessionEndedOverlay.style.display = 'none';
+
+        // 重置評分介面
+        if (this.ratingStep) this.ratingStep.style.display = 'block';
+        if (this.thankYouStep) this.thankYouStep.style.display = 'none';
+        this.selectedRating = 0;
+        this.highlightStars(0);
 
         // 重置表單
         this.userInfoForm.reset();

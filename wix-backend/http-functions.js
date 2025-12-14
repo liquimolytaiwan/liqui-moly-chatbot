@@ -583,6 +583,65 @@ export async function post_endSession(request) {
 }
 
 // ============================================
+// POST /rateSession - 對話評分
+// ============================================
+
+export function options_rateSession(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        }
+    });
+}
+
+export async function post_rateSession(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+
+        if (!body.sessionId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: false,
+                    error: "Missing sessionId"
+                })
+            });
+        }
+
+        // 更新 session 評分
+        const session = await wixData.get('chatSessions', body.sessionId);
+        if (session) {
+            session.rating = body.rating || 0;
+            await wixData.update('chatSessions', session);
+        }
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /rateSession error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
+
+// ============================================
 // GET /cleanupSessions - 清理閒置對話（定時任務呼叫）
 // ============================================
 

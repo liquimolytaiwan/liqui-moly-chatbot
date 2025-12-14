@@ -130,12 +130,29 @@
         <div class="loading-spinner"></div>
     </div>
 
-    <!-- Session Ended Overlay -->
+    <!-- Session Ended Overlay with Rating -->
     <div class="session-ended-overlay" id="sessionEndedOverlay" style="display: none;">
         <div class="session-ended-content">
-            <h2>對話已結束</h2>
-            <p>感謝您的諮詢！如有其他問題，歡迎再次開始對話。</p>
-            <button class="restart-btn" id="restartBtn">重新開始</button>
+            <!-- Rating Step -->
+            <div id="ratingStep">
+                <h2>感謝您的諮詢！</h2>
+                <p>請為本次對話體驗評分</p>
+                <div class="star-rating" id="starRating">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+                <p class="rating-hint">請點選星星評分（1-5 顆星）</p>
+                <button class="skip-btn" id="skipRatingBtn">略過評分</button>
+            </div>
+            <!-- Thank You Step -->
+            <div id="thankYouStep" style="display: none;">
+                <h2>感謝您的回饋！</h2>
+                <p>您的意見對我們非常重要。如有其他問題，歡迎再次開始對話。</p>
+                <button class="restart-btn" id="restartBtn">重新開始</button>
+            </div>
         </div>
     </div>
 
