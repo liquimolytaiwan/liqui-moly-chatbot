@@ -472,27 +472,27 @@ class LiquiMolyChatbot {
      */
     addMessage(content, sender, isHTML = false) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender} -message`;
+        messageDiv.className = `message ${sender}-message`;
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
 
         if (sender === 'bot') {
             messageDiv.innerHTML = `
-            < div class="message-avatar" >
+                <div class="message-avatar">
                     <img src="assets/bot-avatar.jpg" alt="助理">
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">${isHTML ? content : this.formatMessage(content)}</div>
                     <span class="message-time">${timeStr}</span>
                 </div>
-        `;
+            `;
         } else {
             messageDiv.innerHTML = `
-            < div class="message-content" >
+                <div class="message-content">
                     <div class="message-bubble">${this.escapeHTML(content)}</div>
                     <span class="message-time">${timeStr}</span>
-                </div >
+                </div>
             `;
         }
 
