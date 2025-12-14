@@ -183,6 +183,9 @@ class LiquiMolyChatbot {
                         rating: rating
                     })
                 });
+
+                // 評分完成後，結束對話
+                await this.endSession();
             }
         } catch (e) {
             console.error('Submit rating error:', e);
@@ -309,7 +312,9 @@ class LiquiMolyChatbot {
      */
     async handleEndChat() {
         if (confirm('確定要離開對話嗎？')) {
-            await this.endSession();
+            // 先停止閒置計時器
+            this.clearIdleTimer();
+            // 顯示評分介面（不要立即呼叫 endSession，保留 sessionId 給評分用）
             this.showSessionEnded();
         }
     }
@@ -467,27 +472,27 @@ class LiquiMolyChatbot {
      */
     addMessage(content, sender, isHTML = false) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
+        messageDiv.className = `message ${sender} -message`;
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
 
         if (sender === 'bot') {
             messageDiv.innerHTML = `
-                <div class="message-avatar">
+            < div class="message-avatar" >
                     <img src="assets/bot-avatar.jpg" alt="助理">
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">${isHTML ? content : this.formatMessage(content)}</div>
                     <span class="message-time">${timeStr}</span>
                 </div>
-            `;
+        `;
         } else {
             messageDiv.innerHTML = `
-                <div class="message-content">
+            < div class="message-content" >
                     <div class="message-bubble">${this.escapeHTML(content)}</div>
                     <span class="message-time">${timeStr}</span>
-                </div>
+                </div >
             `;
         }
 
@@ -504,7 +509,7 @@ class LiquiMolyChatbot {
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message bot-message typing-message';
         typingDiv.innerHTML = `
-            <div class="message-avatar">
+            < div class="message-avatar" >
                 <img src="assets/bot-avatar.jpg" alt="助理">
             </div>
             <div class="message-content">
@@ -598,7 +603,7 @@ class LiquiMolyChatbot {
         });
 
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+            throw new Error(`API Error: ${response.status} `);
         }
 
         const data = await response.json();
@@ -617,7 +622,7 @@ class LiquiMolyChatbot {
             (match, linkText, url) => {
                 const index = links.length;
                 links.push({ text: linkText, url: url });
-                return `__LINK_PLACEHOLDER_${index}__`;
+                return `__LINK_PLACEHOLDER_${index} __`;
             }
         );
 
@@ -627,8 +632,8 @@ class LiquiMolyChatbot {
         // 還原連結（使用 HTML 格式）
         links.forEach((link, index) => {
             formatted = formatted.replace(
-                `__LINK_PLACEHOLDER_${index}__`,
-                `<a href="${link.url}" target="_blank" rel="noopener">${this.escapeHTML(link.text)}</a>`
+                `__LINK_PLACEHOLDER_${index} __`,
+                `< a href = "${link.url}" target = "_blank" rel = "noopener" > ${this.escapeHTML(link.text)}</a > `
             );
         });
 
