@@ -622,7 +622,7 @@ class LiquiMolyChatbot {
             (match, linkText, url) => {
                 const index = links.length;
                 links.push({ text: linkText, url: url });
-                return `__LINK_PLACEHOLDER_${index} __`;
+                return `__LINK_PLACEHOLDER_${index}__`;
             }
         );
 
@@ -632,8 +632,8 @@ class LiquiMolyChatbot {
         // 還原連結（使用 HTML 格式）
         links.forEach((link, index) => {
             formatted = formatted.replace(
-                `__LINK_PLACEHOLDER_${index} __`,
-                `< a href = "${link.url}" target = "_blank" rel = "noopener" > ${this.escapeHTML(link.text)}</a > `
+                `__LINK_PLACEHOLDER_${index}__`,
+                `<a href="${link.url}" target="_blank" rel="noopener">${this.escapeHTML(link.text)}</a>`
             );
         });
 
