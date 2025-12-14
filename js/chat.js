@@ -100,9 +100,52 @@ class LiquiMolyChatbot {
             });
         });
 
-        // 監聽用戶活動以重置閒置計時器
+        // 監聯用戶活動以重置閒置計時器
         document.addEventListener('mousemove', () => this.resetIdleTimer());
         document.addEventListener('keypress', () => this.resetIdleTimer());
+
+        // 監聽頁面關閉事件，嘗試結束對話
+        window.addEventListener('beforeunload', (e) => this.handlePageUnload(e));
+
+        // 監聽頁面可見性變化（用戶切換分頁）
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && this.sessionId) {
+                // 頁面隱藏時，發送 beacon 結束對話
+                this.sendEndSessionBeacon();
+            }
+        });
+    }
+
+    /**
+     * 處理頁面關閉/離開
+     */
+    handlePageUnload(e) {
+        if (this.sessionId) {
+            // 使用 sendBeacon 在頁面關閉時發送請求
+            this.sendEndSessionBeacon();
+        }
+    }
+
+    /**
+     * 使用 sendBeacon 發送結束對話請求（頁面關閉時也能成功發送）
+     */
+    sendEndSessionBeacon() {
+        if (!this.sessionId) return;
+
+        const url = CONFIG.API_ENDPOINT + '/endSession';
+        const data = JSON.stringify({ sessionId: this.sessionId });
+
+        // navigator.sendBeacon 在頁面關閉時也能發送
+        if (navigator.sendBeacon) {
+            const blob = new Blob([data], { type: 'application/json' });
+            navigator.sendBeacon(url, blob);
+        } else {
+            // 備援：使用同步 XMLHttpRequest（舊瀏覽器）
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url, false); // 同步請求
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(data);
+        }
     }
 
     /**
