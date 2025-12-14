@@ -703,10 +703,19 @@ export async function post_chat(request) {
             });
         }
 
-        // 查詢相關產品
+        // Step 1: AI 分析用戶問題，判斷車型類別和需要的規格
+        let searchInfo = null;
+        try {
+            searchInfo = await analyzeUserQuery(apiKey, body.message);
+            console.log('AI Analysis:', JSON.stringify(searchInfo));
+        } catch (e) {
+            console.error('AI analysis failed:', e);
+        }
+
+        // Step 2: 根據 AI 分析結果搜尋產品
         let productContext = "目前沒有產品資料";
         try {
-            productContext = await searchProducts(body.message);
+            productContext = await searchProductsWithAI(body.message, searchInfo);
         } catch (e) {
             console.error('Product search failed:', e);
         }
@@ -816,6 +825,138 @@ export async function get_products(request) {
                 error: "Internal server error: " + error.message
             })
         });
+    }
+}
+
+// ============================================
+// AI 分析與搜尋函數
+// ============================================
+
+// AI 分析用戶問題，判斷車型類別和需要的規格
+async function analyzeUserQuery(apiKey, message) {
+    const analysisPrompt = `你是一個汽機車專家。請分析用戶的問題，並以 JSON 格式返回以下資訊：
+
+用戶問題：「${message}」
+
+請返回以下 JSON 格式（只返回 JSON，不要其他文字）：
+{
+    "vehicleType": "汽車" 或 "摩托車" 或 "未知",
+    "vehicleSubType": "速克達/CVT" 或 "檔車/濕式離合器" 或 "重機" 或 "轎車" 或 "休旅車" 或 "柴油車" 或 "未知",
+    "certifications": ["需要的認證，如 JASO MA2, API SP, ACEA C3 等"],
+    "viscosity": "建議黏度，如 10W40, 5W30 等",
+    "searchKeywords": ["搜尋關鍵字，如 Motorbike, 4T, 機油 等"],
+    "productCategory": "機油" 或 "添加劑" 或 "化學品" 或 "其他" 或 "未知",
+    "needsProductRecommendation": true 或 false
+}
+
+注意：
+- 如果是摩托車檔車（如 DR-Z, CBR, Ninja），vehicleSubType 應為 "檔車/濕式離合器"，需要 JASO MA 或 MA2 認證
+- 如果是速克達（如 PCX, NMAX, Force），vehicleSubType 應為 "速克達/CVT"，需要 JASO MB 認證
+- 如果問題與產品推薦無關（如一般知識問題），needsProductRecommendation 設為 false`;
+
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: analysisPrompt }] }],
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 500
+                }
+            })
+        });
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        // 嘗試解析 JSON
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        return null;
+    } catch (e) {
+        console.error('analyzeUserQuery error:', e);
+        return null;
+    }
+}
+
+// 根據 AI 分析結果搜尋產品
+async function searchProductsWithAI(query, searchInfo) {
+    try {
+        // 如果不需要產品推薦，返回空
+        if (searchInfo && searchInfo.needsProductRecommendation === false) {
+            return '（此問題不需要產品推薦，請使用內建知識回答）';
+        }
+
+        // 先嘗試精確搜尋（產品編號優先）
+        const partnoMatch = query.match(/lm\d+/i);
+        if (partnoMatch) {
+            const partnoResults = await wixData.query('products')
+                .contains('partno', partnoMatch[0])
+                .limit(10)
+                .find();
+            if (partnoResults.items.length > 0) {
+                return formatProducts(partnoResults.items);
+            }
+        }
+
+        // 根據 AI 分析結果搜尋
+        if (searchInfo) {
+            let allResults = [];
+
+            // 根據車型類別搜尋
+            if (searchInfo.vehicleType === '摩托車') {
+                const motorcycleProducts = await wixData.query('products')
+                    .contains('sort', '摩托車')
+                    .limit(30)
+                    .find();
+                allResults = allResults.concat(motorcycleProducts.items);
+            } else if (searchInfo.vehicleType === '汽車') {
+                const carProducts = await wixData.query('products')
+                    .contains('sort', '汽車')
+                    .limit(30)
+                    .find();
+                allResults = allResults.concat(carProducts.items);
+            }
+
+            // 根據認證搜尋
+            if (searchInfo.certifications && searchInfo.certifications.length > 0) {
+                for (const cert of searchInfo.certifications) {
+                    const certResults = await wixData.query('products')
+                        .contains('cert', cert)
+                        .limit(10)
+                        .find();
+                    allResults = allResults.concat(certResults.items);
+                }
+            }
+
+            // 根據搜尋關鍵字搜尋
+            if (searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
+                for (const keyword of searchInfo.searchKeywords) {
+                    const keywordResults = await wixData.query('products')
+                        .contains('title', keyword)
+                        .or(wixData.query('products').contains('content', keyword))
+                        .limit(10)
+                        .find();
+                    allResults = allResults.concat(keywordResults.items);
+                }
+            }
+
+            // 去除重複
+            const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
+            if (uniqueResults.length > 0) {
+                return formatProducts(uniqueResults.slice(0, 30));
+            }
+        }
+
+        // Fallback：使用原始搜尋邏輯
+        return await searchProducts(query);
+
+    } catch (error) {
+        console.error('searchProductsWithAI error:', error);
+        return await searchProducts(query);
     }
 }
 
