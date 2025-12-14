@@ -1,0 +1,48 @@
+// backend/cleanupSessions.jsw
+// Wix Velo Scheduled Job for cleaning up idle chat sessions
+// 將此檔案複製到 Wix 後端的 backend/cleanupSessions.jsw
+
+import wixData from 'wix-data';
+
+/**
+ * 清理閒置對話 - 由 Scheduled Job 每 5 分鐘呼叫
+ * 將超過 10 分鐘未活動的 active session 標記為 ended
+ */
+export async function cleanupIdleSessions() {
+    try {
+        // 10 分鐘前的時間
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+        // 查詢所有超過 10 分鐘未活動的 active session
+        const results = await wixData.query('chatSessions')
+            .eq('status', 'active')
+            .lt('lastActivity', tenMinutesAgo)
+            .limit(100)
+            .find();
+
+        let closedCount = 0;
+
+        // 批量更新為 ended
+        for (const session of results.items) {
+            session.status = 'ended';
+            session.endTime = new Date();
+            await wixData.update('chatSessions', session);
+            closedCount++;
+        }
+
+        console.log(`Scheduled cleanup: closed ${closedCount} idle sessions at ${new Date().toISOString()}`);
+        
+        return {
+            success: true,
+            closedSessions: closedCount,
+            timestamp: new Date().toISOString()
+        };
+
+    } catch (error) {
+        console.error('Scheduled cleanup error:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
