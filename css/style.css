@@ -488,7 +488,32 @@ body.iframe-mode .chat-container {
     font-size: var(--font-size-xs);
     color: var(--gray-500);
     text-align: center;
-    margin-top: var(--space-2);
+    margin: 0;
+}
+
+.footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-3);
+}
+
+.end-chat-btn-footer {
+    background: transparent;
+    border: 1px solid var(--gray-500);
+    color: var(--gray-400);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.end-chat-btn-footer:hover {
+    border-color: var(--primary-red);
+    color: var(--primary-red);
+    background: rgba(218, 41, 28, 0.1);
 }
 
 /* ================================
