@@ -107,10 +107,9 @@ class LiquiMolyChatbot {
         // 監聽頁面關閉事件，嘗試結束對話
         window.addEventListener('beforeunload', (e) => this.handlePageUnload(e));
 
-        // 監聽頁面可見性變化（用戶切換分頁）
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && this.sessionId) {
-                // 頁面隱藏時，發送 beacon 結束對話
+        // pagehide 事件在頁面卸載時觸發（比 beforeunload 更可靠）
+        window.addEventListener('pagehide', (e) => {
+            if (this.sessionId) {
                 this.sendEndSessionBeacon();
             }
         });
