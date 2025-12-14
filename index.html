@@ -13,7 +13,44 @@
 </head>
 
 <body>
-    <div class="chat-container">
+    <!-- 對話前表單 Overlay -->
+    <div class="form-overlay" id="formOverlay">
+        <div class="form-container">
+            <div class="form-header">
+                <img src="assets/liqui-moly-logo.jpg" alt="LIQUI MOLY" class="form-logo">
+                <h2>歡迎使用產品諮詢助理</h2>
+                <p>請填寫以下資訊，以便我們提供更好的服務</p>
+            </div>
+            <form id="userInfoForm">
+                <div class="form-group">
+                    <label for="userName">姓名 <span class="required">*</span></label>
+                    <input type="text" id="userName" name="userName" required placeholder="請輸入您的姓名">
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">電子郵件 <span class="required">*</span></label>
+                    <input type="email" id="userEmail" name="userEmail" required placeholder="請輸入電子郵件">
+                </div>
+                <div class="form-group">
+                    <label for="userPhone">手機號碼 <span class="optional">(選填)</span></label>
+                    <input type="tel" id="userPhone" name="userPhone" placeholder="請輸入手機號碼">
+                </div>
+                <div class="form-group">
+                    <label for="category">問題類別 <span class="required">*</span></label>
+                    <select id="category" name="category" required>
+                        <option value="">請選擇問題類別</option>
+                        <option value="車型機油推薦">車型機油推薦</option>
+                        <option value="產品使用問題">產品使用問題</option>
+                        <option value="購買管道諮詢">購買管道諮詢</option>
+                        <option value="保修廠合作洽詢">保修廠合作洽詢</option>
+                        <option value="其他問題">其他問題</option>
+                    </select>
+                </div>
+                <button type="submit" class="form-submit-btn">開始諮詢</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer" style="display: none;">
         <!-- Header -->
         <header class="chat-header">
             <div class="header-logo">
@@ -26,6 +63,13 @@
                     線上服務中
                 </span>
             </div>
+            <button class="end-chat-btn" id="endChatBtn" title="結束對話">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                離開
+            </button>
         </header>
 
         <!-- Chat Messages Area -->
@@ -84,6 +128,15 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Session Ended Overlay -->
+    <div class="session-ended-overlay" id="sessionEndedOverlay" style="display: none;">
+        <div class="session-ended-content">
+            <h2>對話已結束</h2>
+            <p>感謝您的諮詢！如有其他問題，歡迎再次開始對話。</p>
+            <button class="restart-btn" id="restartBtn">重新開始</button>
+        </div>
     </div>
 
     <script src="js/config.js"></script>

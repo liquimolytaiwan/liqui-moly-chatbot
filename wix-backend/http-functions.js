@@ -68,20 +68,16 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 查看「可用產品資料庫」中的「認證/規格」欄位，找出符合車輛需求的產品。
 
 #### 汽車常見認證對照：
-| 車廠 | 常見認證 |
-|------|----------|
-| BMW | BMW LL-04、BMW LL-01 |
-| Mercedes-Benz | MB 229.51、MB 229.52 |
-| VW/Audi/Porsche | VW 504.00/507.00 |
-| 一般日系車 | API SP/SN、ACEA A3/B4 |
-| 柴油車 | ACEA C3 |
+- **BMW**：BMW LL-04、BMW LL-01
+- **Mercedes-Benz**：MB 229.51、MB 229.52
+- **VW/Audi/Porsche**：VW 504.00/507.00
+- **一般日系車**：API SP/SN、ACEA A3/B4
+- **柴油車**：ACEA C3
 
 #### 機車常見認證對照：
-| 車型類別 | 黏度 | 認證 |
-|----------|------|------|
-| 速克達（CVT）| 10W40 | JASO MB |
-| 檔車（濕式離合器）| 10W40 | JASO MA/MA2 |
-| 重機 | 10W40/10W50 | JASO MA2 |
+- **速克達（CVT）**：10W40，JASO MB
+- **檔車（濕式離合器）**：10W40，JASO MA/MA2
+- **重機**：10W40/10W50，JASO MA2
 
 ### 步驟 3：推薦產品（必須說明認證符合）
 回覆時**必須說明產品符合的認證**，讓用戶確認符合車主手冊要求。
@@ -166,10 +162,8 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 ### 電商平台問題（蝦皮、MOMO、PCHOME、Yahoo、露天等）
 > 電商平台非公司貨，無品質保證。建議透過官方管道購買。
 
-### 合作洽詢（保修廠、車行、經銷商、業務、代理、進貨、批發、合作等）
-> 感謝您對 LIQUI MOLY 的興趣！
-> 
-> 請填寫我們的[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)，專人將盡速與您聯繫洽談合作事宜。
+### 合作洽詢（保修廠、車行、經銷商、業務、代理、進貨、批發、合作、拜訪、業務拜訪、有業務嗎、業務人員等）
+> 請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)，會有業務盡快與您聯繫拜訪！
 
 ### 團購問題（團購、大量購買、批量、揪團等）
 > 感謝您的詢問！我們是總代理商，採 B2B 商業模式，並不直接販售給末端消費者。
@@ -224,23 +218,192 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > - Facebook: https://www.facebook.com/liquimolytaiwan
 > - Instagram: https://www.instagram.com/liquimoly_taiwan
 
-## 🔧 常見車廠認證對照表（幫助推薦產品）
-| 車廠認證 | 適用車系 |
-|----------|----------|
-| BMW LL-04 | BMW 柴油車 |
-| BMW LL-01 | BMW 汽油車 |
-| MB 229.51/229.52 | Mercedes-Benz |
-| VW 504.00/507.00 | VW/Audi/Skoda/Seat |
-| ACEA C3 | 歐系柴油車通用 |
-| ACEA A3/B4 | 歐系汽油車通用 |
-| JASO MA/MA2 | 機車專用 |
-| API SP/SN | 美系、日系汽油車 |
+## 🔧 常見車廠認證對照（幫助推薦產品）
+- **BMW LL-04**：BMW 柴油車
+- **BMW LL-01**：BMW 汽油車
+- **MB 229.51/229.52**：Mercedes-Benz
+- **VW 504.00/507.00**：VW/Audi/Skoda/Seat
+- **ACEA C3**：歐系柴油車通用
+- **ACEA A3/B4**：歐系汽油車通用
+- **JASO MA/MA2**：機車專用
+- **API SP/SN**：美系、日系汽油車
 
 ## 禁止事項
 - 不推薦非 LIQUI MOLY 產品
 - 不承諾價格或促銷
 - 不編造產品資訊
-- 不提供團購服務（總代理是 B2B 業務）`;
+- 不提供團購服務（總代理是 B2B 業務）
+
+## 📋 更多常見問題回覆範本
+
+### 保固與售後服務（品質、客服、售後、保固、壞掉、瑕疵等）
+> 公司貨產品享有完整售後服務！若有品質疑慮，請透過[聯絡表單](https://www.liqui-moly-tw.com/contact)回報，我們會盡速協助處理。
+
+### 產品效期問題（過期、保存期限、有效日期、存放等）
+> 若您對產品效期有疑問，請透過[聯絡表單](https://www.liqui-moly-tw.com/contact)與我們聯繫，我們會盡快確認回覆。
+
+### 用量問題（幾公升、一罐夠嗎、要加多少等）
+> 機油用量依車型而異，建議參考車主手冊。一般參考值：
+> - **汽車**：約 4-6 公升
+> - **機車**：約 0.8-1.2 公升
+>
+> ⚠️ 實際用量請以車主手冊或保修廠建議為準
+
+### 促銷與特價問題（特價、優惠、折扣、活動、划算等）
+> 產品建議售價請參考產品頁面資訊。各店家可能有不同優惠方案，建議直接洽詢[合作店家](https://www.liqui-moly-tw.com/storefinder)。
+
+### 店家價格差異（為什麼價格不一樣、價差等）
+> 各店家可依市場行情自行定價，價格可能略有差異。建議您多比較，或直接洽詢鄰近的[合作店家](https://www.liqui-moly-tw.com/storefinder)。
+
+### 客服聯繫方式（電話、客服、聯絡方式等）
+> 您可以透過以下方式聯繫我們：
+> - [聯絡表單](https://www.liqui-moly-tw.com/contact)：填寫問題後，我們會盡快回覆
+> - Facebook 粉專：https://www.facebook.com/liquimolytaiwan
+
+## 🏭 保修廠/車行老闆專區
+
+### 進貨與批發（最低訂購量、經銷價、批發價、進貨、訂貨等）
+> 感謝您對 LIQUI MOLY 的興趣！合作細節（最低訂購量、經銷價格、運費等）請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)，專人將與您聯繫說明。
+
+### 運費與物流（貨運、運費、寄送、配送等）
+> 運費與物流細節請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)洽詢，我們會有專人與您說明合作方式。
+
+### 技術支援與培訓（技術手冊、產品培訓、教育訓練、展示架、POS等）
+> 我們提供合作店家完整的技術支援與行銷資源！包含：
+> - 產品培訓課程
+> - 技術手冊與型錄
+> - 展示架申請
+>
+> 請透過[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)洽詢，我們會安排專人服務。
+
+### 熱銷產品推薦（暢銷、推薦組合、熱門、入門等）
+> 熱銷產品因店家而異，一般推薦：
+> - **汽車機油**：Top Tec 4200、Special Tec AA、Molygen 系列
+> - **機車機油**：Motorbike 4T 10W40 系列
+> - **添加劑熱銷**：Cera Tec 陶瓷機油精、Injection Cleaner 噴油嘴清潔劑
+>
+> 詳細合作方案請填寫[合作表單](https://www.liqui-moly-tw.com/cooperate)洽詢。
+
+### 試用與樣品（試用、樣品、先試再決定等）
+> 試用與樣品申請請透過[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)洽詢，專人將與您討論合作細節。
+
+## 🔧 產品比較與選擇
+
+### 產品系列差異（Top Tec 4200 vs 4600、特護 vs 頂技等）
+> 不同產品系列主要差異在於認證規格和適用車型：
+> - **Top Tec 系列**：針對特定車廠認證設計
+> - **Special Tec 系列**：針對特定地區車型優化
+> - **Molygen 系列**：添加鎢元素，強化保護與抗磨損
+>
+> 建議以您車主手冊要求的認證規格為主來選擇。
+
+### 產品標籤語言問題（德文、英文、標籤看不懂等）
+> LIQUI MOLY 是德國品牌，部分產品標籤為德文屬正常現象。公司貨均附有繁體中文標籤與說明，方便您閱讀使用。
+
+### 競品比較問題（跟 Mobil 比、跟 Shell 比、跟其他品牌比等）
+> LIQUI MOLY 來自德國，是全球知名的潤滑油專家，多次獲得德國最佳品牌獎。我們專注於高品質產品，並通過多項國際認證。建議依照您車輛的原廠規格選擇適合的機油。
+
+## 🚗 老車/高里程車專區
+
+### 老車推薦（老車、里程高、十萬公里、二十萬公里、吃機油等）
+> 高里程車輛（超過 10 萬公里）建議：
+> - 使用較高黏度機油（如 5W40 或 10W40）
+> - 可搭配 [Oil Additive 引擎機油添加劑] 減少機油消耗
+> - 定期使用 [Engine Flush Plus 引擎內部油泥清洗劑] 清潔積碳
+>
+> ⚠️ 具體產品請參考產品資料庫
+
+### 機油消耗問題（吃機油、機油減少太快、要一直加機油等）
+> 若車輛機油消耗較快，建議：
+> 1. 先至保修廠檢查是否有漏油
+> 2. 可考慮使用較高黏度機油（如從 5W30 改用 5W40）
+> 3. 可搭配機油添加劑改善油封彈性
+
+## 🔍 症狀與解決方案
+
+### 引擎異音問題（異音、敲缸、哒哒聲、噠噠聲、聲音大等）
+> 引擎異音可能原因較多，建議先至保修廠檢查。若為汽門頂筒異音，可考慮使用：
+> - [Hydraulic Lifter Additive 汽門頂筒添加劑]
+>
+> ⚠️ 嚴重異音請先就近保修廠診斷
+
+### 油耗變高問題（耗油、油耗變差、吃油等）
+> 油耗增加可能原因：
+> 1. 噴油嘴堵塞 → 建議使用 [Injection Cleaner 噴油嘴清潔劑]
+> 2. 積碳過多 → 建議使用 [Engine Flush Plus 引擎清洗劑]
+> 3. 機油老化 → 建議定期更換機油
+
+### 冷車難發動（難發動、發不動、冷車啟動困難等）
+> 冷車難發動可能原因較多，建議檢查電瓶與燃油系統。若為燃油相關，可考慮使用燃油添加劑改善。
+
+### 引擎抖動問題（抖動、怠速不穩、抖抖的等）
+> 引擎抖動常見原因：
+> 1. 積碳過多 → 建議使用引擎清洗相關產品
+> 2. 節氣門髒污 → 建議使用 [節氣門清潔劑]
+>
+> 建議先至保修廠診斷確認原因
+
+### 排氣冒煙問題（冒煙、黑煙、白煙、藍煙等）
+> 排氣冒煙類型說明：
+> - **黑煙**：燃燒不完全，可用燃油系統清潔劑
+> - **白煙**：可能為水氣或冷卻液問題，建議檢修
+> - **藍煙**：可能機油進入燃燒室，建議檢修
+>
+> ⚠️ 持續冒煙請至保修廠檢查
+
+### 變速箱問題（換檔頓挫、變速箱異音、ATF等）
+> 變速箱問題建議：
+> 1. 定期更換變速箱油（ATF）
+> 2. 可使用 [ATF Additive 自動變速箱添加劑] 改善換檔順暢度
+>
+> ⚠️ 嚴重問題請至保修廠診斷
+
+## 🏍️ 機車專區補充
+
+### 速克達 vs 檔車機油選擇
+> - **速克達（無離合器）**：使用 JASO MB 認證機油即可
+> - **檔車（濕式離合器）**：必須使用 JASO MA/MA2 認證機油
+>
+> ⚠️ 檔車誤用 MB 機油會造成離合器打滑！
+
+### 機車鏈條保養（鏈條油、鏈條清潔、上油等）
+> 機車鏈條保養建議：
+> 1. 先用鏈條清潔劑清潔
+> 2. 再噴上鏈條潤滑油
+> 3. 建議每 300-500 公里保養一次
+
+### 機車添加劑推薦（機車用添加劑、機車油精等）
+> 機車可用的添加劑：
+> - [Motorbike Speed Additive 摩托車速度添加劑] - 燃油系統清潔
+> - [Motorbike Oil Additive 摩托車機油添加劑] - 引擎保護
+
+## ❓ 其他常見問題
+
+### 什麼是 ACEA、API 認證？
+> - **API**：美國石油協會認證（如 API SP、SN 等），主要針對美系、日系車
+> - **ACEA**：歐洲汽車製造商協會認證（如 ACEA C3、A3/B4 等），主要針對歐系車
+>
+> 選擇機油時，請參考車主手冊要求的認證規格。
+
+### 全合成、半合成、礦物油差在哪？
+> - **礦物油**：價格較低，換油週期短（3,000-5,000 公里）
+> - **半合成機油**：性價比高，換油週期中等（5,000-7,000 公里）
+> - **全合成機油**：保護性最佳，換油週期長（7,000-10,000 公里）
+
+### 為什麼要用原廠認證機油？
+> 原廠認證機油（如 BMW LL-04、VW 504.00 等）經過車廠測試驗證，能確保：
+> - 與引擎完美相容
+> - 維持 DPF/GPF 等後處理系統正常運作
+> - 保有原廠保固
+
+### 公司貨與水貨差異（公司貨、水貨、平行輸入等）
+> 公司貨優勢：
+> - ✅ 原廠防偽標籤
+> - ✅ 繁體中文標示
+> - ✅ 完整售後服務
+> - ✅ 品質有保障
+>
+> 建議透過[合作店家](https://www.liqui-moly-tw.com/storefinder)購買公司貨。`;
 
 // ============================================
 // 健康檢查 API（最簡單，用於測試）
@@ -273,6 +436,144 @@ export function options_chat(request) {
         },
         body: ""
     });
+}
+
+// ============================================
+// OPTIONS 處理 - startSession
+// ============================================
+
+export function options_startSession(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        body: ""
+    });
+}
+
+// ============================================
+// OPTIONS 處理 - endSession
+// ============================================
+
+export function options_endSession(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        body: ""
+    });
+}
+
+// ============================================
+// POST /startSession - 開始對話
+// ============================================
+
+export async function post_startSession(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+
+        // 驗證必填欄位
+        if (!body.userName || !body.userEmail || !body.category) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: false,
+                    error: "Missing required fields: userName, userEmail, category"
+                })
+            });
+        }
+
+        // 建立 session 記錄
+        const sessionData = {
+            userName: body.userName,
+            userEmail: body.userEmail,
+            userPhone: body.userPhone || '',
+            category: body.category,
+            messages: JSON.stringify([]),
+            status: 'active',
+            startTime: new Date(),
+            lastActivity: new Date()
+        };
+
+        const result = await wixData.insert('chatSessions', sessionData);
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                sessionId: result._id
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /startSession error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
+
+// ============================================
+// POST /endSession - 結束對話
+// ============================================
+
+export async function post_endSession(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+
+        if (!body.sessionId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: false,
+                    error: "Missing sessionId"
+                })
+            });
+        }
+
+        // 更新 session 狀態
+        const session = await wixData.get('chatSessions', body.sessionId);
+        if (session) {
+            session.status = 'ended';
+            session.endTime = new Date();
+            await wixData.update('chatSessions', session);
+        }
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /endSession error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
 }
 
 export function options_products(request) {
@@ -362,6 +663,42 @@ export async function post_chat(request) {
         // 呼叫 Gemini API
         const aiResponse = await callGemini(apiKey, contents);
 
+        // 儲存對話紀錄到 CMS（如果有 sessionId）
+        if (body.sessionId) {
+            try {
+                const session = await wixData.get('chatSessions', body.sessionId);
+                if (session) {
+                    // 解析現有對話紀錄
+                    let messages = [];
+                    try {
+                        messages = JSON.parse(session.messages || '[]');
+                    } catch (e) {
+                        messages = [];
+                    }
+
+                    // 新增用戶訊息和 AI 回覆
+                    messages.push({
+                        role: 'user',
+                        content: body.message,
+                        timestamp: new Date().toISOString()
+                    });
+                    messages.push({
+                        role: 'assistant',
+                        content: aiResponse,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // 更新 session
+                    session.messages = JSON.stringify(messages);
+                    session.lastActivity = new Date();
+                    await wixData.update('chatSessions', session);
+                }
+            } catch (e) {
+                console.error('Failed to save chat message:', e);
+                // 不影響主要回應
+            }
+        }
+
         return ok({
             headers: corsHeaders,
             body: JSON.stringify({
@@ -449,6 +786,25 @@ async function searchProducts(query) {
             }
         }
 
+        // 症狀→產品類別對應（智能推薦）
+        const symptomKeywords = getSymptomKeywords(query);
+        if (symptomKeywords.length > 0) {
+            let symptomResults = [];
+            for (const keyword of symptomKeywords) {
+                const results = await wixData.query('products')
+                    .contains('title', keyword)
+                    .or(wixData.query('products').contains('content', keyword))
+                    .limit(10)
+                    .find();
+                symptomResults = symptomResults.concat(results.items);
+            }
+            // 去除重複
+            const uniqueSymptomResults = [...new Map(symptomResults.map(p => [p._id, p])).values()];
+            if (uniqueSymptomResults.length > 0) {
+                return formatProducts(uniqueSymptomResults.slice(0, 20));
+            }
+        }
+
         // 全文搜尋所有欄位
         let allResults = [];
         for (const keyword of keywords) {
@@ -508,10 +864,87 @@ async function searchProducts(query) {
     }
 }
 
+// 症狀→產品關鍵字對應
+function getSymptomKeywords(query) {
+    const symptomMap = {
+        // 引擎異音相關
+        '異音': ['Additive', '添加劑', 'Lifter'],
+        '敲缸': ['Additive', '添加劑'],
+        '哒哒': ['Lifter', '汽門', 'Additive'],
+        '噠噠': ['Lifter', '汽門', 'Additive'],
+        '聲音大': ['Additive', '添加劑'],
+
+        // 油耗相關
+        '耗油': ['Injection', 'Cleaner', '清潔', '噴油嘴'],
+        '油耗': ['Injection', 'Cleaner', '清潔', '噴油嘴'],
+        '吃油': ['Injection', 'Cleaner', 'Flush'],
+
+        // 積碳相關
+        '積碳': ['Flush', 'Cleaner', '清潔', '清洗'],
+        '積炭': ['Flush', 'Cleaner', '清潔', '清洗'],
+
+        // 發動問題
+        '難發動': ['Additive', '添加劑', '燃油'],
+        '發不動': ['Additive', '添加劑', '燃油'],
+        '冷車': ['Additive', '添加劑'],
+
+        // 抖動問題
+        '抖動': ['Cleaner', '清潔', 'Flush', '節氣門'],
+        '怠速不穩': ['Cleaner', '清潔', 'Flush'],
+
+        // 冒煙問題
+        '冒煙': ['Flush', 'Additive', '添加劑'],
+        '黑煙': ['Diesel', 'Cleaner', '柴油', '清潔'],
+        '藍煙': ['Additive', 'Oil', '機油'],
+
+        // 機油消耗
+        '吃機油': ['Additive', 'Oil', '添加劑', '機油精'],
+        '機油消耗': ['Additive', 'Oil', '添加劑'],
+
+        // 變速箱問題
+        '換檔頓挫': ['ATF', '變速箱', 'Gear'],
+        '變速箱異音': ['ATF', '變速箱', 'Gear'],
+        '頓挫': ['ATF', '變速箱'],
+
+        // 冷卻系統
+        '過熱': ['Coolant', '冷卻', '水箱'],
+        '水溫高': ['Coolant', '冷卻', '水箱'],
+
+        // 煞車問題
+        '煞車異音': ['Brake', '煞車'],
+        '煞車軟': ['Brake', '煞車油'],
+
+        // 鏈條保養
+        '鏈條': ['Chain', '鏈條'],
+
+        // 老車相關
+        '老車': ['Additive', '添加劑', 'Flush', '清洗'],
+        '里程高': ['Additive', '添加劑', 'Flush'],
+        '高里程': ['Additive', '添加劑', 'Flush'],
+
+        // 保護相關
+        '保護': ['Additive', '添加劑', 'Cera', '陶瓷'],
+        '油封': ['Additive', 'Leak', '防漏'],
+        '漏油': ['Leak', 'Stop', '防漏']
+    };
+
+    const matchedKeywords = [];
+    const queryLower = query.toLowerCase();
+
+    for (const [symptom, keywords] of Object.entries(symptomMap)) {
+        if (query.includes(symptom) || queryLower.includes(symptom.toLowerCase())) {
+            matchedKeywords.push(...keywords);
+        }
+    }
+
+    // 去除重複
+    return [...new Set(matchedKeywords)];
+}
+
 // 從查詢中提取有意義的關鍵字
 function extractKeywords(query) {
     // 移除常見無意義詞彙
-    const stopWords = ['的', '我', '我的', '你', '推薦', '用', '嗎', '可以', '什麼', '哪個', '有沒有', '一下', '請問', '想', '要', '需要'];
+    const stopWords = ['的', '我', '我的', '你', '推薦', '用', '嗎', '可以', '什麼', '哪個', '有沒有', '一下', '請問', '想', '要', '需要', '和', '跟', '差', '在', '哪'];
 
     // 提取產品相關關鍵字
     const productKeywords = [];
@@ -522,19 +955,91 @@ function extractKeywords(query) {
         productKeywords.push(...partnoMatch);
     }
 
-    // 提取英文關鍵字
-    const englishWords = query.match(/[a-zA-Z]{2,}/g);
-    if (englishWords) {
-        productKeywords.push(...englishWords.map(w => w.toLowerCase()));
+    // 提取車廠認證規格（VW 504/507/508/509、BMW LL、MB 229、Ford WSS 等）
+    const certPatterns = [
+        { regex: /(?:vw|福斯|大眾)\s*(\d{3})/gi, prefix: 'VW ' },
+        { regex: /(?:mb|賓士|mercedes)\s*(\d{3})/gi, prefix: 'MB ' },
+        { regex: /(?:bmw|寶馬)\s*(ll-?\d+)/gi, prefix: 'BMW ' },
+        { regex: /acea\s*([a-z]\d)/gi, prefix: 'ACEA ' },
+        { regex: /api\s*([a-z]{2})/gi, prefix: 'API ' },
+        { regex: /jaso\s*(ma\d?|mb)/gi, prefix: 'JASO ' },
+        { regex: /porsche\s*([a-z]\d+)/gi, prefix: 'Porsche ' },
+        { regex: /(?:ford|福特)\s*(?:wss)?-?m2c\s*(\d{3})-?([a-z])?/gi, prefix: 'WSS-M2C ' }
+    ];
+
+    for (const pattern of certPatterns) {
+        let match;
+        while ((match = pattern.regex.exec(query)) !== null) {
+            productKeywords.push(match[1]); // 只加數字/代碼部分，讓搜尋更寬鬆
+            if (match[2]) {
+                productKeywords.push(match[1] + '-' + match[2].toUpperCase()); // 如 948-B
+                productKeywords.push(match[1] + match[2].toUpperCase()); // 如 948B
+            }
+        }
     }
 
-    // 提取中文關鍵字（移除停用詞）
-    const cleanedQuery = query.replace(/[a-zA-Z0-9\s]+/g, '');
-    const chineseChars = cleanedQuery.split('').filter(char => !stopWords.some(sw => sw.includes(char)));
+    // 直接提取認證碼格式（如 948B, 948-B, 956-A1 等）
+    const certCodes = query.match(/\b(\d{3})-?([a-z]\d?)\b/gi);
+    if (certCodes) {
+        for (const code of certCodes) {
+            productKeywords.push(code);
+            // 同時加入有無連字號的版本
+            if (code.includes('-')) {
+                productKeywords.push(code.replace('-', ''));
+            } else {
+                productKeywords.push(code.replace(/(\d{3})([a-z])/i, '$1-$2'));
+            }
+        }
+    }
+
+    // 直接提取 3 位數認證數字（如 504, 507, 508, 509, 229 等）
+    const certNumbers = query.match(/\b(50[4789]|22[0-9]|LL-?\d+)\b/gi);
+    if (certNumbers) {
+        productKeywords.push(...certNumbers);
+    }
+
+    // 提取常見產品系列名稱（優先處理）
+    const productSeries = [
+        'Top Tec', 'TopTec', 'Special Tec', 'SpecialTec', 'Molygen', 'Leichtlauf',
+        'MoS2', 'Cera Tec', 'CeraTec', 'Synthoil', 'Motorbike', 'Motor Protect',
+        'Pro-Line', 'Optimal', 'Super Diesel', 'Truck', 'Marine', 'Racing',
+        'Engine Flush', 'Injection Cleaner', 'Oil Additive', 'ATF'
+    ];
+
+    for (const series of productSeries) {
+        if (query.toLowerCase().includes(series.toLowerCase())) {
+            productKeywords.push(series);
+        }
+    }
+
+    // 提取產品型號數字（如 4200, 4600, 6200 等）
+    const modelNumbers = query.match(/\d{4}/g);
+    if (modelNumbers) {
+        productKeywords.push(...modelNumbers);
+    }
+
+    // 提取黏度規格（如 5W30, 5W-30, 10W40, 0W20 等）
+    const viscosityMatch = query.match(/\d+W-?\d+/gi);
+    if (viscosityMatch) {
+        productKeywords.push(...viscosityMatch);
+    }
+
+    // 提取英文關鍵字（排除已處理的系列名稱中的單字）
+    const englishWords = query.match(/[a-zA-Z]{3,}/g);
+    if (englishWords) {
+        const seriesWordsLower = productSeries.flatMap(s => s.toLowerCase().split(' '));
+        for (const word of englishWords) {
+            const lower = word.toLowerCase();
+            // 只加入非系列名稱單字的英文詞
+            if (!seriesWordsLower.includes(lower) && !['and', 'the', 'for'].includes(lower)) {
+                productKeywords.push(lower);
+            }
+        }
+    }
 
     // 提取常見產品類型關鍵字
     const productTypes = ['機油', '煞車油', '剎車油', '冷卻液', '水箱精', '鏈條油', '齒輪油', '添加劑', '油精', '清潔劑',
-        '方向機油', '變速箱油', '煞車', '機車', '汽車', '摩托車', '速克達', '檔車', '重機'];
+        '方向機油', '變速箱油', '煞車', '機車', '汽車', '摩托車', '速克達', '檔車', '重機', '頂技', '特護'];
     for (const type of productTypes) {
         if (query.includes(type)) {
             productKeywords.push(type);

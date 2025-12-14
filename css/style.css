@@ -639,3 +639,242 @@ body.iframe-mode .chat-container {
         display: none;
     }
 }
+
+/* ================================
+   Form Overlay (對話前表單)
+   ================================ */
+
+.form-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, var(--dark-900) 0%, var(--dark-800) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: var(--space-4);
+}
+
+.form-container {
+    width: 100%;
+    max-width: 420px;
+    background: var(--dark-800);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--dark-600);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.form-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-md);
+}
+
+.form-header h2 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+    color: var(--white);
+}
+
+.form-header p {
+    font-size: var(--font-size-sm);
+    color: var(--gray-400);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-group label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    margin-bottom: var(--space-2);
+    color: var(--white);
+}
+
+.form-group .required {
+    color: var(--accent-red);
+}
+
+.form-group .optional {
+    color: var(--gray-400);
+    font-weight: 400;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--dark-700);
+    border: 1px solid var(--dark-600);
+    border-radius: var(--radius-md);
+    color: var(--white);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    transition: border-color var(--transition-fast);
+}
+
+.form-group input::placeholder {
+    color: var(--gray-500);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(27, 77, 155, 0.2);
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%238A8A8A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-3) center;
+    padding-right: var(--space-8);
+}
+
+.form-submit-btn {
+    width: 100%;
+    padding: var(--space-4);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--white);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-top: var(--space-4);
+}
+
+.form-submit-btn:hover {
+    background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.form-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* ================================
+   End Chat Button (離開按鈕)
+   ================================ */
+
+.end-chat-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--white);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.end-chat-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.end-chat-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ================================
+   Session Ended Overlay (對話結束)
+   ================================ */
+
+.session-ended-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 15, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: var(--space-4);
+}
+
+.session-ended-content {
+    text-align: center;
+    max-width: 360px;
+}
+
+.session-ended-content h2 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-4);
+    color: var(--white);
+}
+
+.session-ended-content p {
+    font-size: var(--font-size-base);
+    color: var(--gray-300);
+    margin-bottom: var(--space-6);
+    line-height: 1.6;
+}
+
+.restart-btn {
+    padding: var(--space-3) var(--space-6);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--white);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.restart-btn:hover {
+    background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+/* ================================
+   Responsive Adjustments for Form
+   ================================ */
+
+@media (max-width: 520px) {
+    .form-container {
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+    }
+
+    .form-logo {
+        width: 64px;
+        height: 64px;
+    }
+
+    .form-header h2 {
+        font-size: var(--font-size-lg);
+    }
+
+    .end-chat-btn span {
+        display: none;
+    }
+
+    .end-chat-btn {
+        padding: var(--space-2);
+    }
+}

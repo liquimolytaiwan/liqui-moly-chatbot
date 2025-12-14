@@ -1,19 +1,29 @@
 /**
  * LIQUI MOLY Chatbot - Main Chat Module
- * 聊天機器人主程式
+ * 聊天機器人主程式（含用戶資料收集與對話管理）
  */
 
 class LiquiMolyChatbot {
     constructor() {
         // DOM Elements
+        this.formOverlay = document.getElementById('formOverlay');
+        this.userInfoForm = document.getElementById('userInfoForm');
+        this.chatContainer = document.getElementById('chatContainer');
         this.chatMessages = document.getElementById('chatMessages');
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
+        this.endChatBtn = document.getElementById('endChatBtn');
         this.loadingOverlay = document.getElementById('loadingOverlay');
+        this.sessionEndedOverlay = document.getElementById('sessionEndedOverlay');
+        this.restartBtn = document.getElementById('restartBtn');
 
         // State
         this.conversationHistory = [];
         this.isLoading = false;
+        this.sessionId = null;
+        this.userInfo = null;
+        this.idleTimer = null;
+        this.IDLE_TIMEOUT = 10 * 60 * 1000; // 10 分鐘
 
         // Initialize
         this.init();
@@ -29,11 +39,8 @@ class LiquiMolyChatbot {
         // 綁定事件
         this.bindEvents();
 
-        // 自動調整輸入框高度
+        // 設定輸入框自動調整高度
         this.setupAutoResize();
-
-        // 載入對話歷史（如有）
-        this.loadConversationHistory();
 
         console.log('LIQUI MOLY Chatbot initialized');
     }
@@ -56,6 +63,9 @@ class LiquiMolyChatbot {
      * 綁定事件處理器
      */
     bindEvents() {
+        // 表單提交
+        this.userInfoForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
         // 發送按鈕點擊
         this.sendButton.addEventListener('click', () => this.handleSend());
 
@@ -70,7 +80,14 @@ class LiquiMolyChatbot {
         // 輸入框內容變化
         this.messageInput.addEventListener('input', () => {
             this.updateSendButtonState();
+            this.resetIdleTimer();
         });
+
+        // 離開按鈕
+        this.endChatBtn.addEventListener('click', () => this.handleEndChat());
+
+        // 重新開始按鈕
+        this.restartBtn.addEventListener('click', () => this.handleRestart());
 
         // 快速操作按鈕
         document.querySelectorAll('.quick-action-btn').forEach(btn => {
@@ -82,6 +99,163 @@ class LiquiMolyChatbot {
                 }
             });
         });
+
+        // 監聽用戶活動以重置閒置計時器
+        document.addEventListener('mousemove', () => this.resetIdleTimer());
+        document.addEventListener('keypress', () => this.resetIdleTimer());
+    }
+
+    /**
+     * 處理表單提交
+     */
+    async handleFormSubmit(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this.userInfoForm);
+        this.userInfo = {
+            userName: formData.get('userName'),
+            userEmail: formData.get('userEmail'),
+            userPhone: formData.get('userPhone') || '',
+            category: formData.get('category')
+        };
+
+        // 開始對話 session
+        await this.startSession();
+    }
+
+    /**
+     * 開始對話 session
+     */
+    async startSession() {
+        try {
+            this.showLoading(true);
+
+            const response = await fetch(CONFIG.API_ENDPOINT + '/startSession', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.userInfo)
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.sessionId) {
+                this.sessionId = data.sessionId;
+
+                // 隱藏表單，顯示聊天區域
+                this.formOverlay.style.display = 'none';
+                this.chatContainer.style.display = 'flex';
+
+                // 開始閒置計時器
+                this.startIdleTimer();
+
+                console.log('Session started:', this.sessionId);
+            } else {
+                throw new Error(data.error || 'Failed to start session');
+            }
+        } catch (error) {
+            console.error('Start session error:', error);
+            alert('無法開始對話，請稍後再試。');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    /**
+     * 結束對話
+     */
+    async endSession() {
+        if (!this.sessionId) return;
+
+        try {
+            await fetch(CONFIG.API_ENDPOINT + '/endSession', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: this.sessionId })
+            });
+
+            console.log('Session ended:', this.sessionId);
+        } catch (error) {
+            console.error('End session error:', error);
+        }
+
+        // 清除狀態
+        this.clearIdleTimer();
+        this.sessionId = null;
+        this.conversationHistory = [];
+    }
+
+    /**
+     * 處理離開對話
+     */
+    async handleEndChat() {
+        if (confirm('確定要離開對話嗎？')) {
+            await this.endSession();
+            this.showSessionEnded();
+        }
+    }
+
+    /**
+     * 處理重新開始
+     */
+    handleRestart() {
+        // 隱藏結束畫面
+        this.sessionEndedOverlay.style.display = 'none';
+
+        // 重置表單
+        this.userInfoForm.reset();
+
+        // 清除聊天訊息（保留歡迎訊息）
+        this.clearChatMessages();
+
+        // 顯示表單
+        this.formOverlay.style.display = 'flex';
+        this.chatContainer.style.display = 'none';
+    }
+
+    /**
+     * 顯示對話結束畫面
+     */
+    showSessionEnded() {
+        this.chatContainer.style.display = 'none';
+        this.sessionEndedOverlay.style.display = 'flex';
+    }
+
+    /**
+     * 開始閒置計時器
+     */
+    startIdleTimer() {
+        this.clearIdleTimer();
+        this.idleTimer = setTimeout(() => {
+            this.handleIdleTimeout();
+        }, this.IDLE_TIMEOUT);
+    }
+
+    /**
+     * 重置閒置計時器
+     */
+    resetIdleTimer() {
+        if (this.sessionId) {
+            this.startIdleTimer();
+        }
+    }
+
+    /**
+     * 清除閒置計時器
+     */
+    clearIdleTimer() {
+        if (this.idleTimer) {
+            clearTimeout(this.idleTimer);
+            this.idleTimer = null;
+        }
+    }
+
+    /**
+     * 處理閒置超時
+     */
+    async handleIdleTimeout() {
+        console.log('Idle timeout, ending session...');
+        await this.endSession();
+        this.showSessionEnded();
     }
 
     /**
@@ -127,6 +301,9 @@ class LiquiMolyChatbot {
             content: message
         });
 
+        // 重置閒置計時器
+        this.resetIdleTimer();
+
         // 取得 AI 回覆
         await this.getAIResponse(message);
     }
@@ -138,6 +315,24 @@ class LiquiMolyChatbot {
         const quickActions = document.querySelector('.quick-actions');
         if (quickActions) {
             quickActions.style.display = 'none';
+        }
+    }
+
+    /**
+     * 清除聊天訊息（保留歡迎訊息）
+     */
+    clearChatMessages() {
+        const messages = this.chatMessages.querySelectorAll('.message');
+        messages.forEach((msg, index) => {
+            if (index > 0) {
+                msg.remove();
+            }
+        });
+
+        // 重新顯示快速操作
+        const quickActions = document.querySelector('.quick-actions');
+        if (quickActions) {
+            quickActions.style.display = 'flex';
         }
     }
 
@@ -248,9 +443,6 @@ class LiquiMolyChatbot {
             // 限制對話歷史長度
             this.trimConversationHistory();
 
-            // 儲存對話歷史
-            this.saveConversationHistory();
-
         } catch (error) {
             console.error('Chat error:', error);
             this.removeTypingIndicator(typingIndicator);
@@ -274,6 +466,7 @@ class LiquiMolyChatbot {
             },
             body: JSON.stringify({
                 message: message,
+                sessionId: this.sessionId,
                 conversationHistory: this.conversationHistory.slice(-CONFIG.CONVERSATION.MAX_HISTORY)
             })
         });
@@ -364,49 +557,13 @@ class LiquiMolyChatbot {
     }
 
     /**
-     * 儲存對話歷史到 localStorage
+     * 顯示/隱藏載入狀態
      */
-    saveConversationHistory() {
-        try {
-            localStorage.setItem('liquiMolyChatHistory', JSON.stringify(this.conversationHistory));
-        } catch (e) {
-            console.warn('Unable to save chat history:', e);
-        }
-    }
-
-    /**
-     * 載入對話歷史
-     */
-    loadConversationHistory() {
-        try {
-            const saved = localStorage.getItem('liquiMolyChatHistory');
-            if (saved) {
-                this.conversationHistory = JSON.parse(saved);
-            }
-        } catch (e) {
-            console.warn('Unable to load chat history:', e);
-        }
-    }
-
-    /**
-     * 清除對話歷史
-     */
-    clearHistory() {
-        this.conversationHistory = [];
-        localStorage.removeItem('liquiMolyChatHistory');
-
-        // 清除聊天區域除了歡迎訊息
-        const messages = this.chatMessages.querySelectorAll('.message');
-        messages.forEach((msg, index) => {
-            if (index > 0) {
-                msg.remove();
-            }
-        });
-
-        // 重新顯示快速操作
-        const quickActions = document.querySelector('.quick-actions');
-        if (quickActions) {
-            quickActions.style.display = 'flex';
+    showLoading(show) {
+        if (show) {
+            this.loadingOverlay.classList.add('active');
+        } else {
+            this.loadingOverlay.classList.remove('active');
         }
     }
 
