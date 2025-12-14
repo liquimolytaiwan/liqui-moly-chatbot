@@ -840,25 +840,31 @@ export async function get_products(request) {
 
 // AI 分析用戶問題，判斷車型類別和需要的規格
 async function analyzeUserQuery(apiKey, message) {
-    const analysisPrompt = `你是一個汽機車專家。請分析用戶的問題，並以 JSON 格式返回以下資訊：
+    const analysisPrompt = `你是一個汽機車專家。請分析用戶的問題，判斷車型類別和需要的規格。
 
 用戶問題：「${message}」
 
-請返回以下 JSON 格式（只返回 JSON，不要其他文字）：
+請只返回一個 JSON 對象，格式如下：
 {
-    "vehicleType": "汽車" 或 "摩托車" 或 "未知",
-    "vehicleSubType": "速克達/CVT" 或 "檔車/濕式離合器" 或 "重機" 或 "轎車" 或 "休旅車" 或 "柴油車" 或 "未知",
-    "certifications": ["需要的認證，如 JASO MA2, API SP, ACEA C3 等"],
-    "viscosity": "建議黏度，如 10W40, 5W30 等",
-    "searchKeywords": ["搜尋關鍵字，如 Motorbike, 4T, 機油 等"],
-    "productCategory": "機油" 或 "添加劑" 或 "化學品" 或 "其他" 或 "未知",
-    "needsProductRecommendation": true 或 false
+    "vehicleType": "汽車",
+    "vehicleSubType": "未知",
+    "certifications": [],
+    "viscosity": "",
+    "searchKeywords": ["機油"],
+    "productCategory": "機油",
+    "needsProductRecommendation": true
 }
 
-注意：
-- 如果是摩托車檔車（如 DR-Z, CBR, Ninja），vehicleSubType 應為 "檔車/濕式離合器"，需要 JASO MA 或 MA2 認證
-- 如果是速克達（如 PCX, NMAX, Force），vehicleSubType 應為 "速克達/CVT"，需要 JASO MB 認證
-- 如果問題與產品推薦無關（如一般知識問題），needsProductRecommendation 設為 false`;
+說明：
+- vehicleType: 填入 "汽車" 或 "摩托車" 或 "未知"
+- vehicleSubType: 填入 "速克達" 或 "檔車" 或 "重機" 或 "轎車" 或 "柴油車" 或 "未知"
+- certifications: 需要的認證陣列，如 ["JASO MA2"] 或 ["ACEA C3", "VW 504"]
+- viscosity: 建議黏度如 "10W40" 或 "5W30"，不確定就留空
+- searchKeywords: 用於搜尋產品的關鍵字陣列
+- productCategory: "機油" 或 "添加劑" 或 "化學品" 或 "其他"
+- needsProductRecommendation: 如果是一般知識問題填 false，需要推薦產品填 true
+
+注意：如果是摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB。只返回 JSON，不要其他文字。`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -873,13 +879,23 @@ async function analyzeUserQuery(apiKey, message) {
             })
         });
 
+        if (!response.ok) {
+            console.error('AI analysis API error:', response.status);
+            return null;
+        }
+
         const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
         // 嘗試解析 JSON
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
+            try {
+                return JSON.parse(jsonMatch[0]);
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError, 'Text:', text);
+                return null;
+            }
         }
         return null;
     } catch (e) {
