@@ -884,8 +884,24 @@ async function searchProducts(query) {
         let fallbackProducts = null;
 
         const queryLower = query.toLowerCase();
-        if (queryLower.includes('機車') || queryLower.includes('摩托') || queryLower.includes('速克達') ||
-            queryLower.includes('檔車') || queryLower.includes('重機') || queryLower.includes('motorbike')) {
+
+        // 常見摩托車品牌和車型關鍵字
+        const motorcycleBrands = ['suzuki', 'honda', 'yamaha', 'kawasaki', 'ktm', 'ducati', 'harley', 'bmw', 'triumph', 'aprilia', 'vespa', 'sym', 'kymco', 'gogoro', 'pgo'];
+        const motorcycleModels = ['dr-z', 'drz', 'cbr', 'ninja', 'r1', 'r6', 'mt-', 'yzf', 'gsx', 'z900', 'z1000', 'z650', 'crf', 'wr', 'pcx', 'nmax', 'xmax', 'forza', 'burgman', 'address', 'jog', 'force', 'cuxi', 'bws'];
+
+        const isMotorcycleQuery =
+            queryLower.includes('機車') ||
+            queryLower.includes('摩托') ||
+            queryLower.includes('速克達') ||
+            queryLower.includes('檔車') ||
+            queryLower.includes('重機') ||
+            queryLower.includes('motorbike') ||
+            queryLower.includes('motorcycle') ||
+            queryLower.includes('scooter') ||
+            motorcycleBrands.some(brand => queryLower.includes(brand)) ||
+            motorcycleModels.some(model => queryLower.includes(model));
+
+        if (isMotorcycleQuery) {
             fallbackProducts = await wixData.query('products')
                 .contains('sort', '摩托車')
                 .limit(20)
