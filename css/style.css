@@ -250,7 +250,7 @@ body.iframe-mode .chat-container {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    background: var(--dark-700);
+    background: var(--white);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -259,8 +259,9 @@ body.iframe-mode .chat-container {
 }
 
 .message-avatar img {
-    width: 24px;
-    height: 24px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .message-content {
