@@ -96,6 +96,7 @@ ${contextSummary}用戶當前問題：「${message}」
    - "變速箱"：出現 變速箱油、ATF、齒輪油
    - "煞車"：出現 煞車油
    - "冷卻"：出現 水箱精、冷卻液
+   - "鏈條"：出現 鏈條、鍊條、Chain、Lube、乾式、濕式、鍊條油、鏈條清洗
    
 3. **searchKeywords (搜尋關鍵字)**
    - 必須包含中英文，用於資料庫模糊搜尋
@@ -212,6 +213,14 @@ function generateWixQueries(analysis, keywords) {
     // === 策略 D: 汽車機油 ===
     else if (!isBike && productCategory === '機油') {
         addQuery('sort', '【汽車】機油', 50);
+    }
+
+    // === 策略: 鏈條保養 ===
+    else if (productCategory === '鏈條') {
+        addQuery('sort', '【摩托車】機車養護', 30);
+        queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+        queries.push({ field: 'title', value: 'Ketten', limit: 20, method: 'contains' });
+        queries.push({ field: 'title', value: '鏈條', limit: 20, method: 'contains' });
     }
 
     // === 策略 E: 通用/清潔 ===
