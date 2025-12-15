@@ -1405,9 +1405,7 @@ function formatProducts(products) {
 }
 
 function buildContents(message, history, productContext) {
-    const contents = [];
-
-    // 建構系統上下文（每次都包含）
+    // 建構系統上下文
     const systemContext = `${SYSTEM_PROMPT}
 
 ${productContext}
@@ -1418,80 +1416,52 @@ ${productContext}
 - 連結必須是 https://www.liqui-moly-tw.com/products/ 開頭
 - 使用 Markdown 格式：[產品名稱](產品連結)`;
 
-    // 處理對話歷史
+    const contents = [];
+
+    // 簡化邏輯：始終將 systemContext 放在第一條 user 訊息中
     if (history && history.length > 0) {
-        // 將系統上下文和歷史第一條 user 訊息合併
-        let firstUserHandled = false;
+        // 有對話歷史時，重建對話
+        let isFirstUser = true;
 
-        for (let i = 0; i < history.length; i++) {
-            const msg = history[i];
-
-            if (!firstUserHandled && msg.role === 'user') {
-                // 第一條 user 訊息加入系統上下文
-                contents.push({
-                    role: 'user',
-                    parts: [{ text: `${systemContext}\n\n用戶問題: ${msg.content}` }]
-                });
-                firstUserHandled = true;
-            } else if (msg.role === 'assistant') {
-                // 確保 model 訊息前面有 user 訊息
-                if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
-                    // 如果沒有 user 訊息，加一個空的
-                    if (!firstUserHandled) {
-                        contents.push({
-                            role: 'user',
-                            parts: [{ text: systemContext }]
-                        });
-                        firstUserHandled = true;
-                    }
-                }
-                contents.push({
-                    role: 'model',
-                    parts: [{ text: msg.content }]
-                });
-            } else if (msg.role === 'user' && firstUserHandled) {
-                // 確保 user 訊息前面有 model 訊息（除了第一條）
-                if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
-                    // 合併連續的 user 訊息
-                    contents[contents.length - 1].parts[0].text += '\n\n' + msg.content;
+        for (const msg of history) {
+            if (msg.role === 'user') {
+                if (isFirstUser) {
+                    // 第一條 user 訊息包含 systemContext
+                    contents.push({
+                        role: 'user',
+                        parts: [{ text: `${systemContext}\n\n用戶問題: ${msg.content}` }]
+                    });
+                    isFirstUser = false;
                 } else {
+                    // 後續 user 訊息
                     contents.push({
                         role: 'user',
                         parts: [{ text: msg.content }]
                     });
                 }
+            } else if (msg.role === 'assistant') {
+                contents.push({
+                    role: 'model',
+                    parts: [{ text: msg.content }]
+                });
             }
         }
 
-        // 確保最後是 model 訊息才能加新的 user 訊息
-        if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
-            // 最後一條是 user，這可能是歷史不完整，暫時移除它讓當前訊息取代
-            // 或者合併到當前訊息
-            const lastUserContent = contents[contents.length - 1].parts[0].text;
-            contents.pop();
-
-            // 如果 contents 還有內容且最後是 model，就正常加入
-            if (contents.length > 0 && contents[contents.length - 1].role === 'model') {
-                contents.push({
-                    role: 'user',
-                    parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
-                });
-            } else {
-                // 否則把 lastUserContent 和當前訊息合併
-                contents.push({
-                    role: 'user',
-                    parts: [{ text: `${systemContext}\n\n${lastUserContent}\n\n${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
-                });
-            }
-        } else {
-            // 正常加入當前訊息
-            contents.push({
-                role: 'user',
-                parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
-            });
-        }
+        // 加入當前訊息
+        contents.push({
+            role: 'user',
+            parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
+        });
     } else {
         // 沒有歷史時，第一條訊息加入完整上下文
+        contents.push({
+            role: 'user',
+            parts: [{ text: `${systemContext}\n\n用戶問題: ${message}` }]
+        });
+    }
+
+    // 驗證：確保至少有一條訊息，且最後一條是 user
+    if (contents.length === 0) {
         contents.push({
             role: 'user',
             parts: [{ text: `${systemContext}\n\n用戶問題: ${message}` }]
