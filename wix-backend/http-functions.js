@@ -1037,8 +1037,8 @@ async function searchProductsWithAI(query, searchInfo) {
             console.log('AI 分析失敗，使用 fallback 智慧判斷');
 
             // 摩托車品牌和車型關鍵字
-            const motorcycleBrands = ['suzuki', 'honda', 'yamaha', 'kawasaki', 'ktm', 'ducati', 'harley', 'bmw', 'triumph', 'aprilia', 'vespa', 'sym', 'kymco', 'gogoro', 'pgo'];
-            const motorcycleModels = ['dr-z', 'drz', 'cbr', 'ninja', 'r1', 'r6', 'mt-', 'yzf', 'gsx', 'z900', 'z1000', 'z650', 'crf', 'wr', 'pcx', 'nmax', 'xmax', 'forza', 'burgman', 'address', 'jog', 'force', 'cuxi', 'bws', 'jet'];
+            const motorcycleBrands = ['suzuki', 'honda', 'yamaha', 'kawasaki', 'ktm', 'ducati', 'harley', 'triumph', 'aprilia', 'vespa', 'sym', 'kymco', 'gogoro', 'pgo'];
+            const motorcycleModels = ['dr-z', 'drz', 'cbr', 'ninja', 'r1', 'r6', 'mt-', 'yzf', 'gsx', 'z900', 'z1000', 'crf', 'pcx', 'nmax', 'xmax', 'forza', 'jet'];
 
             const isMotorcycleQuery =
                 queryLower.includes('機車') ||
@@ -1051,32 +1051,24 @@ async function searchProductsWithAI(query, searchInfo) {
 
             if (isMotorcycleQuery) {
                 console.log('Fallback 判斷：摩托車相關');
-                // 載入所有摩托車產品
+                // 使用單一查詢載入摩托車產品（減少查詢次數）
                 const motorcycleProducts = await wixData.query('products')
                     .contains('sort', '摩托車')
-                    .limit(100)
+                    .limit(50)  // 減少 limit
                     .find();
-                allResults = allResults.concat(motorcycleProducts.items);
-
-                // 額外搜尋 Motorbike 關鍵字
-                const motorbikeProducts = await wixData.query('products')
-                    .contains('title', 'Motorbike')
-                    .limit(50)
-                    .find();
-                allResults = allResults.concat(motorbikeProducts.items);
+                allResults = motorcycleProducts.items;
             } else {
                 // 非摩托車，載入汽車產品
                 const carProducts = await wixData.query('products')
                     .contains('sort', '汽車')
-                    .limit(100)
+                    .limit(50)  // 減少 limit
                     .find();
-                allResults = allResults.concat(carProducts.items);
+                allResults = carProducts.items;
             }
 
-            // 去除重複並返回
-            const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
-            if (uniqueResults.length > 0) {
-                return formatProducts(uniqueResults.slice(0, 50));
+            // 直接返回結果
+            if (allResults.length > 0) {
+                return formatProducts(allResults.slice(0, 30));
             }
         }
 
@@ -1120,33 +1112,18 @@ async function searchProductsWithAI(query, searchInfo) {
         if (searchInfo && searchInfo.vehicleType && searchInfo.vehicleType !== '未知') {
             console.log('策略 3 - 車型搜尋:', searchInfo.vehicleType);
             if (searchInfo.vehicleType === '摩托車') {
+                // 使用單一查詢載入摩托車產品（避免超時）
                 const motorcycleProducts = await wixData.query('products')
                     .contains('sort', '摩托車')
-                    .limit(100)
+                    .limit(50)
                     .find();
                 console.log('摩托車產品數量:', motorcycleProducts.items.length);
                 allResults = allResults.concat(motorcycleProducts.items);
 
-                // 額外搜尋 Motorbike 關鍵字產品
-                const motorbikeKeywordProducts = await wixData.query('products')
-                    .contains('title', 'Motorbike')
-                    .limit(50)
-                    .find();
-                console.log('Motorbike 關鍵字產品數量:', motorbikeKeywordProducts.items.length);
-                allResults = allResults.concat(motorbikeKeywordProducts.items);
-
-                // 再搜尋 Scooter 速克達產品
-                const scooterProducts = await wixData.query('products')
-                    .contains('title', 'Scooter')
-                    .limit(30)
-                    .find();
-                console.log('Scooter 產品數量:', scooterProducts.items.length);
-                allResults = allResults.concat(scooterProducts.items);
-
             } else if (searchInfo.vehicleType === '汽車') {
                 const carProducts = await wixData.query('products')
                     .contains('sort', '汽車')
-                    .limit(100)
+                    .limit(50)
                     .find();
                 allResults = allResults.concat(carProducts.items);
             }
