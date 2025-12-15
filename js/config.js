@@ -45,7 +45,7 @@ const CONFIG = {
 
     // Mock API for development
     MOCK_RESPONSES: {
-        default: '感謝您的詢問！我是 LIQUI MOLY Taiwan 的產品諮詢助理。請問有什麼可以為您服務的嗎？'
+        default: '感謝您的詢問！我是 LIQUI MOLY Taiwan 的 AI產品諮詢助理。請問有什麼可以為您服務的嗎？'
     }
 };
 

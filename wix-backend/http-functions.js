@@ -17,7 +17,7 @@ import wixData from 'wix-data';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
 
-const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的產品諮詢助理。
+const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的 AI產品諮詢助理。
 
 ## 你的能力
 你可以回答兩類問題：

@@ -25,7 +25,7 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
 
 // 系統提示詞
-const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的產品諮詢助理。
+const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的 AI產品諮詢助理。
 
 ## 你的身份
 - 你代表台灣總代理宜福工業提供客戶服務
