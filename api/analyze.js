@@ -351,6 +351,22 @@ function generateWixQueries(analysis, keywords) {
     uniqueKw.slice(0, maxKeywords).forEach(kw => {
         if (!kw || kw.length < 2) return; // 跳過過短關鍵字
 
+        // === 0. 產品編號直達車 (SKU Direct Search) ===
+        // 檢查是否為產品編號格式：4-5位數字，或 LM 開頭接數字
+        // 如：9047, LM9047, lm-9047
+        const skuMatch = kw.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
+        if (skuMatch) {
+            const skuNum = skuMatch[1];
+            console.log(`Detected SKU Keyword: ${kw} -> Searching PartNo: ${skuNum}`);
+            // 強制搜尋 PartNo 與 Title，繞過所有車種過濾
+            priorityQueries.push({ field: 'partno', value: skuNum, limit: 5, method: 'contains' });
+            priorityQueries.push({ field: 'title', value: skuNum, limit: 5, method: 'contains' });
+            // 找到編號後，通常這是最強意圖，這個關鍵字就不需要再走下面的類別搜尋了
+            // 但為了保險，讓它繼續跑，只是這是最高優先級
+        }
+
+        // === 0.5 通用名星產品直達車 (Universal Product Bypass) ===
+
         // 如果是摩托車上下文，且不是通用產品 (如洗手膏、清潔類)，才加車型濾鏡
         const isCleaning = productCategory === '清潔' || productCategory === '美容';
         if (isBike && !analysis.isGeneralProduct && !isCleaning) {
