@@ -387,7 +387,9 @@ async function searchProducts(query, searchInfo) {
                 try {
                     const res = await wixData.query('products').contains('title', kw).limit(10).find();
                     allResults = allResults.concat(res.items);
-                } catch (e) { }
+                } catch (e) {
+                    console.log('Fallback search error:', e);
+                }
             }
         } else {
             // 2. 依序執行 Vercel 指派的任務
