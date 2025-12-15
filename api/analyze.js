@@ -440,10 +440,13 @@ function generateWixQueries(analysis, keywords, message = '') {
         const skuMatch = kw.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
         if (skuMatch) {
             const skuNum = skuMatch[1];
-            console.log(`Detected SKU Keyword: ${kw} -> Searching PartNo: ${skuNum}`);
-            // 強制搜尋 PartNo 與 Title，繞過所有車種過濾
-            priorityQueries.push({ field: 'partno', value: skuNum, limit: 5, method: 'contains' });
-            priorityQueries.push({ field: 'title', value: skuNum, limit: 5, method: 'contains' });
+            // 補全 LM 前綴進行精確匹配，避免搜到錯誤產品
+            const fullSku = `LM${skuNum}`;
+            console.log(`Detected SKU Keyword: ${kw} -> Searching PartNo: ${fullSku}`);
+            // 使用 eq 精確匹配 partno，確保找到正確產品
+            priorityQueries.push({ field: 'partno', value: fullSku, limit: 5, method: 'eq' });
+            // 同時用 contains 作為備援（以防 partno 格式不一致）
+            priorityQueries.push({ field: 'partno', value: skuNum, limit: 3, method: 'contains' });
 
             // === 大包裝搜尋擴展 (Large Package Search Extension) ===
             // 若用戶問「大包裝」，需要找同產品的大容量版本
