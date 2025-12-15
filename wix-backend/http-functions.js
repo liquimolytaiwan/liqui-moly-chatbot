@@ -937,7 +937,7 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
         ).join('\n') + '\n\n';
     }
 
-    const analysisPrompt = `你是一個汽機車專家。請分析用戶的問題，判斷車型類別和需要的規格。
+    const analysisPrompt = `你是一個汽機車專家和產品顧問。請分析用戶的問題，判斷需要的產品類型和規格。
 
 ${contextSummary}用戶當前問題：「${message}」
 
@@ -949,22 +949,31 @@ ${contextSummary}用戶當前問題：「${message}」
     "viscosity": "",
     "searchKeywords": ["機油"],
     "productCategory": "機油",
+    "productSubCategory": "",
+    "isGeneralProduct": false,
     "needsProductRecommendation": true
 }
 
 說明：
-- vehicleType: 填入 "汽車" 或 "摩托車" 或 "未知"（如果上下文有提到車型，使用上下文的車型）
-- vehicleSubType: 填入 "速克達" 或 "檔車" 或 "重機" 或 "轟車" 或 "柴油車" 或 "未知"
-- certifications: 需要的認證陣列，如 ["JASO MA2"] 或 ["ACEA C3", "VW 504"]
-- viscosity: 建議黏度如 "10W40" 或 "5W30"，不確定就留空
-- searchKeywords: 用於搜尋產品的關鍵字陣列
-- productCategory: "機油" 或 "添加劑" 或 "化學品" 或 "其他"
-- needsProductRecommendation: 如果是一般知識問題填 false，需要推薦產品填 true
+- vehicleType: "汽車" 或 "摩托車" 或 "未知"（根據上下文推斷）
+- vehicleSubType: "速克達"/"檔車"/"重機"/"轎車"/"柴油車"/"SUV"/"未知"
+- certifications: 認證陣列如 ["JASO MA2"]、["ACEA C3"]
+- viscosity: 黏度如 "10W40"、"5W30"
+- searchKeywords: **重要**！用於搜尋產品標題的關鍵字，要多元化，例如：
+  - 問「洗車」→ ["洗車", "Wash", "Shampoo", "Car Wash"]
+  - 問「機油」→ ["機油", "Oil", "Motoroil"]
+  - 問「添加劑」→ ["添加劑", "Additive", "Shooter"]
+- productCategory: 主類別 - "機油"/"添加劑"/"變速箱"/"煞車"/"冷卻"/"美容清潔"/"化學品"/"空調"/"其他"
+- productSubCategory: 細分類別（選填）
+- isGeneralProduct: **重要**！如果產品不限於特定車型（如洗車液、煞車油、冷卻液）填 true
+- needsProductRecommendation: 需要推薦產品填 true，純知識問題填 false
 
 注意：
-1. 如果是摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB
-2. **重要**：如果對話上下文中有提到車型（如 JET、摩托車、Macan 等），即使當前問題沒有明確說，也要根據上下文判斷
-3. 只返回 JSON，不要其他文字。`;
+1. 摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB
+2. 根據對話上下文推斷車型，即使當前問題沒有明確說
+3. **重要**：searchKeywords 要包含中英文關鍵字，確保能搜尋到產品
+4. 洗車、煞車油、冷卻液等是通用產品，isGeneralProduct 應為 true
+5. 只返回 JSON，不要其他文字。`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -1012,6 +1021,8 @@ async function searchProductsWithAI(query, searchInfo) {
             return '（此問題不需要產品推薦，請使用內建知識回答）';
         }
 
+        let allResults = [];
+
         // 先嘗試精確搜尋（產品編號優先）
         const partnoMatch = query.match(/lm\d+/i);
         if (partnoMatch) {
@@ -1024,16 +1035,36 @@ async function searchProductsWithAI(query, searchInfo) {
             }
         }
 
-        // 根據 AI 分析結果搜尋 - 載入該車型的所有產品讓 AI 智慧選擇
-        if (searchInfo && searchInfo.vehicleType) {
-            let allResults = [];
+        // === 策略 1：根據 AI 分析的 searchKeywords 搜尋產品標題（最重要！）===
+        if (searchInfo && searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
+            for (const keyword of searchInfo.searchKeywords) {
+                const keywordResults = await wixData.query('products')
+                    .contains('title', keyword)
+                    .limit(20)
+                    .find();
+                allResults = allResults.concat(keywordResults.items);
+            }
+        }
 
-            // 根據車型類別載入所有相關產品（機油、添加劑、化學品等）
+        // === 策略 2：根據產品類別搜尋通用產品 ===
+        if (searchInfo && searchInfo.isGeneralProduct) {
+            // 搜尋通用類別（車輛美容、化學品、煞車、冷卻等）
+            const generalCategories = ['車輛美容', '化學品', '煞車', '冷卻'];
+            for (const cat of generalCategories) {
+                const catResults = await wixData.query('products')
+                    .contains('sort', cat)
+                    .limit(30)
+                    .find();
+                allResults = allResults.concat(catResults.items);
+            }
+        }
+
+        // === 策略 3：根據車型類別搜尋 ===
+        if (searchInfo && searchInfo.vehicleType && searchInfo.vehicleType !== '未知') {
             if (searchInfo.vehicleType === '摩托車') {
-                // 載入所有摩托車相關產品
                 const motorcycleProducts = await wixData.query('products')
                     .contains('sort', '摩托車')
-                    .limit(100)  // 增加數量讓 AI 有更多選擇
+                    .limit(100)
                     .find();
                 allResults = allResults.concat(motorcycleProducts.items);
 
@@ -1045,43 +1076,49 @@ async function searchProductsWithAI(query, searchInfo) {
                 allResults = allResults.concat(motorbikeKeywordProducts.items);
 
             } else if (searchInfo.vehicleType === '汽車') {
-                // 載入所有汽車相關產品
                 const carProducts = await wixData.query('products')
                     .contains('sort', '汽車')
                     .limit(100)
                     .find();
                 allResults = allResults.concat(carProducts.items);
             }
+        }
 
-            // 根據產品類別補充搜尋（添加劑、變速箱油等）
-            if (searchInfo.productCategory) {
-                const categoryProducts = await wixData.query('products')
-                    .contains('sort', searchInfo.productCategory)
-                    .limit(30)
+        // === 策略 4：根據 productCategory 搜尋特定類別 ===
+        if (searchInfo && searchInfo.productCategory) {
+            const categoryMapping = {
+                '美容清潔': '車輛美容',
+                '煞車': '煞車系統',
+                '冷卻': '冷卻系統',
+                '空調': '空調系統',
+                '變速箱': '變速箱'
+            };
+            const mappedCategory = categoryMapping[searchInfo.productCategory] || searchInfo.productCategory;
+            const categoryProducts = await wixData.query('products')
+                .contains('sort', mappedCategory)
+                .limit(30)
+                .find();
+            allResults = allResults.concat(categoryProducts.items);
+        }
+
+        // === 策略 5：根據認證搜尋 ===
+        if (searchInfo && searchInfo.certifications && searchInfo.certifications.length > 0) {
+            for (const cert of searchInfo.certifications) {
+                const certResults = await wixData.query('products')
+                    .contains('cert', cert)
+                    .limit(20)
                     .find();
-                allResults = allResults.concat(categoryProducts.items);
-            }
-
-            // 根據認證搜尋
-            if (searchInfo.certifications && searchInfo.certifications.length > 0) {
-                for (const cert of searchInfo.certifications) {
-                    const certResults = await wixData.query('products')
-                        .contains('cert', cert)
-                        .limit(20)
-                        .find();
-                    allResults = allResults.concat(certResults.items);
-                }
-            }
-
-            // 去除重複
-            const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
-            if (uniqueResults.length > 0) {
-                // 返回所有找到的產品，讓 AI 自己選擇最適合的
-                return formatProducts(uniqueResults.slice(0, 50));
+                allResults = allResults.concat(certResults.items);
             }
         }
 
-        // Fallback：使用原始搜尋邏輯
+        // 去除重複
+        const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
+        if (uniqueResults.length > 0) {
+            return formatProducts(uniqueResults.slice(0, 50));
+        }
+
+        // === Fallback：使用原始搜尋邏輯 ===
         return await searchProducts(query);
 
     } catch (error) {
