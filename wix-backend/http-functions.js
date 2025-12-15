@@ -448,10 +448,12 @@ async function searchProducts(query, searchInfo) {
 
             for (const title of titlesToExpand.slice(0, 3)) {
                 try {
+                    console.log(`[Title Expansion] Searching for title: "${title}"`);
                     const res = await wixData.query('products')
                         .eq('title', title)
                         .limit(10)
                         .find();
+                    console.log(`[Title Expansion] Found ${res.items.length} items for title: "${title}"`);
 
                     for (const p of res.items) {
                         if (p._id && !seenIds.has(p._id)) {
