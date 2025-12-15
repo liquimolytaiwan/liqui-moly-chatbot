@@ -1061,11 +1061,13 @@ async function searchProductsWithAI(query, searchInfo) {
 
         // === 策略 3：根據車型類別搜尋 ===
         if (searchInfo && searchInfo.vehicleType && searchInfo.vehicleType !== '未知') {
+            console.log('策略 3 - 車型搜尋:', searchInfo.vehicleType);
             if (searchInfo.vehicleType === '摩托車') {
                 const motorcycleProducts = await wixData.query('products')
                     .contains('sort', '摩托車')
                     .limit(100)
                     .find();
+                console.log('摩托車產品數量:', motorcycleProducts.items.length);
                 allResults = allResults.concat(motorcycleProducts.items);
 
                 // 額外搜尋 Motorbike 關鍵字產品
@@ -1073,7 +1075,16 @@ async function searchProductsWithAI(query, searchInfo) {
                     .contains('title', 'Motorbike')
                     .limit(50)
                     .find();
+                console.log('Motorbike 關鍵字產品數量:', motorbikeKeywordProducts.items.length);
                 allResults = allResults.concat(motorbikeKeywordProducts.items);
+
+                // 再搜尋 Scooter 速克達產品
+                const scooterProducts = await wixData.query('products')
+                    .contains('title', 'Scooter')
+                    .limit(30)
+                    .find();
+                console.log('Scooter 產品數量:', scooterProducts.items.length);
+                allResults = allResults.concat(scooterProducts.items);
 
             } else if (searchInfo.vehicleType === '汽車') {
                 const carProducts = await wixData.query('products')
