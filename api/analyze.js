@@ -158,7 +158,11 @@ ${contextSummary}用戶當前問題：「${message}」
                         const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
 
                         // 1. 檢查速克達/摩托車
-                        const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto', 'sym', 'kymco', 'yamaha'];
+                        const scooterKeywords = [
+                            'jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto',
+                            'sym', 'kymco', 'yamaha', 'pgo', 'aeon', 'suzuki', 'vespa', 'jbubu', 'bubu', 'vivo', 'woo', 'nice', 'racing',
+                            '騎' // 強力關鍵字：用戶說「騎」通常指機車/自行車
+                        ];
                         if (scooterKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
                             result.vehicleType = '摩托車';
