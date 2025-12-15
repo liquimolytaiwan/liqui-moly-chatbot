@@ -343,7 +343,22 @@ function generateWixQueries(analysis, keywords) {
         // 判斷方式：含該關鍵字混合了數字與字母 (如 948B, 504.00, LL-04) 或是顯著的特殊規格
         const isCertification = /[a-zA-Z].*[0-9]|[0-9].*[a-zA-Z]|[-.]/.test(kw) && kw.length > 3;
 
-        if (isCertification) {
+        // === 黏度優化 (Viscosity Optimization) ===
+        // 檢查是否為黏度 (5W30, 10W-40) -> 搜尋 word2 欄位
+        const isViscosity = /(\d{1,2}W[- ]?\d{2,3})|SAE/i.test(kw);
+        if (isViscosity) {
+            console.log(`Detected Viscosity Keyword: ${kw} -> Adding word2 Field Search`);
+            priorityQueries.push({ field: 'word2', value: kw, limit: 20, method: 'contains' });
+        }
+
+        // === 系列名稱/次分類優化 (Series Optimization) ===
+        // 針對非黏度、非純數字的關鍵字，嘗試搜尋 word1 (次分類/系列)
+        // 例如 "Optimal", "Molygen", "Top Tec", "Street"
+        if (!isViscosity && !isCertification && kw.length > 3 && isNaN(kw)) {
+            priorityQueries.push({ field: 'word1', value: kw, limit: 15, method: 'contains' });
+        }
+
+        if (isCertification && !isViscosity) {
             console.log(`Detected Certification Keyword: ${kw} -> Adding Cert Field Search`);
             // 用戶確認欄位名稱為 'cert'
             priorityQueries.push({ field: 'cert', value: kw, limit: 20, method: 'contains' });

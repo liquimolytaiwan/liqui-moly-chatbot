@@ -112,7 +112,7 @@ export async function post_chat(request) {
         let productContext = "目前沒有產品資料";
         try {
             productContext = await searchProducts(body.message, searchInfo);
-            console.log('productContext 長度:', productContext.length);
+            // console.log('productContext 長度:', productContext.length);
         } catch (e) {
             console.error('Product search failed:', e);
         }
@@ -378,10 +378,10 @@ async function searchProducts(query, searchInfo) {
         // 1. 讀取 Vercel 傳來的「搜尋指令」 (Remote Instructions)
         const queries = searchInfo?.wixQueries || [];
 
-        console.log('執行遠端搜尋策略:', JSON.stringify(queries));
+        // console.log('執行遠端搜尋策略:', JSON.stringify(queries));
 
         if (queries.length === 0) {
-            console.log('警告：未收到搜尋指令，使用預設關鍵字搜尋 (Fallback)');
+            // console.log('警告：未收到搜尋指令，使用預設關鍵字搜尋 (Fallback)');
             const keywords = searchInfo?.searchKeywords || [query];
             for (const kw of keywords.slice(0, 2)) {
                 try {
@@ -420,7 +420,7 @@ async function searchProducts(query, searchInfo) {
                         );
                     }
 
-                    console.log(`指令完成 [${task.value}]: 找到 ${items.length} 筆`);
+                    // console.log(`指令完成 [${task.value}]: 找到 ${items.length} 筆`);
                     allResults = allResults.concat(items);
 
                 } catch (taskError) {
@@ -440,7 +440,9 @@ async function searchProducts(query, searchInfo) {
             }
         }
 
-        console.log(`搜尋總結: 原始 ${allResults.length} -> 去重後 ${uniqueProducts.length}`);
+        if (allResults.length > 0) {
+            //console.log(`搜尋完成: 找到 ${uniqueProducts.length} 筆`);
+        }
 
         if (uniqueProducts.length > 0) {
             return formatProducts(uniqueProducts.slice(0, 30));
@@ -481,16 +483,19 @@ function formatProducts(products) {
     products.forEach((p, i) => {
         const url = p.partno
             ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}`
-            : 'https://www.liqui-moly-tw.com/catalogue';
+            : 'https://www.liqui-moly-tw.com/products/';
 
         context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
         context += `- 產品編號: ${p.partno || 'N/A'}\n`;
+        context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
         context += `- 認證/規格: ${p.cert || 'N/A'}\n`;
         context += `- 分類: ${p.sort || 'N/A'}\n`;
         context += `- 建議售價: ${p.price || '請洽店家詢價'}\n`;
         context += `- 產品連結: ${url}\n`;
-        context += `- 產品說明: ${p.content || 'N/A'}\n\n`;
+
+        const details = p.content || 'N/A';
+        context += `- 產品說明: ${details}\n\n`;
     });
 
     return context;
