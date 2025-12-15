@@ -61,7 +61,8 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
         ).join('\n') + '\n\n';
     }
 
-    const analysisPrompt = `你是一個汽機車專家和產品顧問。請分析用戶的問題，判斷需要的產品類型和規格。
+    const analysisPrompt = `你是一個汽機車專家和產品顧問。你擁有豐富的車輛知識，包括各品牌車款的原廠機油規格。
+請分析用戶的問題，**利用你的內建知識** 判斷該車型需要的機油認證和黏度。
 
 ${contextSummary}用戶當前問題：「${message}」
 
@@ -80,6 +81,33 @@ ${contextSummary}用戶當前問題：「${message}」
 }
 
 說明與規則：
+
+0. **🧠 車型規格推理 (Vehicle Spec Inference) - 最重要！**
+   - 當用戶提供車型+年份時，**必須利用你的內建知識** 推理該車需要的機油規格！
+   - 填入 "certifications" 欄位：該車原廠建議的認證 (如 API SP, ILSAC GF-6A, ACEA C3, BMW LL-04 等)
+   - 填入 "viscosity" 欄位：該車原廠建議的黏度 (如 0W-20, 5W-30, 5W-40 等)
+   - 填入 "searchKeywords" 欄位：用 certifications + viscosity + 產品系列名 組合搜尋
+   - **範例**：
+     - 用戶問「2022 KIA Sportage 1.6 汽油」
+       - 你知道這款車原廠建議 API SP / ILSAC GF-6A，黏度 0W-20 或 5W-30
+       - certifications: ["API SP", "ILSAC GF-6A"]
+       - viscosity: "0W-20"
+       - searchKeywords: ["0W-20", "0W20", "API SP", "Special Tec", "Top Tec 6300"]
+     - 用戶問「2020 BMW X3 xDrive30i」
+       - 你知道 BMW 需要 LL-01 或 LL-04 認證
+       - certifications: ["BMW LL-01", "BMW LL-04"]
+       - viscosity: "5W-30"
+       - searchKeywords: ["5W30", "LL-01", "LL-04", "Top Tec 4200", "Top Tec 6600"]
+     - 用戶問「2023 Lexus NX 350」
+       - 你知道 Toyota/Lexus 新車需要 ILSAC GF-6A，黏度 0W-20
+       - certifications: ["ILSAC GF-6A", "API SP"]
+       - viscosity: "0W-20"
+       - searchKeywords: ["0W-20", "0W20", "GF-6", "Special Tec AA", "Top Tec 6610"]
+   - **如果你不確定該車型規格，請根據車系和年份做合理推測**：
+     - 亞洲車 (日系/韓系) 2018+ -> 通常 API SP / ILSAC GF-6, 0W-20 或 5W-30
+     - 歐系車 -> 通常有車廠認證 (BMW LL, MB 229.X, VW 504/507)
+     - 美系車 -> 通常 API SP / SN, 5W-20 或 5W-30
+
 1. **上下文繼承 (Context Inheritance - CRITICAL)**
    - 如果當前問題很短（如「那機油呢？」、「是」），**必須**回溯上方對話紀錄找到車型與**認證規格**。
    - 如果之前提過 "JET", "勁戰", "DRG"，那麼 vehicleSubType **必須** 填入 "速克達"。
