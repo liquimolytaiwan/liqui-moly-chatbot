@@ -124,7 +124,8 @@ ${contextSummary}用戶當前問題：「${message}」
        - 難發動/怠速不穩 -> 搜 "Injection Cleaner", "Valve Clean", "Carburetor"
        - 柴油車DPF阻塞 -> 搜 "DPF", "Diesel Particulate"
      - **[變速箱/動力方向/冷卻]**
-       - 換檔頓挫/打滑 -> 搜 "ATF Additive", "Gear Oil Additive"
+       - 換檔頓挫/打滑 (汽車) -> 搜 "ATF Additive", "Gear Oil Additive"
+       - 換檔頓挫/不順 (機車) -> 搜 "Gear Oil", "Motorbike Oil Additive", "4T Additive", "Shooter"
        - 變速箱漏油 -> 搜 "Transmission Stop Leak"
        - 方向盤重/漏油 -> 搜 "Power Steering Oil Leak"
        - 水箱漏水 -> 搜 "Radiator Stop Leak"
@@ -137,13 +138,13 @@ ${contextSummary}用戶當前問題：「${message}」
        - 皮革龜裂 -> 搜 "Leather Care"
      - **[船舶/自行車專區]**
        - 船外機保養 -> 搜 "Marine Oil", "Gear Lube", "4T", "2T"
-       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray"
+       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray", "Rust"
        - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube"
        - 煞車異音 (單車) -> 搜 "Brake Cleaner"
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
-
-4. **isGeneralProduct**
-   - 洗車、煞車油、冷卻液、洗手、清潔劑等不限車型的產品設為 true
+   - **⚠️ 注意車種差異**：
+     - 若 `vehicleType` 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
+     - 若 `vehicleType` 是「汽車」，嚴禁搜尋 "Scooter", "Shooter" (除非是 Gasoline Shooter), "4T Additive"。
 
 5. 只返回 JSON，不要其他文字。`;
 
