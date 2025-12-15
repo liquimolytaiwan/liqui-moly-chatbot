@@ -145,8 +145,8 @@ ${contextSummary}用戶當前問題：「${message}」
        - 電子接點氧化 -> 搜 "Electronic Spray", "LM 40", "接點"
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
    - **⚠️ 注意車種差異**：
-     - 若 `vehicleType` 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
-     - 若 `vehicleType` 是「汽車」，嚴禁搜尋 "Scooter", "Shooter" (除非是 Gasoline Shooter), "4T Additive"。
+     - 若 'vehicleType' 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
+     - 若 'vehicleType' 是「汽車」，嚴禁搜尋 "Scooter", "Shooter" (除非是 Gasoline Shooter), "4T Additive"。
 
 5. 只返回 JSON，不要其他文字。`;
 
