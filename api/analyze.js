@@ -334,6 +334,14 @@ function generateWixQueries(analysis, keywords) {
         keywords.some(k => ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter'].includes(k.toLowerCase()))
     );
 
+    // === 大包裝搜尋邏輯 (Large Package Search) ===
+    // 當用戶問「有大包裝嗎」、「4L」、「5L」等，同時有產品編號時
+    // 需要額外搜尋產品名稱 (title) 以找到同系列不同容量的產品
+    const largePackageKeywords = ['大包裝', '大公升', '4l', '5l', '20l', '經濟包', '大瓶', '大容量'];
+    const isLargePackageQuery = keywords.some(kw =>
+        largePackageKeywords.some(lpk => kw.toLowerCase().includes(lpk))
+    );
+
     // Helper to add query
     const addQuery = (field, value, limit = 20, method = 'contains') => {
         queries.push({ field, value, limit, method });
@@ -434,6 +442,30 @@ function generateWixQueries(analysis, keywords) {
             // 強制搜尋 PartNo 與 Title，繞過所有車種過濾
             priorityQueries.push({ field: 'partno', value: skuNum, limit: 5, method: 'contains' });
             priorityQueries.push({ field: 'title', value: skuNum, limit: 5, method: 'contains' });
+
+            // === 大包裝搜尋擴展 (Large Package Search Extension) ===
+            // 若用戶問「大包裝」，需要找同產品的大容量版本
+            // 策略：同產品不同容量的 title 相同，但 partno 不同
+            // 所以要額外搜尋 size 欄位找大容量產品
+            if (isLargePackageQuery) {
+                console.log(`Large package query detected for SKU: ${skuNum}`);
+
+                // 從訊息中提取黏度 (如 5W-30, 10W-40)，用於搜尋同規格大容量產品
+                const viscosityMatch = keywords.join(' ').match(/(\d+[Ww]-?\d+)/);
+                if (viscosityMatch) {
+                    const viscosity = viscosityMatch[1].replace('-', '');
+                    console.log(`Searching for ${viscosity} in larger sizes`);
+                    // 搜尋同黏度且是大容量的產品
+                    priorityQueries.push({
+                        field: 'word2', value: viscosity, limit: 20, method: 'contains'
+                    });
+                }
+
+                // 直接搜尋 size 欄位包含大容量的產品
+                priorityQueries.push({ field: 'size', value: '5L', limit: 15, method: 'contains' });
+                priorityQueries.push({ field: 'size', value: '4L', limit: 15, method: 'contains' });
+                priorityQueries.push({ field: 'size', value: '20L', limit: 10, method: 'contains' });
+            }
             // 找到編號後，通常這是最強意圖，這個關鍵字就不需要再走下面的類別搜尋了
             // 但為了保險，讓它繼續跑，只是這是最高優先級
         }
