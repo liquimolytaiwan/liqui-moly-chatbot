@@ -311,10 +311,11 @@ function generateWixQueries(analysis, keywords) {
         const isCertification = /[a-zA-Z].*[0-9]|[0-9].*[a-zA-Z]|[-.]/.test(kw) && kw.length > 3;
 
         if (isCertification) {
-            console.log(`Detected Certification Keyword: ${kw} -> Adding Description Search`);
-            priorityQueries.push({ field: 'description', value: kw, limit: 20, method: 'contains' });
-            // 有些認證寫在 approve 欄位 (若 Wix 有此欄位)
-            // priorityQueries.push({ field: 'approve', value: kw, limit: 20, method: 'contains' }); 
+            console.log(`Detected Certification Keyword: ${kw} -> Adding Cert Field Search`);
+            // 用戶確認欄位名稱為 'cert'
+            priorityQueries.push({ field: 'cert', value: kw, limit: 20, method: 'contains' });
+            // 保留 description 作為備用 (有些可能沒填 cert 欄位但寫在描述)
+            priorityQueries.push({ field: 'description', value: kw, limit: 10, method: 'contains' });
         }
     });
 
