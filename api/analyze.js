@@ -87,23 +87,27 @@ ${contextSummary}用戶當前問題：「${message}」
    - **關鍵：若歷史紀錄中提及特定認證（如 948B, LL-04, 504/507），務必將其加入 searchKeywords！**
 
 2. **vehicleType (車型判斷)**
-   - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、JET、勁戰、MMBCU、DRG、Force、SMAX、R15、CBR、Ninja、GSX、Vespa
-   - "船舶"：出現 船、Marine、Boat、艦艇、遊艇
-   - "自行車"：出現 自行車、腳踏車、單車、Bike、Bicycle
-   - "汽車"：預設值，或出現 汽車、轎車、SUV
+   - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、
+     以及熱門車款：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Gogoro, Ai-1, Ur-1, eMoving, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur
+   - "船舶"：出現 船, Marine, Boat, Yacht, 艦艇, 遊艇, 船外機, Outboard, Inboard, Jet Ski, 水上摩托車
+   - "自行車"：出現 自行車, 腳踏車, 單車, Bike, Bicycle, MTB, 公路車, 登山車
+   - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車, Hybrid, HEV, PHEV, EV
    
 3. **productCategory (產品主類別)**
-   - "添加劑"：出現 添加劑、油精、快樂跑、清潔燃油、通油路、Shooter、Engine Flush、汽門、除碳
-   - "機油"：出現 機油、潤滑油、Oil、5W30、10W40 (若沒特別指添加劑)
-   - "清潔"：出現 洗車、打蠟、鍍膜、清潔劑、洗鍊條
-   - "變速箱"：出現 變速箱油、ATF、齒輪油
-   - "煞車"：出現 煞車油
-   - "冷卻"：出現 水箱精、冷卻液
-   - "鏈條"：出現 鏈條、鍊條、Chain、Lube、乾式、濕式、鍊條油、鏈條清洗
-   - "船舶"：出現 船、Marine、Boat、艦艇
-   - "自行車"：出現 自行車、腳踏車、單車、Bike、Bicycle
+   - "添加劑"：Additives, 油精, 快樂跑, 清潔燃油, 通油路, Shooter, Engine Flush, 汽門, 除碳, MOS2, Ceratec
+   - "機油"：Motor Oil, 機油, 潤滑油, 5W30, 10W40, 0W20 (若沒特別指添加劑)
+   - "美容" (Detailing)：洗車, 打蠟, 鍍膜, 清潔劑, 洗鍊條, 皮革, 塑料, 內裝, 玻璃, 雨刷水, 鐵粉, 柏油, 海綿, 布, Shampoo, Wax, Polish
+   - "化學品" (Chemicals)：煞車油 (Brake Fluid), 水箱精 (Coolant), 動力方向油 (Power Steering), 雨刷精, 電瓶水, 噴油嘴清潔
+   - "變速箱"：變速箱油, ATF, 齒輪油, Gear Oil, DCT, CVT, Transmission
+   - "鏈條"：鏈條, 鍊條, Chain, Lube, 乾式, 濕式, 鍊條油, 鏈條清洗
+   - "船舶"：船用機油, 2T, 4T, Marine Oil, Gear Lube
+   - "自行車"：單車保養, Bike Lube, Bike Cleaner
    
-3. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
+4. **isGeneralProduct (通用產品判定)**
+   - **必填 true**：當類別為「美容」、「化學品」、「清潔」時 (除非明確指定是摩托車專用，如"重機鍊條油")。
+   - **必填 true**：煞車油、水箱精、洗手膏、雨刷水通常不分車種。
+   
+5. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
    - 請提供 **3-5 個** 不同的關鍵字，用於資料庫廣泛搜尋。
    - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
    - 例如：鏈條油 -> ["Chain Lube", "Chain Spray", "鏈條油", "Ketten", "Lube"]
@@ -157,11 +161,18 @@ ${contextSummary}用戶當前問題：「${message}」
                     if (!explicitTypes.includes(result.vehicleType) || isDefaultCar) {
                         const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
 
-                        // 1. 檢查速克達/摩托車
+                        // 1. 檢查速克達/摩托車/重機/檔車 (2025 台灣主流車款庫)
                         const scooterKeywords = [
-                            'jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto',
-                            'sym', 'kymco', 'yamaha', 'pgo', 'aeon', 'suzuki', 'vespa', 'jbubu', 'bubu', 'vivo', 'woo', 'nice', 'racing',
-                            '騎' // 強力關鍵字：用戶說「騎」通常指機車/自行車
+                            // SYM
+                            'jet', 'sl', 'sr', 'sl+', 'drg', 'mmbcu', '4mica', 'fiddle', 'clbc', 'woo', 'vivo', 'z1', 'duke', '迪爵', 'krn', 'ttlbt',
+                            // KYMCO
+                            'kymco', 'racing', 'rcs', 'roma', 'romagt', 'rts', 'krv', 'like', 'colombo', 'many', 'nice', 'gp', 'freeway', '大地名流', 'dollar', 'ionex',
+                            // YAMAHA
+                            'yamaha', 'cygnus', 'gryphus', '勁戰', 'force', 'smax', 'augur', 'bws', 'vino', 'limi', 'jog', 'rs neo', 'mt-15', 'r15', 'r3', 'r7', 'mt-03', 'mt-07', 'mt-09', 'xmax', 'tmax',
+                            // SUZUKI / PGO / AEON
+                            'suzuki', 'saluto', 'swish', 'sui', 'address', 'access', 'gsx', 'pgo', 'jbubu', 'tigra', 'spring', 'ur1', 'aeon', 'ai-1', 'ai-2', 'str',
+                            // OTHERS
+                            'gogoro', 'emoving', 'vespa', 'scooter', 'motorcycle', 'motorbike', '重機', '檔車', '速克達', '跑山', '環島', '騎'
                         ];
                         if (scooterKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
@@ -171,15 +182,15 @@ ${contextSummary}用戶當前問題：「${message}」
                             }
                         }
 
-                        // 2. 檢查船舶 (新增)
-                        const marineKeywords = ['船', 'marine', 'boat', 'yacht', '艦艇', '遊艇', 'outboard', 'inboard'];
+                        // 2. 檢查船舶 (Marine)
+                        const marineKeywords = ['船', 'marine', 'boat', 'yacht', '艦艇', '遊艇', 'outboard', 'inboard', 'jet ski', '水上摩托車'];
                         if (marineKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Marine keyword in history! Forcing Marine mode.');
                             result.vehicleType = '船舶';
                         }
 
-                        // 3. 檢查自行車 (新增)
-                        const bikeKeywords = ['自行車', '腳踏車', '單車', 'bike', 'bicycle', '單車'];
+                        // 3. 檢查自行車 (Bicycle)
+                        const bikeKeywords = ['自行車', '腳踏車', '單車', 'bike', 'bicycle', 'mtb', 'road bike', 'cycling', '公路車', '登山車'];
                         if (bikeKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Bicycle keyword in history! Forcing Bicycle mode.');
                             result.vehicleType = '自行車';
