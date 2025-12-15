@@ -255,8 +255,9 @@ function generateWixQueries(analysis, keywords) {
     uniqueKw.slice(0, maxKeywords).forEach(kw => {
         if (!kw || kw.length < 2) return; // 跳過過短關鍵字
 
-        // 如果是摩托車上下文，且不是通用產品 (如洗手膏)，才加車型濾鏡
-        if (isBike && !analysis.isGeneralProduct) {
+        // 如果是摩托車上下文，且不是通用產品 (如洗手膏、清潔類)，才加車型濾鏡
+        const isCleaning = productCategory === '清潔' || productCategory === '美容';
+        if (isBike && !analysis.isGeneralProduct && !isCleaning) {
             // 摩托車專屬過濾：標題含關鍵字 AND 分類含摩托車
             // 這樣可以避免搜到同名的汽車產品 (ex: 同樣叫 Oil)
             queries.push({
