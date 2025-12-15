@@ -119,28 +119,29 @@ ${contextSummary}用戶當前問題：「${message}」
        - 油泥/太久沒換油 -> 搜 "Engine Flush", "Oil Sludge"
        - 冒白煙 (水箱水跑到引擎) -> (通常需維修) 搜 "Radiator Stop Leak" (死馬當活馬醫)
      - **[燃油/燃燒系統]**
-       - 冒黑煙/耗油/驗車不過 -> 搜 "Emission Reduction", "Diesel Purge", "Smoke Stop", "汽油精"
-       - 引擎無力/加速遲緩 -> 搜 "Injection Cleaner", "Valve Clean", "Speed Tec", "Fuel System"
-       - 難發動/怠速不穩 -> 搜 "Injection Cleaner", "Valve Clean", "Carburetor"
+       - 冒黑煙/耗油/驗車不過 (柴油) -> 搜 "Diesel Purge", "Super Diesel", "Smoke Stop", "燃油", "積碳"
+       - 冒黑煙/耗油/驗車不過 (汽油) -> 搜 "Injection Cleaner", "Valve Clean", "Catalytic", "燃油", "積碳"
+       - 引擎無力/加速遲緩 -> 搜 "Injection Cleaner", "Valve Clean", "Speed Tec", "Fuel System", "油精"
+       - 難發動/怠速不穩 -> 搜 "Injection Cleaner", "Valve Clean", "Carburetor", "怠速"
        - 柴油車DPF阻塞 -> 搜 "DPF", "Diesel Particulate"
      - **[變速箱/動力方向/冷卻]**
-       - 換檔頓挫/打滑 (汽車) -> 搜 "ATF Additive", "Gear Oil Additive"
-       - 換檔頓挫/不順 (機車) -> 搜 "Gear Oil", "Motorbike Oil Additive", "4T Additive", "Shooter"
-       - 變速箱漏油 -> 搜 "Transmission Stop Leak"
-       - 方向盤重/漏油 -> 搜 "Power Steering Oil Leak"
-       - 水箱漏水 -> 搜 "Radiator Stop Leak"
-       - 水溫高/水垢 -> 搜 "Radiator Cleaner", "Coolant"
+       - 換檔頓挫/打滑 (汽車) -> 搜 "ATF Additive", "Gear Oil Additive", "自排"
+       - 換檔頓挫/不順 (機車) -> 搜 "Gear Oil", "Motorbike Oil Additive", "4T Additive", "Shooter", "齒輪"
+       - 變速箱漏油 -> 搜 "Transmission Stop Leak", "漏油"
+       - 方向盤重/漏油 -> 搜 "Power Steering Oil Leak", "方向盤"
+       - 水箱漏水 -> 搜 "Radiator Stop Leak", "止漏"
+       - 水溫高/水垢 -> 搜 "Radiator Cleaner", "Coolant", "水箱精"
      - **[外觀美容/內裝]**
-       - 柏油/瀝青 -> 搜 "Tar Remover"
-       - 鐵粉/粗糙 -> 搜 "Wheel Cleaner" (通常含除鐵粉)
-       - 塑料白化 -> 搜 "Plastic Restorer", "Plastic Deep"
-       - 車內異味/煙味 -> 搜 "Climate Fresh", "AC System Cleaner"
-       - 皮革龜裂 -> 搜 "Leather Care"
+       - 柏油/瀝青 -> 搜 "Tar Remover", "柏油"
+       - 鐵粉/粗糙 -> 搜 "Wheel Cleaner", "鐵粉"
+       - 塑料白化 -> 搜 "Plastic Restorer", "Plastic Deep", "塑料"
+       - 車內異味/煙味 -> 搜 "Climate Fresh", "AC System Cleaner", "除臭"
+       - 皮革龜裂 -> 搜 "Leather Care", "皮革"
      - **[船舶/自行車專區]**
-       - 船外機保養 -> 搜 "Marine Oil", "Gear Lube", "4T", "2T"
-       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray", "Rust"
-       - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube"
-       - 煞車異音 (單車) -> 搜 "Brake Cleaner"
+       - 船外機保養 -> 搜 "Marine Oil", "Gear Lube", "4T", "2T", "船"
+       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray", "Rust", "防鏽"
+       - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube", "鍊條"
+       - 煞車異音 (單車) -> 搜 "Brake Cleaner", "煞車"
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
    - **⚠️ 注意車種差異**：
      - 若 `vehicleType` 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
