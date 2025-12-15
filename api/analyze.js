@@ -159,9 +159,11 @@ ${contextSummary}用戶當前問題：「${message}」
                     // 注意：如果 AI 預設回傳 "汽車" (可能是因為用戶只說 "機油"), 我們需要檢查是否誤判
                     const isDefaultCar = result.vehicleType === '汽車';
 
-                    // 檢查用戶是否「顯式切換」回汽車 (如：那汽車呢？)
-                    // 如果用戶當前這句話包含汽車關鍵字，絕對不要回溯歷史改成機車！
-                    const isExplicitCarSwitch = ['汽車', 'car', 'auto', '轎車', '四輪', 'passenger'].some(k => message.toLowerCase().includes(k));
+                    // 檢查用戶是否「顯式切換」回汽車 (如：那汽車呢？ 或 那 Altis 呢？)
+                    // 如果用戶當前這句話包含汽車關鍵字，或者 AI 已經明確識別出具體車款(如 Altis)，絕對不要回溯歷史改成機車！
+                    const isExplicitKeyword = ['汽車', 'car', 'auto', '轎車', '四輪', 'passenger'].some(k => message.toLowerCase().includes(k));
+                    const isSpecificCarModel = result.vehicleType === '汽車' && result.vehicleSubType && result.vehicleSubType !== '未知';
+                    const isExplicitCarSwitch = isExplicitKeyword || isSpecificCarModel;
 
                     if ((!explicitTypes.includes(result.vehicleType) || isDefaultCar) && !isExplicitCarSwitch) {
                         const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
@@ -177,7 +179,7 @@ ${contextSummary}用戶當前問題：「${message}」
                             // SUZUKI / PGO / AEON
                             'suzuki', 'saluto', 'swish', 'sui', 'address', 'access', 'gsx', 'pgo', 'jbubu', 'tigra', 'spring', 'ur1', 'aeon', 'ai-1', 'ai-2', 'str',
                             // OTHERS
-                            'gogoro', 'emoving', 'vespa', 'scooter', 'motorcycle', 'motorbike', '重機', '檔車', '速克達', '跑山', '環島', '騎'
+                            'gogoro', 'emoving', 'vespa', 'scooter', 'motorcycle', 'motorbike', '重機', '檔車', '速克達', '跑山', '環島', '騎', '2t', '4t'
                         ];
                         if (scooterKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
