@@ -112,6 +112,7 @@ export async function post_chat(request) {
         let productContext = "目前沒有產品資料";
         try {
             productContext = await searchProducts(body.message, searchInfo);
+            console.log('productContext 長度:', productContext.length);
         } catch (e) {
             console.error('Product search failed:', e);
         }
