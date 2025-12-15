@@ -445,45 +445,16 @@ async function searchProducts(query, searchInfo) {
         // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
         if (uniqueProducts.length > 0 && uniqueProducts.length <= 20) {
             const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
-            const seriesToExpand = [...new Set(uniqueProducts.map(p => p.word1).filter(Boolean))];
-            const viscosityToExpand = [...new Set(uniqueProducts.map(p => p.word2).filter(Boolean))];
 
-            // 1. 使用產品系列 (word1) + 黏度 (word2) 搜尋同規格產品
-            // 這比標題精確匹配更可靠
-            for (const series of seriesToExpand.slice(0, 2)) {
-                for (const vis of viscosityToExpand.slice(0, 2)) {
-                    try {
-                        console.log(`[Series+Viscosity Expansion] Searching: series="${series}", viscosity="${vis}"`);
-                        const res = await wixData.query('products')
-                            .contains('word1', series)
-                            .contains('word2', vis)
-                            .limit(15)
-                            .find();
-                        console.log(`[Series+Viscosity Expansion] Found ${res.items.length} items`);
-
-                        for (const p of res.items) {
-                            if (p._id && !seenIds.has(p._id)) {
-                                seenIds.add(p._id);
-                                uniqueProducts.push(p);
-                            }
-                        }
-                    } catch (e) {
-                        console.log('Series+Viscosity expansion error:', e);
-                    }
-                }
-            }
-
-            // 2. 使用 contains 搜尋標題 (更寬鬆的匹配)
+            // 使用 eq() 精確匹配完整 title（因為確認同產品不同容量的 title 完全相同）
             for (const title of titlesToExpand.slice(0, 3)) {
                 try {
-                    // 取標題前 20 個字元作為搜尋關鍵字，避免完全匹配失敗
-                    const titleKeyword = title.substring(0, 20);
-                    console.log(`[Title Expansion] Searching for title containing: "${titleKeyword}"`);
+                    console.log(`[Title Expansion] Searching for exact title: "${title}"`);
                     const res = await wixData.query('products')
-                        .contains('title', titleKeyword)
-                        .limit(15)
+                        .eq('title', title)
+                        .limit(20)
                         .find();
-                    console.log(`[Title Expansion] Found ${res.items.length} items for title: "${titleKeyword}"`);
+                    console.log(`[Title Expansion] Found ${res.items.length} items for title: "${title}"`);
 
                     for (const p of res.items) {
                         if (p._id && !seenIds.has(p._id)) {
