@@ -1245,7 +1245,18 @@ function getSymptomKeywords(query) {
         // 保護相關
         '保護': ['Additive', '添加劑', 'Cera', '陶瓷'],
         '油封': ['Additive', 'Leak', '防漏'],
-        '漏油': ['Leak', 'Stop', '防漏']
+        '漏油': ['Leak', 'Stop', '防漏'],
+
+        // 摩托車/機車相關
+        '機車': ['Motorbike', '摩托車', 'Shooter', 'Speed Additive'],
+        '摩托車': ['Motorbike', '機車', 'Shooter', 'Speed Additive'],
+        '速克達': ['Motorbike', 'Scooter', '2T', '4T'],
+        '檔車': ['Motorbike', '4T', 'MA2'],
+        '重機': ['Motorbike', '4T', '10W-40', '10W-50'],
+        'JET': ['Motorbike', '4T', 'Shooter', '速克達'],
+        'jet': ['Motorbike', '4T', 'Shooter', '速克達'],
+        '跑山': ['Motorbike', 'Shooter', 'Speed', 'Additive', '添加劑'],
+        '通勤': ['Motorbike', '4T', 'Speed', 'Shooter']
     };
 
     const matchedKeywords = [];
