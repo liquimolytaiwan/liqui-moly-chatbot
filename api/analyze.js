@@ -334,6 +334,11 @@ function generateWixQueries(analysis, keywords) {
             }
         }
 
+        // === Fallback: 寬鬆搜尋 (Relaxed Search) ===
+        // 為了避免因分類錯誤或過濾太嚴格而漏掉產品，額外搜尋僅標題匹配的結果
+        // 這讓 AI 能夠看到「雖然分類不符但標題吻合」的產品，進而正確引導用戶（而不是說找不到）
+        priorityQueries.push({ field: 'title', value: kw, limit: 5, method: 'contains' });
+
         // === 關鍵修正：針對「認證/規格」類關鍵字，追加搜尋 Description 欄位 ===
         // 判斷方式：含該關鍵字混合了數字與字母 (如 948B, 504.00, LL-04) 或是顯著的特殊規格
         const isCertification = /[a-zA-Z].*[0-9]|[0-9].*[a-zA-Z]|[-.]/.test(kw) && kw.length > 3;
