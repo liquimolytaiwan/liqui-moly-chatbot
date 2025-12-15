@@ -309,7 +309,7 @@ ${contextSummary}用戶當前問題：「${message}」
                 // ============================================
                 // 生成 Wix 查詢指令 (Logic moved from Wix to here!)
                 // ============================================
-                result.wixQueries = generateWixQueries(result, result.searchKeywords || []);
+                result.wixQueries = generateWixQueries(result, result.searchKeywords || [], message);
 
                 return result;
             } catch (parseError) {
@@ -325,7 +325,7 @@ ${contextSummary}用戶當前問題：「${message}」
 }
 
 // 根據 AI 分析結果，生成具體的 Wix Data Query 指令
-function generateWixQueries(analysis, keywords) {
+function generateWixQueries(analysis, keywords, message = '') {
     const queries = [];
     const { vehicleType, productCategory, vehicleSubType } = analysis;
     const isBike = vehicleType === '摩托車';
@@ -338,9 +338,11 @@ function generateWixQueries(analysis, keywords) {
     // 當用戶問「有大包裝嗎」、「4L」、「5L」等，同時有產品編號時
     // 需要額外搜尋產品名稱 (title) 以找到同系列不同容量的產品
     const largePackageKeywords = ['大包裝', '大公升', '4l', '5l', '20l', '經濟包', '大瓶', '大容量'];
-    const isLargePackageQuery = keywords.some(kw =>
-        largePackageKeywords.some(lpk => kw.toLowerCase().includes(lpk))
-    );
+    // 同時檢查原始用戶訊息和 AI 生成的 keywords
+    const messageLower = message.toLowerCase();
+    const isLargePackageQuery =
+        largePackageKeywords.some(lpk => messageLower.includes(lpk)) ||
+        keywords.some(kw => largePackageKeywords.some(lpk => kw.toLowerCase().includes(lpk)));
 
     // Helper to add query
     const addQuery = (field, value, limit = 20, method = 'contains') => {
@@ -553,6 +555,19 @@ function generateWixQueries(analysis, keywords) {
             });
         }
     });
+
+    // === 大包裝獨立搜尋 (Large Package Standalone Search) ===
+    // 當用戶問「大容量包裝」但沒有產品編號時，直接搜尋大容量產品
+    if (isLargePackageQuery) {
+        console.log('Large package query detected, adding size-based search');
+        // 搜尋 size 欄位包含大容量的產品
+        priorityQueries.push({ field: 'size', value: '5L', limit: 25, method: 'contains' });
+        priorityQueries.push({ field: 'size', value: '4L', limit: 25, method: 'contains' });
+        priorityQueries.push({ field: 'size', value: '20L', limit: 15, method: 'contains' });
+        // 也搜尋 title 中可能包含容量資訊的產品
+        priorityQueries.push({ field: 'title', value: '5L', limit: 15, method: 'contains' });
+        priorityQueries.push({ field: 'title', value: '4L', limit: 15, method: 'contains' });
+    }
 
     // 最後保底
     if (queries.length === 0 && priorityQueries.length === 0 && isBike) {
