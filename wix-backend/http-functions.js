@@ -1030,6 +1030,55 @@ async function searchProductsWithAI(query, searchInfo) {
         }
 
         let allResults = [];
+        const queryLower = query.toLowerCase();
+
+        // === 當 AI 分析失敗時，從查詢中智慧判斷車型 ===
+        if (!searchInfo) {
+            console.log('AI 分析失敗，使用 fallback 智慧判斷');
+
+            // 摩托車品牌和車型關鍵字
+            const motorcycleBrands = ['suzuki', 'honda', 'yamaha', 'kawasaki', 'ktm', 'ducati', 'harley', 'bmw', 'triumph', 'aprilia', 'vespa', 'sym', 'kymco', 'gogoro', 'pgo'];
+            const motorcycleModels = ['dr-z', 'drz', 'cbr', 'ninja', 'r1', 'r6', 'mt-', 'yzf', 'gsx', 'z900', 'z1000', 'z650', 'crf', 'wr', 'pcx', 'nmax', 'xmax', 'forza', 'burgman', 'address', 'jog', 'force', 'cuxi', 'bws', 'jet'];
+
+            const isMotorcycleQuery =
+                queryLower.includes('機車') ||
+                queryLower.includes('摩托車') ||
+                queryLower.includes('速克達') ||
+                queryLower.includes('檔車') ||
+                queryLower.includes('重機') ||
+                motorcycleBrands.some(brand => queryLower.includes(brand)) ||
+                motorcycleModels.some(model => queryLower.includes(model));
+
+            if (isMotorcycleQuery) {
+                console.log('Fallback 判斷：摩托車相關');
+                // 載入所有摩托車產品
+                const motorcycleProducts = await wixData.query('products')
+                    .contains('sort', '摩托車')
+                    .limit(100)
+                    .find();
+                allResults = allResults.concat(motorcycleProducts.items);
+
+                // 額外搜尋 Motorbike 關鍵字
+                const motorbikeProducts = await wixData.query('products')
+                    .contains('title', 'Motorbike')
+                    .limit(50)
+                    .find();
+                allResults = allResults.concat(motorbikeProducts.items);
+            } else {
+                // 非摩托車，載入汽車產品
+                const carProducts = await wixData.query('products')
+                    .contains('sort', '汽車')
+                    .limit(100)
+                    .find();
+                allResults = allResults.concat(carProducts.items);
+            }
+
+            // 去除重複並返回
+            const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
+            if (uniqueResults.length > 0) {
+                return formatProducts(uniqueResults.slice(0, 50));
+            }
+        }
 
         // 先嘗試精確搜尋（產品編號優先）
         const partnoMatch = query.match(/lm\d+/i);
