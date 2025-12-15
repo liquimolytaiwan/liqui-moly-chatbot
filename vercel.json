@@ -1,18 +1,8 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "api/**/*.js",
-            "use": "@vercel/node"
+    "functions": {
+        "api/*.js": {
+            "memory": 1024,
+            "maxDuration": 30
         }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/$1"
-        }
-    ],
-    "env": {
-        "GEMINI_API_KEY": "@gemini_api_key"
     }
 }
