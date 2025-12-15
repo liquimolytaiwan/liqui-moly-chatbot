@@ -451,12 +451,34 @@ async function searchProducts(query, searchInfo) {
         // 若搜到產品，自動搜尋同 title 不同容量的產品
         // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
         console.log(`[Search] Found ${uniqueProducts.length} unique products before Title Expansion`);
-        // 移除數量上限限制，只對前 3 個標題進行擴展以控制效能
+
         if (uniqueProducts.length > 0) {
-            const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
+            // 優先找 SKU 匹配的產品（通常是用戶最想查詢的）
+            // 從用戶 query 中提取 SKU（4-5 位數字）
+            const skuMatch = query.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
+            let titlesToExpand = [];
+
+            if (skuMatch) {
+                const skuNum = skuMatch[1];
+                const fullSku = `LM${skuNum}`;
+                console.log(`[Title Expansion] Looking for SKU: ${fullSku}`);
+
+                // 在搜尋結果中找到 SKU 完全匹配的產品
+                const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
+                if (skuProduct && skuProduct.title) {
+                    titlesToExpand = [skuProduct.title];
+                    console.log(`[Title Expansion] Found SKU product, will expand title: "${skuProduct.title}"`);
+                }
+            }
+
+            // 如果沒找到 SKU 產品，fallback 到前 3 個標題
+            if (titlesToExpand.length === 0) {
+                titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))].slice(0, 3);
+            }
+
             console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
 
-            for (const exactTitle of titlesToExpand.slice(0, 3)) {
+            for (const exactTitle of titlesToExpand) {
                 try {
                     // Step 1: 用 contains() 搜尋產品名稱的前 20 個字元
                     const searchKey = exactTitle.substring(0, 20);
