@@ -440,6 +440,31 @@ async function searchProducts(query, searchInfo) {
             }
         }
 
+        // === 同 Title 擴展搜尋 (Title-Based Expansion) ===
+        // 若搜到產品，自動搜尋同 title 不同容量的產品
+        // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
+        if (uniqueProducts.length > 0 && uniqueProducts.length <= 5) {
+            const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
+
+            for (const title of titlesToExpand.slice(0, 3)) {
+                try {
+                    const res = await wixData.query('products')
+                        .eq('title', title)
+                        .limit(10)
+                        .find();
+
+                    for (const p of res.items) {
+                        if (p._id && !seenIds.has(p._id)) {
+                            seenIds.add(p._id);
+                            uniqueProducts.push(p);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Title expansion error:', e);
+                }
+            }
+        }
+
         if (allResults.length > 0) {
             //console.log(`搜尋完成: 找到 ${uniqueProducts.length} 筆`);
         }
@@ -486,7 +511,7 @@ function formatProducts(products) {
 
         context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
         context += `- 產品編號: ${p.partno || 'N/A'}\n`;
-        context += `- 容量/尺寸: ${p.size || 'N/A'}\\n`;
+        context += `- 容量/尺寸: ${p.size || 'N/A'}\n`;
         context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
         context += `- 認證/規格: ${p.cert || 'N/A'}\n`;
