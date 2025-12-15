@@ -79,11 +79,17 @@ ${contextSummary}用戶當前問題：「${message}」
 }
 
 說明與規則：
-1. **vehicleType (車型判斷 - 非常重要！)**
+1. **上下文繼承 (Context Inheritance - CRITICAL)**
+   - 如果當前問題很短（如「那機油呢？」），**必須**回溯上方對話紀錄找到車型。
+   - 如果之前提過 "JET", "勁戰", "DRG"，那麼 vehicleSubType **必須** 填入 "速克達"。
+   - 如果之前提過 "CBR", "R15", "Ninja"，那麼 vehicleSubType **必須** 填入 "檔車"。
+   - **一旦車型確定，除非用戶明確換車，否則後續所有搜尋都必須保留該車型設定。**
+
+2. **vehicleType (車型判斷)**
    - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、JET、勁戰、MMBCU、DRG、Force、SMAX、R15、CBR、Ninja、GSX、Vespa
    - "汽車"：預設值，或出現 汽車、轎車、SUV
    
-2. **productCategory (產品主類別 - 關鍵過濾依據)**
+3. **productCategory (產品主類別)**
    - "添加劑"：出現 添加劑、油精、快樂跑、清潔燃油、通油路、Shooter、Engine Flush、汽門、除碳
    - "機油"：出現 機油、潤滑油、Oil、5W30、10W40 (若沒特別指添加劑)
    - "清潔"：出現 洗車、打蠟、鍍膜、清潔劑、洗鍊條
