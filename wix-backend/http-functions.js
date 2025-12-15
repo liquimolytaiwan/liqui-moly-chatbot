@@ -1011,23 +1011,42 @@ async function searchProductsWithAI(query, searchInfo) {
             }
         }
 
-        // 根據 AI 分析結果搜尋
-        if (searchInfo) {
+        // 根據 AI 分析結果搜尋 - 載入該車型的所有產品讓 AI 智慧選擇
+        if (searchInfo && searchInfo.vehicleType) {
             let allResults = [];
 
-            // 根據車型類別搜尋
+            // 根據車型類別載入所有相關產品（機油、添加劑、化學品等）
             if (searchInfo.vehicleType === '摩托車') {
+                // 載入所有摩托車相關產品
                 const motorcycleProducts = await wixData.query('products')
                     .contains('sort', '摩托車')
-                    .limit(30)
+                    .limit(100)  // 增加數量讓 AI 有更多選擇
                     .find();
                 allResults = allResults.concat(motorcycleProducts.items);
+
+                // 額外搜尋 Motorbike 關鍵字產品
+                const motorbikeKeywordProducts = await wixData.query('products')
+                    .contains('title', 'Motorbike')
+                    .limit(50)
+                    .find();
+                allResults = allResults.concat(motorbikeKeywordProducts.items);
+
             } else if (searchInfo.vehicleType === '汽車') {
+                // 載入所有汽車相關產品
                 const carProducts = await wixData.query('products')
                     .contains('sort', '汽車')
-                    .limit(30)
+                    .limit(100)
                     .find();
                 allResults = allResults.concat(carProducts.items);
+            }
+
+            // 根據產品類別補充搜尋（添加劑、變速箱油等）
+            if (searchInfo.productCategory) {
+                const categoryProducts = await wixData.query('products')
+                    .contains('sort', searchInfo.productCategory)
+                    .limit(30)
+                    .find();
+                allResults = allResults.concat(categoryProducts.items);
             }
 
             // 根據認證搜尋
@@ -1035,28 +1054,17 @@ async function searchProductsWithAI(query, searchInfo) {
                 for (const cert of searchInfo.certifications) {
                     const certResults = await wixData.query('products')
                         .contains('cert', cert)
-                        .limit(10)
+                        .limit(20)
                         .find();
                     allResults = allResults.concat(certResults.items);
-                }
-            }
-
-            // 根據搜尋關鍵字搜尋
-            if (searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
-                for (const keyword of searchInfo.searchKeywords) {
-                    const keywordResults = await wixData.query('products')
-                        .contains('title', keyword)
-                        .or(wixData.query('products').contains('content', keyword))
-                        .limit(10)
-                        .find();
-                    allResults = allResults.concat(keywordResults.items);
                 }
             }
 
             // 去除重複
             const uniqueResults = [...new Map(allResults.map(p => [p._id, p])).values()];
             if (uniqueResults.length > 0) {
-                return formatProducts(uniqueResults.slice(0, 30));
+                // 返回所有找到的產品，讓 AI 自己選擇最適合的
+                return formatProducts(uniqueResults.slice(0, 50));
             }
         }
 
