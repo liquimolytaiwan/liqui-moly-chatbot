@@ -365,27 +365,45 @@ function generateWixQueries(analysis, keywords) {
         // 判斷方式：含該關鍵字混合了數字與字母 (如 948B, 504.00, LL-04) 或是顯著的特殊規格
         const isCertification = /[a-zA-Z].*[0-9]|[0-9].*[a-zA-Z]|[-.]/.test(kw) && kw.length > 3;
 
-        // === 黏度優化 (Viscosity Optimization) ===
-        // 檢查是否為黏度 (5W30, 10W-40) -> 搜尋 word2 欄位
-        const isViscosity = /(\d{1,2}W[- ]?\d{2,3})|SAE/i.test(kw);
-        if (isViscosity) {
-            console.log(`Detected Viscosity Keyword: ${kw} -> Adding word2 Field Search`);
-            priorityQueries.push({ field: 'word2', value: kw, limit: 20, method: 'contains' });
+        // === 黏度優化 (Viscosity Optimization & Smart Variants) ===
+        // 1. 檢查是否為黏度 (5W30, 10W-40) -> 搜尋 word2 欄位
+        // 2. 自動生成變體：5W30 <-> 5W-30，確保資料庫無論存哪種格式都能搜到
+        const viscosityMatch = kw.match(/(\d{1,2}W)([- ]?)(\d{2,3})/i);
+        if (viscosityMatch) {
+            const [full, prefix, sep, suffix] = viscosityMatch;
+            const variants = [
+                `${prefix}${suffix}`,       // 5W30
+                `${prefix}-${suffix}`,      // 5W-30
+                `${prefix} ${suffix}`       // 5W 30
+            ];
+            // 去重並搜尋 word2
+            [...new Set(variants)].forEach(v => {
+                priorityQueries.push({ field: 'word2', value: v, limit: 20, method: 'contains' });
+            });
+            console.log(`Smart Viscosity Search: ${kw} -> Variants: ${variants.join(', ')}`);
         }
 
         // === 系列名稱/次分類優化 (Series Optimization) ===
         // 針對非黏度、非純數字的關鍵字，嘗試搜尋 word1 (次分類/系列)
         // 例如 "Optimal", "Molygen", "Top Tec", "Street"
-        if (!isViscosity && !isCertification && kw.length > 3 && isNaN(kw)) {
+        if (!viscosityMatch && !isCertification && kw.length > 3 && isNaN(kw)) {
             priorityQueries.push({ field: 'word1', value: kw, limit: 15, method: 'contains' });
         }
 
-        if (isCertification && !isViscosity) {
+        if (isCertification && !viscosityMatch) {
             console.log(`Detected Certification Keyword: ${kw} -> Adding Cert Field Search`);
-            // 用戶確認欄位名稱為 'cert'
-            priorityQueries.push({ field: 'cert', value: kw, limit: 20, method: 'contains' });
-            // 保留 description 作為備用 (有些可能沒填 cert 欄位但寫在描述)
-            priorityQueries.push({ field: 'description', value: kw, limit: 10, method: 'contains' });
+
+            // 智慧認證變體 (Smart Certification Variants)
+            // MB229.5 <-> MB 229.5
+            // BMW LL-04 <-> LL04
+            const variants = [kw];
+            if (kw.includes(' ')) variants.push(kw.replace(/\s+/g, ''));
+            if (!kw.includes(' ')) variants.push(kw.replace(/([a-zA-Z]+)(\d)/, '$1 $2')); // MB229 -> MB 229
+
+            [...new Set(variants)].forEach(v => {
+                priorityQueries.push({ field: 'cert', value: v, limit: 20, method: 'contains' });
+                priorityQueries.push({ field: 'description', value: v, limit: 10, method: 'contains' });
+            });
         }
     });
 
