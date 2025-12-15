@@ -266,6 +266,108 @@ export async function post_endSession(request) {
 }
 
 // ============================================
+// POST /rateSession - 對話評分
+// ============================================
+
+export function options_rateSession(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        body: ""
+    });
+}
+
+export async function post_rateSession(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+
+        if (!body.sessionId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing sessionId" })
+            });
+        }
+
+        const session = await wixData.get('chatSessions', body.sessionId);
+        if (session) {
+            session.rating = body.rating || 0;
+            await wixData.update('chatSessions', session);
+        }
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({ success: true })
+        });
+
+    } catch (error) {
+        console.error('POST /rateSession error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, error: "Internal server error: " + error.message })
+        });
+    }
+}
+
+// ============================================
+// GET /products - 取得產品列表
+// ============================================
+
+export function options_products(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        body: ""
+    });
+}
+
+export async function get_products(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const results = await wixData.query('products')
+            .ascending('title')
+            .limit(1000)
+            .find();
+
+        const products = results.items.map(p => ({
+            id: p._id,
+            title: p.title,
+            partno: p.partno,
+            viscosity: p.word2,
+            certifications: p.cert,
+            category: p.sort,
+            url: p.partno ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}` : null
+        }));
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({ success: true, products: products })
+        });
+
+    } catch (error) {
+        console.error('GET /products error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, error: "Internal server error: " + error.message })
+        });
+    }
+}
+
+// ============================================
 // 產品搜尋邏輯
 // ============================================
 
