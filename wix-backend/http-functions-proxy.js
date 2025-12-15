@@ -180,11 +180,29 @@ export async function post_startSession(request) {
     };
 
     try {
+        const body = await request.body.json();
+
+        // 驗證必填欄位
+        if (!body.userName || !body.userEmail || !body.category) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: false,
+                    error: "Missing required fields: userName, userEmail, category"
+                })
+            });
+        }
+
+        // 建立 session 記錄（包含用戶資訊）
         const sessionData = {
+            userName: body.userName,
+            userEmail: body.userEmail,
+            userPhone: body.userPhone || '',
+            category: body.category,
+            messages: JSON.stringify([]),
             status: 'active',
             startTime: new Date(),
-            lastActivity: new Date(),
-            messages: '[]'
+            lastActivity: new Date()
         };
 
         const result = await wixData.insert('chatSessions', sessionData);
@@ -193,8 +211,7 @@ export async function post_startSession(request) {
             headers: corsHeaders,
             body: JSON.stringify({
                 success: true,
-                sessionId: result._id,
-                message: '您好！我是 LIQUI MOLY 的 AI產品諮詢助理，很高興為您服務！'
+                sessionId: result._id
             })
         });
 
