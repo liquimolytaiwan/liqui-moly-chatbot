@@ -108,8 +108,10 @@ ${contextSummary}用戶當前問題：「${message}」
    - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
    - 例如：鏈條油 -> ["Chain Lube", "Chain Spray", "鏈條油", "Ketten", "Lube"]
    - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
+   - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
    - 例如：洗手 -> ["Hand Cleaner", "Hand Paste", "洗手膏", "Hand Wash", "洗手"]
-   
+   - **認證拆解**：若有認證關鍵字（如 948B），請同時提供拆解版本 ["948B", "948", "948-B"] 以增加匹配率。
+
 4. **isGeneralProduct**
    - 洗車、煞車油、冷卻液、洗手、清潔劑等不限車型的產品設為 true
 
@@ -302,6 +304,17 @@ function generateWixQueries(analysis, keywords) {
         } else {
             // 汽車或不分車型
             priorityQueries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
+        }
+
+        // === 關鍵修正：針對「認證/規格」類關鍵字，追加搜尋 Description 欄位 ===
+        // 判斷方式：含該關鍵字混合了數字與字母 (如 948B, 504.00, LL-04) 或是顯著的特殊規格
+        const isCertification = /[a-zA-Z].*[0-9]|[0-9].*[a-zA-Z]|[-.]/.test(kw) && kw.length > 3;
+
+        if (isCertification) {
+            console.log(`Detected Certification Keyword: ${kw} -> Adding Description Search`);
+            priorityQueries.push({ field: 'description', value: kw, limit: 20, method: 'contains' });
+            // 有些認證寫在 approve 欄位 (若 Wix 有此欄位)
+            // priorityQueries.push({ field: 'approve', value: kw, limit: 20, method: 'contains' }); 
         }
     });
 
