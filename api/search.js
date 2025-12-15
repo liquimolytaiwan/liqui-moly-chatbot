@@ -190,45 +190,26 @@ function titleExpansion(products, searchResults) {
     return expandedResults;
 }
 
-// 格式化產品資料
+// 格式化產品資料 (精簡版，避免 AI 截斷)
 function formatProducts(products) {
     if (!products || products.length === 0) {
         return '目前沒有匹配的產品資料';
     }
 
-    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
+    let context = `## ⚠️ 重要：只能推薦以下產品，禁止編造產品編號！
 
-**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
+## 可用產品列表 (共 ${products.length} 筆)
 
-違規範例（絕對禁止！）：
-- LM1580 ❌ 不存在
-- LM20852 ❌ 不存在
-
-**只能使用下方列表中的「產品編號」和「產品連結」！**
-
----
-
-## 可用產品資料庫
-
+| 編號 | 產品名稱 | 容量 | 連結 |
+|------|----------|------|------|
 `;
 
-    products.forEach((p, i) => {
+    products.forEach(p => {
         const url = p.partno
             ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}`
             : 'https://www.liqui-moly-tw.com/products/';
 
-        context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
-        context += `- 產品編號: ${p.partno || 'N/A'}\n`;
-        context += `- 容量/尺寸: ${p.size || 'N/A'}\n`;
-        context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
-        context += `- 黏度: ${p.viscosity || p.word2 || 'N/A'}\n`;
-        context += `- 認證/規格: ${p.certifications || p.cert || 'N/A'}\n`;
-        context += `- 分類: ${p.category || p.sort || 'N/A'}\n`;
-        context += `- 建議售價: ${p.price || '請洽店家詢價'}\n`;
-        context += `- 產品連結: ${url}\n`;
-
-        const details = p.content || 'N/A';
-        context += `- 產品說明: ${details}\n\n`;
+        context += `| ${p.partno || 'N/A'} | ${p.title || '未命名'} | ${p.size || 'N/A'} | ${url} |\n`;
     });
 
     return context;
