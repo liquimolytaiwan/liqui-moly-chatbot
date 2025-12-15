@@ -422,12 +422,33 @@ async function searchProducts(query, searchInfo) {
         else if (isBike && category === '機油') {
             console.log('執行策略 B: 摩托車機油專屬搜尋');
 
-            const r1 = await wixData.query('products')
-                .contains('sort', '【摩托車】機油')
-                .limit(50)
-                .find();
+            const subType = searchInfo?.vehicleSubType || '';
+            const isScooter = subType.includes('速克達') || queryLower.includes('速克達') || queryLower.includes('jet') || queryLower.includes('勁戰') || queryLower.includes('drg') || queryLower.includes('mmbcu') || queryLower.includes('smax') || queryLower.includes('force');
 
-            allResults = r1.items;
+            if (isScooter) {
+                console.log('子策略: 速克達 (Scooter) 機油優先');
+                // 1. 優先找標題有 "Scooter" 的
+                const scooterOils = await wixData.query('products')
+                    .contains('sort', '【摩托車】機油')
+                    .contains('title', 'Scooter')
+                    .limit(20)
+                    .find();
+
+                // 2. 找其他機油做備選
+                const otherOils = await wixData.query('products')
+                    .contains('sort', '【摩托車】機油')
+                    .limit(30)
+                    .find();
+
+                allResults = [...scooterOils.items, ...otherOils.items];
+            } else {
+                // 檔車/重機/一般
+                const r1 = await wixData.query('products')
+                    .contains('sort', '【摩托車】機油')
+                    .limit(50)
+                    .find();
+                allResults = r1.items;
+            }
         }
 
         // === 策略 C: 汽車 + 添加劑 ===
