@@ -249,6 +249,7 @@ function generateWixQueries(analysis, keywords) {
     // 自動將 AI 建議的關鍵字轉換為查詢指令，不管用戶輸入什麼都能動態適應
     // 如果前面策略未命中(queries.length=0)，搜尋更多關鍵字(4個)；否則只搜前2個作為補充
 
+    const priorityQueries = []; // 優先級最高的查詢 (會排在結果最前面)
     const maxKeywords = queries.length === 0 ? 4 : 2;
     // 簡單去重
     const uniqueKw = keywords.filter((v, i, a) => a.indexOf(v) === i);
@@ -260,31 +261,29 @@ function generateWixQueries(analysis, keywords) {
         const isCleaning = productCategory === '清潔' || productCategory === '美容';
         if (isBike && !analysis.isGeneralProduct && !isCleaning) {
             // 摩托車專屬過濾：標題含關鍵字 AND 分類含摩托車
-            // 這樣可以避免搜到同名的汽車產品 (ex: 同樣叫 Oil)
-            queries.push({
+            priorityQueries.push({
                 field: 'title', value: kw, limit: 15, method: 'contains',
                 andContains: { field: 'sort', value: '摩托車' }
             });
 
-            // 額外嘗試：標題含關鍵字 AND 標題含 Motorbike (針對英文標題產品)
-            if (/^[a-zA-Z]+$/.test(kw)) { // 只有純英文關鍵字才試這個，減少查詢數
-                queries.push({
+            // 額外嘗試：標題含關鍵字 AND 標題含 Motorbike
+            if (/^[a-zA-Z]+$/.test(kw)) {
+                priorityQueries.push({
                     field: 'title', value: kw, limit: 10, method: 'contains',
                     andContains: { field: 'title', value: 'Motorbike' }
                 });
             }
         } else {
             // 汽車或不分車型
-            // 排除明確標示為摩托車的產品
-            // 暫時不支援 not contains, 簡單搜 title 即可
-            queries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
+            priorityQueries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
         }
     });
 
     // 最後保底
-    if (queries.length === 0 && isBike) {
+    if (queries.length === 0 && priorityQueries.length === 0 && isBike) {
         addQuery('sort', '摩托車', 20);
     }
 
-    return queries;
+    // 將優先查詢放在最前面！
+    return [...priorityQueries, ...queries];
 }
