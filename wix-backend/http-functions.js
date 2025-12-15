@@ -1418,28 +1418,78 @@ ${productContext}
 - 連結必須是 https://www.liqui-moly-tw.com/products/ 開頭
 - 使用 Markdown 格式：[產品名稱](產品連結)`;
 
-    // 加入歷史對話
+    // 處理對話歷史
     if (history && history.length > 0) {
-        // 第一條訊息加入系統上下文
-        history.forEach((msg, index) => {
-            if (index === 0 && msg.role === 'user') {
+        // 將系統上下文和歷史第一條 user 訊息合併
+        let firstUserHandled = false;
+
+        for (let i = 0; i < history.length; i++) {
+            const msg = history[i];
+
+            if (!firstUserHandled && msg.role === 'user') {
+                // 第一條 user 訊息加入系統上下文
                 contents.push({
                     role: 'user',
                     parts: [{ text: `${systemContext}\n\n用戶問題: ${msg.content}` }]
                 });
-            } else {
+                firstUserHandled = true;
+            } else if (msg.role === 'assistant') {
+                // 確保 model 訊息前面有 user 訊息
+                if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
+                    // 如果沒有 user 訊息，加一個空的
+                    if (!firstUserHandled) {
+                        contents.push({
+                            role: 'user',
+                            parts: [{ text: systemContext }]
+                        });
+                        firstUserHandled = true;
+                    }
+                }
                 contents.push({
-                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    role: 'model',
                     parts: [{ text: msg.content }]
                 });
+            } else if (msg.role === 'user' && firstUserHandled) {
+                // 確保 user 訊息前面有 model 訊息（除了第一條）
+                if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+                    // 合併連續的 user 訊息
+                    contents[contents.length - 1].parts[0].text += '\n\n' + msg.content;
+                } else {
+                    contents.push({
+                        role: 'user',
+                        parts: [{ text: msg.content }]
+                    });
+                }
             }
-        });
+        }
 
-        // 當前訊息（繼續對話時仍帶上產品資料庫提醒）
-        contents.push({
-            role: 'user',
-            parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
-        });
+        // 確保最後是 model 訊息才能加新的 user 訊息
+        if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+            // 最後一條是 user，這可能是歷史不完整，暫時移除它讓當前訊息取代
+            // 或者合併到當前訊息
+            const lastUserContent = contents[contents.length - 1].parts[0].text;
+            contents.pop();
+
+            // 如果 contents 還有內容且最後是 model，就正常加入
+            if (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+                contents.push({
+                    role: 'user',
+                    parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
+                });
+            } else {
+                // 否則把 lastUserContent 和當前訊息合併
+                contents.push({
+                    role: 'user',
+                    parts: [{ text: `${systemContext}\n\n${lastUserContent}\n\n${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
+                });
+            }
+        } else {
+            // 正常加入當前訊息
+            contents.push({
+                role: 'user',
+                parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
+            });
+        }
     } else {
         // 沒有歷史時，第一條訊息加入完整上下文
         contents.push({
