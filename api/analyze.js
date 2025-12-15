@@ -151,16 +151,34 @@ ${contextSummary}用戶當前問題：「${message}」
                     // 只有當 AI 沒有明確判斷為其他特定車種時，才執行歷史回溯補救
                     // 避免用戶問「那汽車呢？」時，因歷史紀錄有 JET 而被強制改回摩托車
                     const explicitTypes = ['汽車', '船舶', '自行車'];
-                    if (!explicitTypes.includes(result.vehicleType)) {
-                        const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
-                        const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto'];
+                    // 注意：如果 AI 預設回傳 "汽車" (可能是因為用戶只說 "機油"), 我們需要檢查是否誤判
+                    const isDefaultCar = result.vehicleType === '汽車';
 
+                    if (!explicitTypes.includes(result.vehicleType) || isDefaultCar) {
+                        const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
+
+                        // 1. 檢查速克達/摩托車
+                        const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto', 'sym', 'kymco', 'yamaha'];
                         if (scooterKeywords.some(kw => historyText.includes(kw))) {
                             console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
                             result.vehicleType = '摩托車';
                             if (!result.vehicleSubType || result.vehicleSubType === '未知' || !result.vehicleSubType.includes('速克達')) {
                                 result.vehicleSubType = (result.vehicleSubType || '') + ' 速克達';
                             }
+                        }
+
+                        // 2. 檢查船舶 (新增)
+                        const marineKeywords = ['船', 'marine', 'boat', 'yacht', '艦艇', '遊艇', 'outboard', 'inboard'];
+                        if (marineKeywords.some(kw => historyText.includes(kw))) {
+                            console.log('Context Override: Detected Marine keyword in history! Forcing Marine mode.');
+                            result.vehicleType = '船舶';
+                        }
+
+                        // 3. 檢查自行車 (新增)
+                        const bikeKeywords = ['自行車', '腳踏車', '單車', 'bike', 'bicycle', '單車'];
+                        if (bikeKeywords.some(kw => historyText.includes(kw))) {
+                            console.log('Context Override: Detected Bicycle keyword in history! Forcing Bicycle mode.');
+                            result.vehicleType = '自行車';
                         }
                     }
                 } catch (e) {
