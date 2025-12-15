@@ -450,6 +450,7 @@ async function searchProducts(query, searchInfo) {
         // === 同 Title 擴展搜尋 (Title-Based Expansion) ===
         // 若搜到產品，自動搜尋同 title 不同容量的產品
         // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
+        console.log(`[Search] Found ${uniqueProducts.length} unique products before Title Expansion`);
         if (uniqueProducts.length > 0 && uniqueProducts.length <= 20) {
             const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
             console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
