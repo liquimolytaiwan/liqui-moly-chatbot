@@ -400,13 +400,36 @@ async function searchProducts(query, searchInfo) {
 
         // Step 1: 根據車型載入基礎產品池
         if (isMotorcycleQuery || (searchInfo && searchInfo.vehicleType === '摩托車')) {
-            // 摩托車優先搜尋
+            // 摩托車優先搜尋 - 包含機車養護類別
             const motorcycleProducts = await wixData.query('products')
                 .contains('sort', '摩托車')
                 .limit(50)
                 .find();
             allResults = motorcycleProducts.items;
             console.log('優先載入摩托車產品:', allResults.length);
+
+            // 額外搜尋：標題包含 Motorbike 的產品（可能在其他分類）
+            const motorbikeTitle = await wixData.query('products')
+                .contains('title', 'Motorbike')
+                .limit(30)
+                .find();
+            allResults = allResults.concat(motorbikeTitle.items);
+            console.log('Motorbike 標題產品:', motorbikeTitle.items.length);
+
+            // 如果用戶問添加劑，也搜尋汽車添加劑（部分適用於機車）
+            if (queryLower.includes('添加') || queryLower.includes('油精') || 
+                (searchInfo && searchInfo.productCategory === '添加劑')) {
+                const additiveProducts = await wixData.query('products')
+                    .contains('sort', '添加劑')
+                    .limit(30)
+                    .find();
+                // 只加入標題含 Motorbike 或 MoS2 的添加劑
+                const motorbikeAdditives = additiveProducts.items.filter(p => 
+                    p.title && (p.title.includes('Motorbike') || p.title.includes('MoS2') || p.title.includes('二硫化鉬'))
+                );
+                allResults = allResults.concat(motorbikeAdditives);
+                console.log('摩托車相關添加劑:', motorbikeAdditives.length);
+            }
         } else if (hasGeneralKeywords) {
             // 通用產品搜尋
             const generalCategories = ['車輛美容', '化學品', '煞車', '冷卻', '船舶', '自行車'];
@@ -434,12 +457,11 @@ async function searchProducts(query, searchInfo) {
         if (searchInfo && searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
             const limitedKeywords = searchInfo.searchKeywords.slice(0, 2);
             for (const keyword of limitedKeywords) {
-                // 只搜尋對應車型的產品
-                let keywordQuery = wixData.query('products').contains('title', keyword);
-                if (isMotorcycleQuery || (searchInfo && searchInfo.vehicleType === '摩托車')) {
-                    keywordQuery = keywordQuery.contains('sort', '摩托車');
-                }
-                const keywordResults = await keywordQuery.limit(10).find();
+                // 搜尋標題包含關鍵字的產品（不限制車型）
+                const keywordResults = await wixData.query('products')
+                    .contains('title', keyword)
+                    .limit(10)
+                    .find();
                 allResults = allResults.concat(keywordResults.items);
             }
         }
