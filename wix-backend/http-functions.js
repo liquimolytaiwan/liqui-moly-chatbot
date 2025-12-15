@@ -810,6 +810,7 @@ export async function post_chat(request) {
         let productContext = "目前沒有產品資料";
         try {
             productContext = await searchProductsWithAI(body.message, searchInfo);
+            console.log('productContext 長度:', productContext.length, '前 500 字:', productContext.substring(0, 500));
         } catch (e) {
             console.error('Product search failed:', e);
         }
