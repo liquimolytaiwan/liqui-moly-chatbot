@@ -111,11 +111,14 @@ ${contextSummary}用戶當前問題：「${message}」
 5. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
    - 請提供 **3-5 個** 不同的關鍵字，用於資料庫廣泛搜尋。
    - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
-   - 例如：鏈條油 -> ["Chain Lube", "Chain Spray", "鏈條油", "Ketten", "Lube"]
-   - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
-   - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
-   - 例如：洗手 -> ["Hand Cleaner", "Hand Paste", "洗手膏", "Hand Wash", "洗手"]
-   - **認證拆解**：若有認證關鍵字（如 948B），請同時提供拆解版本 ["948B", "948", "948-B"] 以增加匹配率。
+   - **👉 症狀轉產品 (Symptom to Solution) - CRITICAL!**
+     - 用戶若描述症狀，**嚴禁**只搜症狀關鍵字 (DB 裡沒有 "黑煙" 這個產品)。
+     - **必須**轉換為解決方案產品名：
+       - 噴黑煙/耗油/無力 -> 搜 "Injection Cleaner", "Fuel System", "Valve Clean", "汽油精"
+       - 引擎抖動/積碳 -> 搜 "Valve Clean", "Engine Flush", "Carbon"
+       - 漏油 -> 搜 "Stop Leak", "Oil Saver", "止漏"
+       - 異音/磨損 -> 搜 "MOS2", "Cera Tec", "Oil Additive", "Protection"
+   - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
 
 4. **isGeneralProduct**
    - 洗車、煞車油、冷卻液、洗手、清潔劑等不限車型的產品設為 true
