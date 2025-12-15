@@ -46,60 +46,8 @@ liqui-moly-chatbot/
 │   ├── chatbot.jsw         # 聊天邏輯模組
 │   ├── cleanupSessions.jsw # Session 清理模組
 │   └── jobs.config         # 定時任務設定
-├── products_check.json     # 產品資料驗證用檔案
 └── README.md
 ```
-
-## API 端點
-
-| 端點 | 方法 | 說明 |
-|------|------|------|
-| `/_functions/startSession` | POST | 開始對話，建立用戶資料 |
-| `/_functions/endSession` | POST | 結束對話 |
-| `/_functions/chat` | POST | 傳送訊息，取得 AI 回覆 |
-| `/_functions/rateSession` | POST | 對話評分 |
-| `/_functions/products` | GET | 取得產品列表 |
-| `/_functions/health` | GET | 健康檢查 |
-| `/_functions/cleanupSessions` | GET | 清理閒置對話（定時任務） |
-
-## CMS Collection 結構
-
-### Products Collection（產品資料庫）
-
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| title | Text | 產品名稱 |
-| partno | Text | 產品編號 |
-| viscosity | Text | 黏度等級 |
-| cert | Text | 認證規格 |
-| sort | Text | 產品分類 |
-| url | URL | 產品頁面連結 |
-
-### chatSessions Collection（對話紀錄）
-
-| 欄位 | 類型 | 說明 |
-|------|------|------|
-| userName | Text | 用戶姓名 |
-| userEmail | Text | 電子郵件 |
-| userPhone | Text | 手機號碼（選填）|
-| category | Text | 問題類別 |
-| messages | Text | 對話記錄 (JSON) |
-| status | Text | active / ended |
-| rating | Number | 用戶評分 (1-5) |
-| startTime | DateTime | 開始時間 |
-| endTime | DateTime | 結束時間 |
-| lastActivity | DateTime | 最後活動時間 |
-
-## 本地測試
-
-```bash
-cd liqui-moly-chatbot
-python -m http.server 8080
-```
-
-瀏覽器開啟 `http://localhost:8080`
-
-> 注意：本地測試時，需將 `js/config.js` 中的 `DEV_MODE` 設為 `true`
 
 ---
 
