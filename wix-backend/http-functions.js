@@ -268,8 +268,8 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 
 ## 🏭 保修廠/車行老闆專區
 
-### 進貨與批發（最低訂購量、經銷價、批發價、進貨、訂貨等）
-> 感謝您對 LIQUI MOLY 的興趣！合作細節（最低訂購量、經銷價格、運費等）請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)，專人將與您聯繫說明。
+### B2B 合作洽詢（最低訂購量、經銷價、進貨、訂貨等）
+> 感謝您對 LIQUI MOLY 的興趣！合作細節（訂購量、經銷價格、配送等）請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)，專人將與您聯繫說明。
 
 ### 運費與物流（貨運、運費、寄送、配送等）
 > 運費與物流細節請填寫[合作洽詢表單](https://www.liqui-moly-tw.com/cooperate)洽詢，我們會有專人與您說明合作方式。
