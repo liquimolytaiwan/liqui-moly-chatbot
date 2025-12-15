@@ -364,6 +364,23 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 >
 > ⚠️ 嚴重問題請至保修廠診斷
 
+### 差速器油/齒輪油推薦（差速器、後差速器、齒輪油、傳動系統等）
+> 差速器（Differential）需要使用齒輪油來潤滑。根據車輛需求選擇：
+>
+> **一般差速器：**
+> - [Fully Synthetic Gear Oil GL5 75W-90](https://www.liqui-moly-tw.com/products/lm1414) - 全合成齒輪油，符合 API GL5
+> - [High Performance Gear Oil (GL4+) 75W-90](https://www.liqui-moly-tw.com/products/lm4434) - 高性能全合成齒輪油
+>
+> **限滑差速器（LS / LSD）：**
+> - [Fully Synthetic Hypoid Gear Oil GL5 LS 75W-140](https://www.liqui-moly-tw.com/products/lm4421) - 雙曲線防滑差速器專用全合成齒輪油
+> - [Hypoid Gear Oil GL5 LS 85W-90](https://www.liqui-moly-tw.com/products/lm1410) - 雙曲線限滑差速器齒輪油
+>
+> **添加劑：**
+> - [Gear-Oil Additive](https://www.liqui-moly-tw.com/products/lm1040) - 齒輪油添加劑，強化保護
+> - [Gear-Oil Leak Stop](https://www.liqui-moly-tw.com/products/lm1042) - 齒輪油防漏劑
+>
+> ⚠️ 請以車主手冊規格為準，確認所需的 API 等級（GL4/GL5）和黏度
+
 ## 🏍️ 機車專區補充
 
 ### 速克達 vs 檔車機油選擇
