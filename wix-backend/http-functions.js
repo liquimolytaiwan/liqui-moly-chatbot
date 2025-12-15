@@ -510,6 +510,24 @@ async function searchProducts(query, searchInfo) {
         }
 
         if (uniqueProducts.length > 0) {
+            // 如果有 SKU 搜尋，優先返回 SKU 相關產品
+            const skuMatch = query.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
+            if (skuMatch) {
+                const skuNum = skuMatch[1];
+                const fullSku = `LM${skuNum}`;
+                const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
+
+                if (skuProduct && skuProduct.title) {
+                    // 只返回與 SKU 產品相同 title 的所有容量 + 少量其他相關產品
+                    const sameTitle = uniqueProducts.filter(p => p.title === skuProduct.title);
+                    const others = uniqueProducts.filter(p => p.title !== skuProduct.title).slice(0, 5);
+                    const prioritized = [...sameTitle, ...others];
+                    console.log(`[Return] SKU mode: returning ${sameTitle.length} same-title products + ${others.length} others`);
+                    return formatProducts(prioritized.slice(0, 15));
+                }
+            }
+
+            // 一般模式：返回前 30 個
             return formatProducts(uniqueProducts.slice(0, 30));
         }
 
