@@ -799,7 +799,8 @@ export async function post_chat(request) {
         // Step 1: AI 分析用戶問題，判斷車型類別和需要的規格
         let searchInfo = null;
         try {
-            searchInfo = await analyzeUserQuery(apiKey, body.message);
+            // 傳入對話歷史，讓 AI 可以從上下文推斷車型
+            searchInfo = await analyzeUserQuery(apiKey, body.message, conversationHistory);
             console.log('AI Analysis:', JSON.stringify(searchInfo));
         } catch (e) {
             console.error('AI analysis failed:', e);
@@ -926,10 +927,19 @@ export async function get_products(request) {
 // ============================================
 
 // AI 分析用戶問題，判斷車型類別和需要的規格
-async function analyzeUserQuery(apiKey, message) {
+async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
+    // 建構對話上下文摘要
+    let contextSummary = '';
+    if (conversationHistory && conversationHistory.length > 0) {
+        const recentHistory = conversationHistory.slice(-4); // 只取最近 4 條
+        contextSummary = '對話上下文（以此推斷車型）：\n' + recentHistory.map(m =>
+            `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 100)}...`
+        ).join('\n') + '\n\n';
+    }
+
     const analysisPrompt = `你是一個汽機車專家。請分析用戶的問題，判斷車型類別和需要的規格。
 
-用戶問題：「${message}」
+${contextSummary}用戶當前問題：「${message}」
 
 請只返回一個 JSON 對象，格式如下：
 {
@@ -943,15 +953,18 @@ async function analyzeUserQuery(apiKey, message) {
 }
 
 說明：
-- vehicleType: 填入 "汽車" 或 "摩托車" 或 "未知"
-- vehicleSubType: 填入 "速克達" 或 "檔車" 或 "重機" 或 "轎車" 或 "柴油車" 或 "未知"
+- vehicleType: 填入 "汽車" 或 "摩托車" 或 "未知"（如果上下文有提到車型，使用上下文的車型）
+- vehicleSubType: 填入 "速克達" 或 "檔車" 或 "重機" 或 "轟車" 或 "柴油車" 或 "未知"
 - certifications: 需要的認證陣列，如 ["JASO MA2"] 或 ["ACEA C3", "VW 504"]
 - viscosity: 建議黏度如 "10W40" 或 "5W30"，不確定就留空
 - searchKeywords: 用於搜尋產品的關鍵字陣列
 - productCategory: "機油" 或 "添加劑" 或 "化學品" 或 "其他"
 - needsProductRecommendation: 如果是一般知識問題填 false，需要推薦產品填 true
 
-注意：如果是摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB。只返回 JSON，不要其他文字。`;
+注意：
+1. 如果是摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB
+2. **重要**：如果對話上下文中有提到車型（如 JET、摩托車、Macan 等），即使當前問題沒有明確說，也要根據上下文判斷
+3. 只返回 JSON，不要其他文字。`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
