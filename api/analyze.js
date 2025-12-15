@@ -68,17 +68,38 @@ ${contextSummary}用戶當前問題：「${message}」
 
 請只返回一個 JSON 對象，格式如下：
 {
-    "vehicleType": "汽車",
-    "vehicleSubType": "未知",
-    "isElectricVehicle": false,
-    "certifications": [],
-    "viscosity": "",
-    "searchKeywords": ["機油"],
+    "isMultiVehicleQuery": false,
+    "vehicles": [{
+        "vehicleName": "2022 KIA Sportage 1.6",
+        "vehicleType": "汽車",
+        "vehicleSubType": "未知",
+        "isElectricVehicle": false,
+        "certifications": ["API SP"],
+        "viscosity": "0W-20",
+        "searchKeywords": ["0W-20", "API SP", "Special Tec"]
+    }],
     "productCategory": "機油",
     "productSubCategory": "",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
 }
+
+**多車型查詢支援 (Multi-Vehicle Query) - 重要！**
+- 若用戶同時詢問多種車型（如「BMW X3 和 Toyota Camry 分別推薦什麼機油？」），設定 "isMultiVehicleQuery": true
+- 在 "vehicles" 陣列中為每個車型分別填入規格：
+  - "vehicleName": 車型名稱（用於顯示給用戶）
+  - "vehicleType", "certifications", "viscosity", "searchKeywords": 該車型的規格
+- 範例：
+  {
+    "isMultiVehicleQuery": true,
+    "vehicles": [
+      { "vehicleName": "BMW X3 2020", "vehicleType": "汽車", "certifications": ["BMW LL-01"], "viscosity": "5W-30", "searchKeywords": ["5W30", "LL-01", "Top Tec"] },
+      { "vehicleName": "Toyota Camry 2022", "vehicleType": "汽車", "certifications": ["API SP"], "viscosity": "0W-20", "searchKeywords": ["0W-20", "API SP", "Special Tec AA"] }
+    ],
+    "productCategory": "機油",
+    "needsProductRecommendation": true
+  }
+- 若只有一個車型，設定 "isMultiVehicleQuery": false，"vehicles" 陣列只放一個物件即可。
 
 說明與規則：
 
