@@ -359,3 +359,57 @@ function formatProducts(products) {
 
     return context;
 }
+
+// ============================================
+// GET /cleanupSessions - 清理閒置對話（由外部 Cron 呼叫）
+// ============================================
+
+export async function get_cleanupSessions(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        // 10 分鐘前的時間
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+        // 查詢所有超過 10 分鐘未活動的 active session
+        const results = await wixData.query('chatSessions')
+            .eq('status', 'active')
+            .lt('lastActivity', tenMinutesAgo)
+            .limit(100)
+            .find();
+
+        let closedCount = 0;
+
+        // 批量更新為 ended
+        for (const session of results.items) {
+            session.status = 'ended';
+            session.endTime = new Date();
+            await wixData.update('chatSessions', session);
+            closedCount++;
+        }
+
+        console.log(`Cleanup: closed ${closedCount} idle sessions at ${new Date().toISOString()}`);
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                closedSessions: closedCount,
+                timestamp: new Date().toISOString()
+            })
+        });
+
+    } catch (error) {
+        console.error('GET /cleanupSessions error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
