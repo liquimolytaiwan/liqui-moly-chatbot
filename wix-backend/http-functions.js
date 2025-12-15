@@ -395,10 +395,18 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > 2. 再噴上鏈條潤滑油
 > 3. 建議每 300-500 公里保養一次
 
-### 機車添加劑推薦（機車用添加劑、機車油精等）
-> 機車可用的添加劑：
-> - [Motorbike Speed Additive 摩托車速度添加劑] - 燃油系統清潔
-> - [Motorbike Oil Additive 摩托車機油添加劑] - 引擎保護
+### 機車添加劑推薦（機車添加劑、摩托車添加劑、機車油精、跑山、性能提升等）
+> 摩托車可用的添加劑產品：
+>
+> **燃油系統清潔：**
+> - [Motorbike 4T Shooter](https://www.liqui-moly-tw.com/products/lm7822) - 4T摩托車燃油系統清潔劑，直接加入油箱
+> - [Motorbike Speed Additive](https://www.liqui-moly-tw.com/products/lm3040) - 摩托車速度添加劑，提升燃油效率
+>
+> **引擎保護：**
+> - [Motorbike Engine Flush](https://www.liqui-moly-tw.com/products/lm1657) - 摩托車引擎內部清洗劑
+> - [Motorbike Oil Additive](https://www.liqui-moly-tw.com/products/lm1580) - 摩托車機油添加劑，抗磨保護
+>
+> 💡 跑山、通勤族推薦定期使用燃油系統清潔劑保持引擎效能！
 
 ## ❓ 其他常見問題
 
