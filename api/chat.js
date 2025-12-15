@@ -109,7 +109,8 @@ ${productContext}
 - 你必須從上方「可用產品資料庫」中選擇產品推薦
 - 推薦產品時必須使用資料庫中的「產品連結」
 - 連結必須是 https://www.liqui-moly-tw.com/products/ 開頭
-- 使用 Markdown 格式：[產品名稱](產品連結)`;
+- 使用 Markdown 格式：[產品名稱](產品連結)
+- **重要**：即使用戶追問（如「下賽道呢」「那機油呢」），也要從產品資料庫中找到相關產品推薦！`;
 
     const contents = [];
 
@@ -136,9 +137,10 @@ ${productContext}
                 });
             }
         }
+        // 追問時也要提醒 AI 產品資料庫可用
         contents.push({
             role: 'user',
-            parts: [{ text: `${message}\n\n（請記得使用上方產品資料庫中的連結推薦產品）` }]
+            parts: [{ text: `${message}\n\n【系統提醒】請根據上方「可用產品資料庫」推薦相關產品，不要說找不到！資料庫中有${productContext.includes('Motorbike') ? '摩托車添加劑、機油' : ''}等產品可供推薦。` }]
         });
     } else {
         contents.push({
