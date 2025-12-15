@@ -303,7 +303,17 @@ function generateWixQueries(analysis, keywords) {
             }
         } else {
             // 汽車或不分車型
-            priorityQueries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
+            // === 嚴格類別過濾 (Strict Category Filter) ===
+            // 針對容易混淆的類別 (如機油 vs 添加劑)，強制加上類別過濾
+            const strictCategories = ['機油', '添加劑', '變速箱', '煞車', '冷卻'];
+            if (strictCategories.includes(productCategory) && !analysis.isGeneralProduct) {
+                priorityQueries.push({
+                    field: 'title', value: kw, limit: 15, method: 'contains',
+                    andContains: { field: 'sort', value: productCategory }
+                });
+            } else {
+                priorityQueries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
+            }
         }
 
         // === 關鍵修正：針對「認證/規格」類關鍵字，追加搜尋 Description 欄位 ===
