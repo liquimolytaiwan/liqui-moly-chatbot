@@ -217,10 +217,23 @@ function generateWixQueries(analysis, keywords) {
 
     // === 策略: 鏈條保養 ===
     else if (productCategory === '鏈條') {
-        addQuery('sort', '【摩托車】機車養護', 30);
-        queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+        // 是否明確問「油」
+        const isOilQuery = keywords.some(k => k.includes('油') || k.toLowerCase().includes('lube') || k.toLowerCase().includes('spray'));
+
+        if (isOilQuery) {
+            // 優先找潤滑油
+            queries.push({ field: 'title', value: 'Lube', limit: 10, method: 'contains' });
+            queries.push({ field: 'title', value: 'Spray', limit: 10, method: 'contains' });
+            queries.push({ field: 'title', value: 'Chain', limit: 20, method: 'contains' });
+        } else {
+            // 一般鏈條 (可能包含清潔)
+            queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+            queries.push({ field: 'title', value: '鏈條', limit: 20, method: 'contains' });
+        }
+
         queries.push({ field: 'title', value: 'Ketten', limit: 20, method: 'contains' });
-        queries.push({ field: 'title', value: '鏈條', limit: 20, method: 'contains' });
+        // 最後才放這個大類別，作為補充
+        addQuery('sort', '【摩托車】機車養護', 20);
     }
 
     // === 策略 E: 通用/清潔 ===
