@@ -80,10 +80,11 @@ ${contextSummary}用戶當前問題：「${message}」
 
 說明與規則：
 1. **上下文繼承 (Context Inheritance - CRITICAL)**
-   - 如果當前問題很短（如「那機油呢？」），**必須**回溯上方對話紀錄找到車型。
+   - 如果當前問題很短（如「那機油呢？」、「是」），**必須**回溯上方對話紀錄找到車型與**認證規格**。
    - 如果之前提過 "JET", "勁戰", "DRG"，那麼 vehicleSubType **必須** 填入 "速克達"。
    - 如果之前提過 "CBR", "R15", "Ninja"，那麼 vehicleSubType **必須** 填入 "檔車"。
    - **一旦車型確定，除非用戶明確換車，否則後續所有搜尋都必須保留該車型設定。**
+   - **關鍵：若歷史紀錄中提及特定認證（如 948B, LL-04, 504/507），務必將其加入 searchKeywords！**
 
 2. **vehicleType (車型判斷)**
    - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、JET、勁戰、MMBCU、DRG、Force、SMAX、R15、CBR、Ninja、GSX、Vespa
