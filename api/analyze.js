@@ -134,6 +134,24 @@ ${contextSummary}用戶當前問題：「${message}」
                 const result = JSON.parse(jsonMatch[0]);
 
                 // ============================================
+                // 🛑 強制上下文補救 (Rule-based Context Override)
+                // ============================================
+                try {
+                    const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
+                    const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto'];
+
+                    if (scooterKeywords.some(kw => historyText.includes(kw))) {
+                        console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
+                        result.vehicleType = '摩托車';
+                        if (!result.vehicleSubType || result.vehicleSubType === '未知' || !result.vehicleSubType.includes('速克達')) {
+                            result.vehicleSubType = (result.vehicleSubType || '') + ' 速克達';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Override error:', e);
+                }
+
+                // ============================================
                 // 生成 Wix 查詢指令 (Logic moved from Wix to here!)
                 // ============================================
                 result.wixQueries = generateWixQueries(result, result.searchKeywords || []);
