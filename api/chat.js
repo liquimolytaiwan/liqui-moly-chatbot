@@ -158,7 +158,7 @@ ${productContext}
         // 追問時也要提醒 AI 產品資料庫可用
         contents.push({
             role: 'user',
-            parts: [{ text: `${message}\n\n【系統提醒】請根據上方「可用產品資料庫」推薦相關產品，不要說找不到！資料庫中有${productContext.includes('Motorbike') ? '摩托車添加劑、機油' : ''}等產品可供推薦。` }]
+            parts: [{ text: `${message}\n\n【系統強制指令】\n1. 絕對禁止編造產品！只能從上方的「可用產品資料庫」中推薦。\n2. 禁止使用「Motorbike Speed Shooter」、「LM1580」等不存在的產品。\n3. 如果資料庫中有摩托車添加劑，請優先推薦。\n4. 連結必須完全匹配資料庫中的 URL。` }]
         });
     } else {
         contents.push({
@@ -184,7 +184,7 @@ async function callGemini(apiKey, contents) {
     const requestBody = {
         contents: contents,
         generationConfig: {
-            temperature: 0.4,
+            temperature: 0.1,
             topK: 20,
             topP: 0.8,
             maxOutputTokens: 4096,
