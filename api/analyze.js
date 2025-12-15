@@ -91,8 +91,9 @@ ${contextSummary}用戶當前問題：「${message}」
      以及熱門車款：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Gogoro, Ai-1, Ur-1, eMoving, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur
    - "船舶"：出現 船, Marine, Boat, Yacht, 艦艇, 遊艇, 船外機, Outboard, Inboard, Jet Ski, 水上摩托車
    - "自行車"：出現 自行車, 腳踏車, 單車, Bike, Bicycle, MTB, 公路車, 登山車
-   - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車, Hybrid, HEV, PHEV, EV
-   
+   - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車, Hybrid, HEV, PHEV, EV, 
+     以及熱門車款：Toyota, Altis, Corolla Cross, RAV4, Yaris, Vios, Camry, Town Ace, Honda, CRV, HRV, Fit, Civic, Ford, Kuga, Focus, Nissan, X-Trail, Kicks, Sentra, Lexus, NX, RX, UX, LBX, ES, Tesla, Model Y, Model 3, Mazda, CX-5, CX-30, Mazda3, Benz, GLC, C-Class, E-Class, A-Class, BMW, X3, X4, X1, 3 Series, 5 Series, Volvo, XC40, XC60, Hyundai, Tucson, Custin, Kia, Sportage, MG, HS, ZS
+
 3. **productCategory (產品主類別)**
    - "添加劑"：Additives, 油精, 快樂跑, 清潔燃油, 通油路, Shooter, Engine Flush, 汽門, 除碳, MOS2, Ceratec
    - "機油"：Motor Oil, 機油, 潤滑油, 5W30, 10W40, 0W20 (若沒特別指添加劑)
@@ -158,7 +159,11 @@ ${contextSummary}用戶當前問題：「${message}」
                     // 注意：如果 AI 預設回傳 "汽車" (可能是因為用戶只說 "機油"), 我們需要檢查是否誤判
                     const isDefaultCar = result.vehicleType === '汽車';
 
-                    if (!explicitTypes.includes(result.vehicleType) || isDefaultCar) {
+                    // 檢查用戶是否「顯式切換」回汽車 (如：那汽車呢？)
+                    // 如果用戶當前這句話包含汽車關鍵字，絕對不要回溯歷史改成機車！
+                    const isExplicitCarSwitch = ['汽車', 'car', 'auto', '轎車', '四輪', 'passenger'].some(k => message.toLowerCase().includes(k));
+
+                    if ((!explicitTypes.includes(result.vehicleType) || isDefaultCar) && !isExplicitCarSwitch) {
                         const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
 
                         // 1. 檢查速克達/摩托車/重機/檔車 (2025 台灣主流車款庫)
