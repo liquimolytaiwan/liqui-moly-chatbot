@@ -108,23 +108,13 @@ export async function post_chat(request) {
             console.error('Vercel analyze API failed:', e);
         }
 
-        // Step 2: 呼叫 Vercel search API 搜尋產品 (包含 Title Expansion)
+        // Step 2: 從 Wix CMS 搜尋產品 (本地搜尋 + Title Expansion)
         let productContext = "目前沒有產品資料";
         try {
-            const searchResponse = await fetch(`${VERCEL_API_URL}/api/search`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: body.message, searchInfo })
-            });
-            const searchData = await searchResponse.json();
-            if (searchData.success && searchData.productContext) {
-                productContext = searchData.productContext;
-                console.log('Vercel search found', searchData.productCount, 'products');
-            }
-        } catch (e) {
-            console.error('Vercel search API failed, falling back to local search:', e);
-            // 備援：使用本地搜尋
             productContext = await searchProducts(body.message, searchInfo);
+            console.log('Local search completed');
+        } catch (e) {
+            console.error('Product search failed:', e);
         }
 
         // Step 3: 呼叫 Vercel API 進行聊天
