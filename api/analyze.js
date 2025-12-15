@@ -157,6 +157,18 @@ ${contextSummary}用戶當前問題：「${message}」
    - **⚠️ 注意車種差異**：
      - 若 'vehicleType' 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
      - 若 'vehicleType' 是「汽車」，嚴禁搜尋 "Scooter", "Shooter" (除非是 Gasoline Shooter), "4T Additive"。
+   - **🚗 汽車機油通用搜尋 (Default Car Oil Keywords) - 極重要！**
+     - 若 vehicleType 是「汽車」且 productCategory 是「機油」，且用戶沒有明確症狀：
+     - **必須** 在 searchKeywords 中加入以下通用關鍵字：
+       - 黏度相關：["5W30", "5W40", "0W20", "0W30"] (根據車型年份選擇)
+       - 產品系列：["Top Tec", "Special Tec", "Molygen", "Leichtlauf"]
+       - 認證相關：["API SP", "ACEA"] (根據車系選擇)
+     - 範例：用戶問 "2022 KIA Sportage 1.6 汽油"
+       - 推薦 searchKeywords: ["5W30", "5W40", "Top Tec", "Special Tec", "API SP", "ACEA A3"]
+   - **🏍️ 機車機油通用搜尋 (Default Motorcycle Oil Keywords)**
+     - 若 vehicleType 是「摩托車」且 productCategory 是「機油」：
+       - 速克達 -> ["10W40", "Scooter", "JASO MB", "Motorbike 4T"]
+       - 檔車/重機 -> ["10W40", "10W50", "JASO MA", "Street", "Race"]
 
 5. 只返回 JSON，不要其他文字。`;
 
