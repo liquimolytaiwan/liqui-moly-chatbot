@@ -103,6 +103,7 @@ ${contextSummary}用戶當前問題：「${message}」
    - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
    - 例如：鏈條油 -> ["Chain Lube", "Chain Spray", "鏈條油", "Ketten", "Lube"]
    - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
+   - 例如：洗手 -> ["Hand Cleaner", "Hand Paste", "洗手膏", "Hand Wash", "洗手"]
    
 4. **isGeneralProduct**
    - 洗車、煞車油、冷卻液、洗手、清潔劑等不限車型的產品設為 true
