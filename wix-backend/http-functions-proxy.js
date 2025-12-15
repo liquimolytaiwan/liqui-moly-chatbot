@@ -417,14 +417,14 @@ async function searchProducts(query, searchInfo) {
             console.log('Motorbike 標題產品:', motorbikeTitle.items.length);
 
             // 如果用戶問添加劑，也搜尋汽車添加劑（部分適用於機車）
-            if (queryLower.includes('添加') || queryLower.includes('油精') || 
+            if (queryLower.includes('添加') || queryLower.includes('油精') ||
                 (searchInfo && searchInfo.productCategory === '添加劑')) {
                 const additiveProducts = await wixData.query('products')
                     .contains('sort', '添加劑')
                     .limit(30)
                     .find();
                 // 只加入標題含 Motorbike 或 MoS2 的添加劑
-                const motorbikeAdditives = additiveProducts.items.filter(p => 
+                const motorbikeAdditives = additiveProducts.items.filter(p =>
                     p.title && (p.title.includes('Motorbike') || p.title.includes('MoS2') || p.title.includes('二硫化鉬'))
                 );
                 allResults = allResults.concat(motorbikeAdditives);
@@ -487,7 +487,23 @@ function formatProducts(products) {
         return '目前沒有匹配的產品資料';
     }
 
-    let context = '## 可用產品資料庫\n\n';
+    // 強烈警告，防止 AI 編造
+    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
+
+**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
+
+違規範例（絕對禁止！）：
+- LM1580 ❌ 不存在
+- LM20852 ❌ 不存在
+- Motorbike Speed Shooter ❌ 不存在
+
+**只能使用下方列表中的「產品編號」和「產品連結」！**
+
+---
+
+## 可用產品資料庫
+
+`;
 
     products.forEach((p, i) => {
         const url = p.partno
