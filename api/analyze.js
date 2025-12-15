@@ -111,13 +111,35 @@ ${contextSummary}用戶當前問題：「${message}」
 5. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
    - 請提供 **3-5 個** 不同的關鍵字，用於資料庫廣泛搜尋。
    - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
-   - **👉 症狀轉產品 (Symptom to Solution) - CRITICAL!**
-     - 用戶若描述症狀，**嚴禁**只搜症狀關鍵字 (DB 裡沒有 "黑煙" 這個產品)。
-     - **必須**轉換為解決方案產品名：
-       - 噴黑煙/耗油/無力 -> 搜 "Injection Cleaner", "Fuel System", "Valve Clean", "汽油精"
-       - 引擎抖動/積碳 -> 搜 "Valve Clean", "Engine Flush", "Carbon"
-       - 漏油 -> 搜 "Stop Leak", "Oil Saver", "止漏"
-       - 異音/磨損 -> 搜 "MOS2", "Cera Tec", "Oil Additive", "Protection"
+   - **👉 症狀轉產品全集 (Universal Symptom Mapping) - CRITICAL!**
+     - **[引擎/機油系統]**
+       - 吃機油/排藍煙/機油少 -> 搜 "Viscoplus", "Oil Saver", "Motor Oil Saver"
+       - 引擎漏油/地上有油漬 -> 搜 "Oil Leak", "Stop Leak", "止漏"
+       - 引擎異音/磨損/保護 -> 搜 "Cera Tec", "MOS2", "Oil Additive", "Anti Friction"
+       - 油泥/太久沒換油 -> 搜 "Engine Flush", "Oil Sludge"
+       - 冒白煙 (水箱水跑到引擎) -> (通常需維修) 搜 "Radiator Stop Leak" (死馬當活馬醫)
+     - **[燃油/燃燒系統]**
+       - 冒黑煙/耗油/驗車不過 -> 搜 "Emission Reduction", "Diesel Purge", "Smoke Stop", "汽油精"
+       - 引擎無力/加速遲緩 -> 搜 "Injection Cleaner", "Valve Clean", "Speed Tec", "Fuel System"
+       - 難發動/怠速不穩 -> 搜 "Injection Cleaner", "Valve Clean", "Carburetor"
+       - 柴油車DPF阻塞 -> 搜 "DPF", "Diesel Particulate"
+     - **[變速箱/動力方向/冷卻]**
+       - 換檔頓挫/打滑 -> 搜 "ATF Additive", "Gear Oil Additive"
+       - 變速箱漏油 -> 搜 "Transmission Stop Leak"
+       - 方向盤重/漏油 -> 搜 "Power Steering Oil Leak"
+       - 水箱漏水 -> 搜 "Radiator Stop Leak"
+       - 水溫高/水垢 -> 搜 "Radiator Cleaner", "Coolant"
+     - **[外觀美容/內裝]**
+       - 柏油/瀝青 -> 搜 "Tar Remover"
+       - 鐵粉/粗糙 -> 搜 "Wheel Cleaner" (通常含除鐵粉)
+       - 塑料白化 -> 搜 "Plastic Restorer", "Plastic Deep"
+       - 車內異味/煙味 -> 搜 "Climate Fresh", "AC System Cleaner"
+       - 皮革龜裂 -> 搜 "Leather Care"
+     - **[船舶/自行車專區]**
+       - 船外機保養 -> 搜 "Marine Oil", "Gear Lube", "4T", "2T"
+       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray"
+       - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube"
+       - 煞車異音 (單車) -> 搜 "Brake Cleaner"
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
 
 4. **isGeneralProduct**
