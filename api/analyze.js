@@ -69,6 +69,7 @@ ${contextSummary}用戶當前問題：「${message}」
 {
     "vehicleType": "汽車",
     "vehicleSubType": "未知",
+    "isElectricVehicle": false,
     "certifications": [],
     "viscosity": "",
     "searchKeywords": ["機油"],
@@ -88,11 +89,20 @@ ${contextSummary}用戶當前問題：「${message}」
 
 2. **vehicleType (車型判斷)**
    - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、
-     以及熱門車款：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Gogoro, Ai-1, Ur-1, eMoving, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur
+     以及熱門車款：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur
    - "船舶"：出現 船, Marine, Boat, Yacht, 艦艇, 遊艇, 船外機, Outboard, Inboard, Jet Ski, 水上摩托車
    - "自行車"：出現 自行車, 腳踏車, 單車, Bike, Bicycle, MTB, 公路車, 登山車
-   - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車, Hybrid, HEV, PHEV, EV, 
-     以及熱門車款：Toyota, Altis, Corolla Cross, RAV4, Yaris, Vios, Camry, Town Ace, Honda, CRV, HRV, Fit, Civic, Ford, Kuga, Focus, Nissan, X-Trail, Kicks, Sentra, Lexus, NX, RX, UX, LBX, ES, Tesla, Model Y, Model 3, Mazda, CX-5, CX-30, Mazda3, Benz, GLC, C-Class, E-Class, A-Class, BMW, X3, X4, X1, 3 Series, 5 Series, Volvo, XC40, XC60, Hyundai, Tucson, Custin, Kia, Sportage, MG, HS, ZS
+   - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車
+     以及熱門車款：Toyota, Altis, Corolla Cross, RAV4, Yaris, Vios, Camry, Town Ace, Honda, CRV, HRV, Fit, Civic, Ford, Kuga, Focus, Nissan, X-Trail, Kicks, Sentra, Lexus, NX, RX, UX, LBX, ES, Mazda, CX-5, CX-30, Mazda3, Benz, GLC, C-Class, E-Class, A-Class, BMW, X3, X4, X1, 3 Series, 5 Series, Volvo, XC40, XC60, Hyundai, Tucson, Custin, Kia, Sportage, MG, HS, ZS
+
+2.5 **isElectricVehicle (電動車偵測) - 極重要！**
+   - 若出現以下關鍵字，必須設為 true：
+     - 電動機車：Gogoro, Ai-1, Ur-1, eMoving, eReady, PBGN, Ionex, 電動機車, 電動速克達
+     - 電動汽車：Tesla, Model Y, Model 3, Model S, Model X, EV, 電動車, 純電, BEV, Rivian, Lucid, 極氪, 小鵬, 蔚來
+     - 油電混合 (Hybrid)：注意 Hybrid/HEV/PHEV 仍需機油，不算純電動車！
+   - 若 isElectricVehicle = true 且用戶只問機油：
+     - needsProductRecommendation 設為 false
+     - 在 searchKeywords 加入 "電動車不需機油" 作為標記
 
 3. **productCategory (產品主類別)**
    - "添加劑"：Additives, 油精, 快樂跑, 清潔燃油, 通油路, Shooter, Engine Flush, 汽門, 除碳, MOS2, Ceratec
