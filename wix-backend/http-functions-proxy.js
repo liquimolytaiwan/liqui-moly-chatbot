@@ -416,19 +416,24 @@ async function searchProducts(query, searchInfo) {
             allResults = allResults.concat(motorbikeTitle.items);
             console.log('Motorbike 標題產品:', motorbikeTitle.items.length);
 
-            // 如果用戶問添加劑，也搜尋汽車添加劑（部分適用於機車）
+            // 如果用戶問添加劑，直接搜尋【摩托車】添加劑類別
             if (queryLower.includes('添加') || queryLower.includes('油精') ||
                 (searchInfo && searchInfo.productCategory === '添加劑')) {
-                const additiveProducts = await wixData.query('products')
-                    .contains('sort', '添加劑')
+                // 直接搜尋【摩托車】添加劑類別
+                const motorbikeAdditives = await wixData.query('products')
+                    .contains('sort', '【摩托車】添加劑')
                     .limit(30)
                     .find();
-                // 只加入標題含 Motorbike 或 MoS2 的添加劑
-                const motorbikeAdditives = additiveProducts.items.filter(p =>
-                    p.title && (p.title.includes('Motorbike') || p.title.includes('MoS2') || p.title.includes('二硫化鉬'))
-                );
-                allResults = allResults.concat(motorbikeAdditives);
-                console.log('摩托車相關添加劑:', motorbikeAdditives.length);
+                console.log('【摩托車】添加劑產品:', motorbikeAdditives.items.length);
+                allResults = allResults.concat(motorbikeAdditives.items);
+
+                // 也搜尋【摩托車】機車養護類別
+                const careProducts = await wixData.query('products')
+                    .contains('sort', '【摩托車】機車養護')
+                    .limit(20)
+                    .find();
+                console.log('【摩托車】機車養護產品:', careProducts.items.length);
+                allResults = allResults.concat(careProducts.items);
             }
         } else if (hasGeneralKeywords) {
             // 通用產品搜尋
