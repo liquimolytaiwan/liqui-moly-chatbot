@@ -276,20 +276,19 @@ async function searchProducts(query, searchInfo) {
             queryLower.includes('煞車') || queryLower.includes('船') ||
             queryLower.includes('冷卻') || queryLower.includes('自行車');
 
-        // 根據 AI 分析的關鍵字搜尋
-        if (searchInfo && searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
-            const limitedKeywords = searchInfo.searchKeywords.slice(0, 3);
-            for (const keyword of limitedKeywords) {
-                const keywordResults = await wixData.query('products')
-                    .contains('title', keyword)
-                    .limit(15)
-                    .find();
-                allResults = allResults.concat(keywordResults.items);
-            }
-        }
+        // === 改進：先根據車型搜尋，確保摩托車查詢不會返回汽車產品 ===
 
-        // 通用產品搜尋
-        if ((searchInfo && searchInfo.isGeneralProduct) || hasGeneralKeywords) {
+        // Step 1: 根據車型載入基礎產品池
+        if (isMotorcycleQuery || (searchInfo && searchInfo.vehicleType === '摩托車')) {
+            // 摩托車優先搜尋
+            const motorcycleProducts = await wixData.query('products')
+                .contains('sort', '摩托車')
+                .limit(50)
+                .find();
+            allResults = motorcycleProducts.items;
+            console.log('優先載入摩托車產品:', allResults.length);
+        } else if (hasGeneralKeywords) {
+            // 通用產品搜尋
             const generalCategories = ['車輛美容', '化學品', '煞車', '冷卻', '船舶', '自行車'];
             for (const cat of generalCategories) {
                 if (queryLower.includes(cat.replace('系列', '').replace('系統', '')) ||
@@ -302,21 +301,27 @@ async function searchProducts(query, searchInfo) {
                     allResults = allResults.concat(catResults.items);
                 }
             }
-        }
-
-        // 摩托車/汽車產品搜尋
-        if (isMotorcycleQuery) {
-            const motorcycleProducts = await wixData.query('products')
-                .contains('sort', '摩托車')
-                .limit(50)
-                .find();
-            allResults = allResults.concat(motorcycleProducts.items);
-        } else if (!hasGeneralKeywords) {
+        } else {
+            // 預設搜尋汽車產品
             const carProducts = await wixData.query('products')
                 .contains('sort', '汽車')
                 .limit(50)
                 .find();
-            allResults = allResults.concat(carProducts.items);
+            allResults = carProducts.items;
+        }
+
+        // Step 2: 如果 AI 有提供 searchKeywords，用它來過濾/補充結果
+        if (searchInfo && searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
+            const limitedKeywords = searchInfo.searchKeywords.slice(0, 2);
+            for (const keyword of limitedKeywords) {
+                // 只搜尋對應車型的產品
+                let keywordQuery = wixData.query('products').contains('title', keyword);
+                if (isMotorcycleQuery || (searchInfo && searchInfo.vehicleType === '摩托車')) {
+                    keywordQuery = keywordQuery.contains('sort', '摩托車');
+                }
+                const keywordResults = await keywordQuery.limit(10).find();
+                allResults = allResults.concat(keywordResults.items);
+            }
         }
 
         // 去除重複
