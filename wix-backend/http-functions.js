@@ -454,22 +454,22 @@ async function searchProducts(query, searchInfo) {
             const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
             console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
 
-            // 使用 contains() 搭配核心標題來搜尋（eq() 對中文可能有問題）
-            for (const title of titlesToExpand.slice(0, 3)) {
+            for (const exactTitle of titlesToExpand.slice(0, 3)) {
                 try {
-                    // 取得核心標題（去除可能的容量標記）
-                    // 例如：「Molygen New Generation 新一代魔護機油 5W-30」-> 搜尋「Molygen New Generation 新一代魔護機油」
-                    const coreTitle = title.replace(/\s*\d+[Ll]?\s*$/, '').trim();
-                    console.log(`[Title Expansion] Searching with contains for: "${coreTitle}"`);
+                    // Step 1: 用 contains() 搜尋產品名稱的前 20 個字元
+                    const searchKey = exactTitle.substring(0, 20);
+                    console.log(`[Title Expansion] Step 1: contains search for "${searchKey}"`);
 
                     const res = await wixData.query('products')
-                        .contains('title', coreTitle)
-                        .limit(20)
+                        .contains('title', searchKey)
+                        .limit(50)
                         .find();
-                    console.log(`[Title Expansion] Found ${res.items.length} items for contains: "${coreTitle}"`);
+                    console.log(`[Title Expansion] Step 1 found ${res.items.length} items`);
 
+                    // Step 2: 記憶體精確過濾 - 只保留 title 完全相同的產品
+                    // 這樣就不會誤匹配到 DPF 等類似產品
                     for (const p of res.items) {
-                        if (p._id && !seenIds.has(p._id)) {
+                        if (p._id && !seenIds.has(p._id) && p.title === exactTitle) {
                             seenIds.add(p._id);
                             uniqueProducts.push(p);
                             console.log(`[Title Expansion] Added: ${p.partno} - ${p.size}`);
