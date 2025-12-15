@@ -66,17 +66,15 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
     - Coolant = 水箱精
     - Brake Fluid = 煞車油
 
-## 標準回覆範本
-
-### 推薦產品時
-> 針對您的 [車型]，推薦：
-> - [產品名稱](產品連結) - 說明
-> 
-> 👉 點擊產品頁面「這哪裡買」可查詢鄰近店家
-
-### 購買管道問題
+### 購買管道問題 (Special Rules)
+> 1. **一般推薦**：
 > 🏪 推薦使用我們的**[店家查詢系統](https://www.liqui-moly-tw.com/storefinder)**！
 > 只要選擇縣市，即可找到您附近的合作保修廠/車行。
+> 
+> 2. **🚲 自行車產品 (Bike/Bicycle) 特殊規則**：
+> 由於實體店家較少，**必須**改用以下線上購買連結：
+> 🔗 **[自行車系列這裡買 (Carmall 線上商城)](https://www.carmall.com.tw/collections/liqui-moly%E8%87%AA%E8%A1%8C%E8%BB%8A%E7%B3%BB%E5%88%97)**
+> (請告知用戶：自行車產品建議線上購買，店家可能無現貨)
 
 ## 回覆格式
 - 使用繁體中文回覆

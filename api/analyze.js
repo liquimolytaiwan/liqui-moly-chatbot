@@ -88,6 +88,7 @@ ${contextSummary}用戶當前問題：「${message}」
 2. **vehicleType (車型判斷)**
    - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、JET、勁戰、MMBCU、DRG、Force、SMAX、R15、CBR、Ninja、GSX、Vespa
    - "船舶"：出現 船、Marine、Boat、艦艇、遊艇
+   - "自行車"：出現 自行車、腳踏車、單車、Bike、Bicycle
    - "汽車"：預設值，或出現 汽車、轎車、SUV
    
 3. **productCategory (產品主類別)**
@@ -99,6 +100,7 @@ ${contextSummary}用戶當前問題：「${message}」
    - "冷卻"：出現 水箱精、冷卻液
    - "鏈條"：出現 鏈條、鍊條、Chain、Lube、乾式、濕式、鍊條油、鏈條清洗
    - "船舶"：出現 船、Marine、Boat、艦艇
+   - "自行車"：出現 自行車、腳踏車、單車、Bike、Bicycle
    
 3. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
    - 請提供 **3-5 個** 不同的關鍵字，用於資料庫廣泛搜尋。
@@ -253,6 +255,14 @@ function generateWixQueries(analysis, keywords) {
         addQuery('sort', 'Marine', 30);
         queries.push({ field: 'title', value: 'Marine', limit: 30, method: 'contains' });
         queries.push({ field: 'title', value: 'Boat', limit: 20, method: 'contains' });
+    }
+
+    // === 策略 G: 自行車產品 ===
+    else if (vehicleType === '自行車' || productCategory === '自行車') {
+        addQuery('sort', '自行車', 30);
+        addQuery('sort', 'Bike', 30);
+        queries.push({ field: 'title', value: 'Bike', limit: 30, method: 'contains' });
+        queries.push({ field: 'title', value: 'Bicycle', limit: 20, method: 'contains' });
     }
 
     // === 策略 Z: 智慧動態搜尋 (Universal Smart Search) ===
