@@ -470,7 +470,6 @@ function formatProducts(products) {
 違規範例（絕對禁止！）：
 - LM1580 ❌ 不存在
 - LM20852 ❌ 不存在
-- Motorbike Speed Shooter ❌ 不存在
 
 **只能使用下方列表中的「產品編號」和「產品連結」！**
 
@@ -487,6 +486,7 @@ function formatProducts(products) {
 
         context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
         context += `- 產品編號: ${p.partno || 'N/A'}\n`;
+        context += `- 容量/尺寸: ${p.size || 'N/A'}\\n`;
         context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
         context += `- 認證/規格: ${p.cert || 'N/A'}\n`;
