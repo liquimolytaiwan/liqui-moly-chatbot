@@ -452,21 +452,27 @@ async function searchProducts(query, searchInfo) {
         // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
         if (uniqueProducts.length > 0 && uniqueProducts.length <= 20) {
             const titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))];
+            console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
 
-            // 使用 eq() 精確匹配完整 title（因為確認同產品不同容量的 title 完全相同）
+            // 使用 contains() 搭配核心標題來搜尋（eq() 對中文可能有問題）
             for (const title of titlesToExpand.slice(0, 3)) {
                 try {
-                    console.log(`[Title Expansion] Searching for exact title: "${title}"`);
+                    // 取得核心標題（去除可能的容量標記）
+                    // 例如：「Molygen New Generation 新一代魔護機油 5W-30」-> 搜尋「Molygen New Generation 新一代魔護機油」
+                    const coreTitle = title.replace(/\s*\d+[Ll]?\s*$/, '').trim();
+                    console.log(`[Title Expansion] Searching with contains for: "${coreTitle}"`);
+
                     const res = await wixData.query('products')
-                        .eq('title', title)
+                        .contains('title', coreTitle)
                         .limit(20)
                         .find();
-                    console.log(`[Title Expansion] Found ${res.items.length} items for title: "${title}"`);
+                    console.log(`[Title Expansion] Found ${res.items.length} items for contains: "${coreTitle}"`);
 
                     for (const p of res.items) {
                         if (p._id && !seenIds.has(p._id)) {
                             seenIds.add(p._id);
                             uniqueProducts.push(p);
+                            console.log(`[Title Expansion] Added: ${p.partno} - ${p.size}`);
                         }
                     }
                 } catch (e) {
