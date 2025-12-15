@@ -1086,25 +1086,36 @@ async function searchProductsWithAI(query, searchInfo) {
 
         // === 策略 1：根據 AI 分析的 searchKeywords 搜尋產品標題（最重要！）===
         if (searchInfo && searchInfo.searchKeywords && searchInfo.searchKeywords.length > 0) {
-            for (const keyword of searchInfo.searchKeywords) {
+            // 限制關鍵字數量避免超時
+            const limitedKeywords = searchInfo.searchKeywords.slice(0, 3);
+            for (const keyword of limitedKeywords) {
                 const keywordResults = await wixData.query('products')
                     .contains('title', keyword)
-                    .limit(20)
+                    .limit(15)
                     .find();
                 allResults = allResults.concat(keywordResults.items);
             }
         }
 
-        // === 策略 2：根據產品類別搜尋通用產品 ===
-        if (searchInfo && searchInfo.isGeneralProduct) {
-            // 搜尋通用類別（車輛美容、化學品、煞車、冷卻等）
-            const generalCategories = ['車輛美容', '化學品', '煞車', '冷卻'];
+        // === 策略 2：根據產品類別搜尋通用產品（擴展觸發條件）===
+        // 當 isGeneralProduct=true，或有相關關鍵字時觸發
+        const hasGeneralKeywords = queryLower.includes('洗車') || queryLower.includes('煞車') ||
+            queryLower.includes('船') || queryLower.includes('冷卻') || queryLower.includes('自行車');
+
+        if ((searchInfo && searchInfo.isGeneralProduct) || hasGeneralKeywords) {
+            // 搜尋通用類別（車輛美容、化學品、煞車、冷卻、船舶、自行車等）
+            const generalCategories = ['車輛美容', '化學品', '煞車', '冷卻', '船舶', '自行車'];
+            // 只查詢相關的類別
             for (const cat of generalCategories) {
-                const catResults = await wixData.query('products')
-                    .contains('sort', cat)
-                    .limit(30)
-                    .find();
-                allResults = allResults.concat(catResults.items);
+                if (queryLower.includes(cat.replace('系列', '').replace('系統', '')) ||
+                    (cat === '車輛美容' && queryLower.includes('洗')) ||
+                    (cat === '船舶' && queryLower.includes('船'))) {
+                    const catResults = await wixData.query('products')
+                        .contains('sort', cat)
+                        .limit(20)
+                        .find();
+                    allResults = allResults.concat(catResults.items);
+                }
             }
         }
 
