@@ -374,141 +374,55 @@ export async function get_products(request) {
 async function searchProducts(query, searchInfo) {
     try {
         let allResults = [];
-        const queryLower = query.toLowerCase();
 
-        console.log('Search Info:', JSON.stringify(searchInfo));
+        // 1. 讀取 Vercel 傳來的「搜尋指令」 (Remote Instructions)
+        const queries = searchInfo?.wixQueries || [];
 
-        // 1. 取得 AI 分析的關鍵資訊
-        const category = searchInfo?.productCategory || '其他';
-        const vehicle = searchInfo?.vehicleType || '汽車';
-        const keywords = searchInfo?.searchKeywords || [];
+        console.log('執行遠端搜尋策略:', JSON.stringify(queries));
 
-        // 2. 判斷車型
-        const isBike = vehicle === '摩托車' || queryLower.includes('機車') || queryLower.includes('重機') || queryLower.includes('jet') || queryLower.includes('勁戰');
-
-        console.log(`搜尋策略啟動: 車型=${isBike ? '摩托車' : '汽車'}, 類別=${category}`);
-
-        // 3. 策略搜尋 (Strategy Pattern)
-
-        // === 策略 A: 摩托車 + 添加劑 (最容易幻覺的案例，優先處理) ===
-        if (isBike && (category === '添加劑' || queryLower.includes('添加') || queryLower.includes('油精') || category === '添加劑')) {
-            console.log('執行策略 A: 摩托車添加劑專屬搜尋');
-
-            // A1. 【摩托車】添加劑
-            const r1 = await wixData.query('products')
-                .contains('sort', '【摩托車】添加劑')
-                .limit(30)
-                .find();
-
-            // A2. 【摩托車】機車養護 (很多添加劑在這裡)
-            const r2 = await wixData.query('products')
-                .contains('sort', '【摩托車】機車養護')
-                .limit(20)
-                .find();
-
-            // A3. 標題包含 'Motorbike' 且包含 'Shooter'/'Additive'/'Flush' 的產品 (雙重保險)
-            const r3 = await wixData.query('products')
-                .contains('title', 'Motorbike')
-                .limit(50)
-                .find();
-            const r3Filtered = r3.items.filter(i =>
-                i.title && (i.title.includes('Additive') || i.title.includes('Shooter') || i.title.includes('Flush') || i.title.includes('Cleaner'))
-            );
-
-            allResults = [...r1.items, ...r2.items, ...r3Filtered];
-        }
-
-        // === 策略 B: 摩托車 + 機油 ===
-        else if (isBike && category === '機油') {
-            console.log('執行策略 B: 摩托車機油專屬搜尋');
-
-            const subType = searchInfo?.vehicleSubType || '';
-            const isScooter = subType.includes('速克達') || queryLower.includes('速克達') || queryLower.includes('jet') || queryLower.includes('勁戰') || queryLower.includes('drg') || queryLower.includes('mmbcu') || queryLower.includes('smax') || queryLower.includes('force');
-
-            if (isScooter) {
-                console.log('子策略: 速克達 (Scooter) 機油優先');
-                // 1. 優先找標題有 "Scooter" 的
-                const scooterOils = await wixData.query('products')
-                    .contains('sort', '【摩托車】機油')
-                    .contains('title', 'Scooter')
-                    .limit(20)
-                    .find();
-
-                // 2. 找其他機油做備選
-                const otherOils = await wixData.query('products')
-                    .contains('sort', '【摩托車】機油')
-                    .limit(30)
-                    .find();
-
-                allResults = [...scooterOils.items, ...otherOils.items];
-            } else {
-                // 檔車/重機/一般
-                const r1 = await wixData.query('products')
-                    .contains('sort', '【摩托車】機油')
-                    .limit(50)
-                    .find();
-                allResults = r1.items;
-            }
-        }
-
-        // === 策略 C: 汽車 + 添加劑 ===
-        else if (!isBike && category === '添加劑') {
-            console.log('執行策略 C: 汽車添加劑專屬搜尋');
-
-            const r1 = await wixData.query('products')
-                .contains('sort', '【汽車】添加劑')
-                .limit(30)
-                .find();
-
-            allResults = r1.items;
-        }
-
-        // === 策略 D: 汽車 + 機油 ===
-        else if (!isBike && category === '機油') {
-            console.log('執行策略 D: 汽車機油搜尋');
-            const r1 = await wixData.query('products')
-                .contains('sort', '【汽車】機油')
-                .limit(50)
-                .find();
-            allResults = r1.items;
-        }
-
-        // === 策略 E: 通用/清潔 ===
-        else if (category === '清潔' || category === '美容' || queryLower.includes('洗')) {
-            console.log('執行策略 E: 清潔美容搜尋');
-
-            const r1 = await wixData.query('products')
-                .contains('sort', '車輛美容')
-                .limit(20)
-                .find();
-            const r2 = await wixData.query('products')
-                .contains('sort', '【汽車】空調') // 空調清潔
-                .limit(10)
-                .find();
-            allResults = [...r1.items, ...r2.items];
-        }
-
-        // === 策略 F: 關鍵字補救 (Fallback) ===
-        // 如果上面的策略沒找到東西，或者是其他類別，就用關鍵字搜
-        if (allResults.length === 0 && keywords.length > 0) {
-            console.log('執行策略 F: 關鍵字搜尋 (Fallback)');
-            const limitedKeywords = keywords.slice(0, 3); // 只用前3個關鍵字
-
-            for (const kw of limitedKeywords) {
-                let q = wixData.query('products').contains('title', kw);
-
-                // 盡量還是區分車型
-                if (isBike) {
-                    q = q.contains('sort', '摩托車').or(q.contains('title', 'Motorbike'));
-                } else {
-                    q = q.not(wixData.query('products').contains('sort', '摩托車')); // 汽車盡量不搜摩托車
-                }
-
+        if (queries.length === 0) {
+            console.log('警告：未收到搜尋指令，使用預設關鍵字搜尋 (Fallback)');
+            const keywords = searchInfo?.searchKeywords || [query];
+            for (const kw of keywords.slice(0, 2)) {
                 try {
-                    const res = await q.limit(10).find();
+                    const res = await wixData.query('products').contains('title', kw).limit(10).find();
                     allResults = allResults.concat(res.items);
-                } catch (e) {
-                    console.log('Keyword search error:', e);
+                } catch (e) { }
+            }
+        } else {
+            // 2. 依序執行 Vercel 指派的任務
+            for (const task of queries) {
+                try {
+                    let q = wixData.query('products');
+
+                    // 2a. 設定主條件
+                    if (task.method === 'contains') {
+                        q = q.contains(task.field, task.value);
+                    } else if (task.method === 'eq') {
+                        q = q.eq(task.field, task.value);
+                    }
+
+                    // 2b. 設定附加條件 (例如: 既要機油又要含 Scooter)
+                    if (task.andContains) {
+                        q = q.contains(task.andContains.field, task.andContains.value);
+                    }
+
+                    // 2c. 執行查詢
+                    const res = await q.limit(task.limit || 20).find();
+                    let items = res.items;
+
+                    // 2d. 記憶體後處理 (Post-processing)
+                    if (task.filterTitle && Array.isArray(task.filterTitle)) {
+                        items = items.filter(item =>
+                            item.title && task.filterTitle.some(keyword => item.title.includes(keyword))
+                        );
+                    }
+
+                    console.log(`指令完成 [${task.value}]: 找到 ${items.length} 筆`);
+                    allResults = allResults.concat(items);
+
+                } catch (taskError) {
+                    console.error(`執行個別指令失敗 [${task.value}]:`, taskError);
                 }
             }
         }
@@ -524,9 +438,8 @@ async function searchProducts(query, searchInfo) {
             }
         }
 
-        console.log(`搜尋完成，共找到 ${uniqueProducts.length} 個產品`);
+        console.log(`搜尋總結: 原始 ${allResults.length} -> 去重後 ${uniqueProducts.length}`);
 
-        // 只回傳前 30 個最相關的，避免 Context 太長
         if (uniqueProducts.length > 0) {
             return formatProducts(uniqueProducts.slice(0, 30));
         }
@@ -534,8 +447,8 @@ async function searchProducts(query, searchInfo) {
         return '目前沒有匹配的產品資料';
 
     } catch (error) {
-        console.error('Product search error:', error);
-        return '無法取得產品資料';
+        console.error('searchProducts Global Error:', error);
+        return '搜尋產品時發生錯誤';
     }
 }
 

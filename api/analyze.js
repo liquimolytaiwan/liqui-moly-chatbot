@@ -125,7 +125,14 @@ ${contextSummary}用戶當前問題：「${message}」
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             try {
-                return JSON.parse(jsonMatch[0]);
+                const result = JSON.parse(jsonMatch[0]);
+
+                // ============================================
+                // 生成 Wix 查詢指令 (Logic moved from Wix to here!)
+                // ============================================
+                result.wixQueries = generateWixQueries(result, result.searchKeywords || []);
+
+                return result;
             } catch (parseError) {
                 console.error('JSON parse error:', parseError, 'Text:', text);
                 return null;
@@ -136,4 +143,71 @@ ${contextSummary}用戶當前問題：「${message}」
         console.error('analyzeUserQuery error:', e);
         return null;
     }
+}
+
+// 根據 AI 分析結果，生成具體的 Wix Data Query 指令
+function generateWixQueries(analysis, keywords) {
+    const queries = [];
+    const { vehicleType, productCategory, vehicleSubType } = analysis;
+    const isBike = vehicleType === '摩托車';
+    const isScooter = isBike && (
+        (vehicleSubType && vehicleSubType.includes('速克達')) ||
+        keywords.some(k => ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter'].includes(k.toLowerCase()))
+    );
+
+    // Helper to add query
+    const addQuery = (field, value, limit = 20, method = 'contains') => {
+        queries.push({ field, value, limit, method });
+    };
+
+    // === 策略 A: 摩托車添加劑 ===
+    if (isBike && productCategory === '添加劑') {
+        addQuery('sort', '【摩托車】添加劑', 30);
+        addQuery('sort', '【摩托車】機車養護', 20);
+        // Title backup
+        queries.push({ field: 'title', value: 'Motorbike', limit: 30, method: 'contains', filterTitle: ['Additive', 'Shooter', 'Flush', 'Cleaner'] });
+    }
+
+    // === 策略 B: 摩托車機油 ===
+    else if (isBike && productCategory === '機油') {
+        if (isScooter) {
+            // 速克達優先
+            queries.push({ field: 'sort', value: '【摩托車】機油', limit: 20, method: 'contains', andContains: { field: 'title', value: 'Scooter' } });
+            // 其他備選
+            addQuery('sort', '【摩托車】機油', 30);
+        } else {
+            addQuery('sort', '【摩托車】機油', 50);
+        }
+    }
+
+    // === 策略 C: 汽車添加劑 ===
+    else if (!isBike && productCategory === '添加劑') {
+        addQuery('sort', '【汽車】添加劑', 30);
+    }
+
+    // === 策略 D: 汽車機油 ===
+    else if (!isBike && productCategory === '機油') {
+        addQuery('sort', '【汽車】機油', 50);
+    }
+
+    // === 策略 E: 通用/清潔 ===
+    else if (productCategory === '清潔' || productCategory === '美容') {
+        addQuery('sort', '車輛美容', 30);
+        addQuery('sort', '【汽車】空調', 10);
+    }
+
+    // === Fallback: 如果上面都沒有指令，或者是「其他」 ===
+    if (queries.length === 0) {
+        // 至少用關鍵字搜一下
+        keywords.slice(0, 2).forEach(kw => {
+            addQuery('title', kw, 10);
+        });
+
+        // 如果是摩托車，加搜摩托車總類
+        if (isBike) {
+            addQuery('sort', '摩托車', 20);
+        }
+    }
+
+    return queries;
 }
