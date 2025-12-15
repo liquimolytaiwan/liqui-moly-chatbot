@@ -78,25 +78,26 @@ ${contextSummary}用戶當前問題：「${message}」
     "needsProductRecommendation": true
 }
 
-說明：
-- vehicleType: "汽車" 或 "摩托車" 或 "未知"（根據上下文推斷）
-- vehicleSubType: "速克達"/"檔車"/"重機"/"轎車"/"柴油車"/"SUV"/"未知"
-- certifications: 認證陣列如 ["JASO MA2"]、["ACEA C3"]
-- viscosity: 黏度如 "10W40"、"5W30"
-- searchKeywords: **重要**！用於搜尋產品標題的關鍵字，要多元化，例如：
-  - 問「洗車」→ ["洗車", "Wash", "Shampoo", "Car Wash"]
-  - 問「機油」→ ["機油", "Oil", "Motoroil"]
-  - 問「添加劑」→ ["添加劑", "Additive", "Shooter"]
-- productCategory: 主類別 - "機油"/"添加劑"/"變速箱"/"煞車"/"冷卻"/"美容清潔"/"化學品"/"空調"/"其他"
-- productSubCategory: 細分類別（選填）
-- isGeneralProduct: **重要**！如果產品不限於特定車型（如洗車液、煞車油、冷卻液）填 true
-- needsProductRecommendation: 需要推薦產品填 true，純知識問題填 false
+說明與規則：
+1. **vehicleType (車型判斷 - 非常重要！)**
+   - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、JET、勁戰、MMBCU、DRG、Force、SMAX、R15、CBR、Ninja、GSX、Vespa
+   - "汽車"：預設值，或出現 汽車、轎車、SUV
+   
+2. **productCategory (產品主類別 - 關鍵過濾依據)**
+   - "添加劑"：出現 添加劑、油精、快樂跑、清潔燃油、通油路、Shooter、Engine Flush、汽門、除碳
+   - "機油"：出現 機油、潤滑油、Oil、5W30、10W40 (若沒特別指添加劑)
+   - "清潔"：出現 洗車、打蠟、鍍膜、清潔劑、洗鍊條
+   - "變速箱"：出現 變速箱油、ATF、齒輪油
+   - "煞車"：出現 煞車油
+   - "冷卻"：出現 水箱精、冷卻液
+   
+3. **searchKeywords (搜尋關鍵字)**
+   - 必須包含中英文，用於資料庫模糊搜尋
+   - 問添加劑 -> ["添加劑", "Additive", "Shooter", "Cleaner"]
+   
+4. **isGeneralProduct**
+   - 洗車、煞車油、冷卻液等不限車型的產品設為 true
 
-注意：
-1. 摩托車檔車需要 JASO MA/MA2，速克達需要 JASO MB
-2. 根據對話上下文推斷車型，即使當前問題沒有明確說
-3. **重要**：searchKeywords 要包含中英文關鍵字，確保能搜尋到產品
-4. 洗車、煞車油、冷卻液等是通用產品，isGeneralProduct 應為 true
 5. 只返回 JSON，不要其他文字。`;
 
     try {
