@@ -137,11 +137,12 @@ ${contextSummary}用戶當前問題：「${message}」
        - 塑料白化 -> 搜 "Plastic Restorer", "Plastic Deep", "塑料"
        - 車內異味/煙味 -> 搜 "Climate Fresh", "AC System Cleaner", "除臭"
        - 皮革龜裂 -> 搜 "Leather Care", "皮革"
-     - **[船舶/自行車專區]**
+     - **[船舶/自行車/通用]**
        - 船外機保養 -> 搜 "Marine Oil", "Gear Lube", "4T", "2T", "船"
-       - 鹽分腐蝕/防鏽 -> 搜 "Marine Grease", "Multi-Spray", "Rust", "防鏽"
-       - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube", "鍊條"
+       - 鹽分腐蝕/防鏽/卡死 -> 搜 "LM 40", "Multi-Spray", "Marine Grease", "Rust", "防鏽", "潤滑"
+       - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube", "LM 40", "鍊條"
        - 煞車異音 (單車) -> 搜 "Brake Cleaner", "煞車"
+       - 電子接點氧化 -> 搜 "Electronic Spray", "LM 40", "接點"
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
    - **⚠️ 注意車種差異**：
      - 若 `vehicleType` 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
