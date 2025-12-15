@@ -98,9 +98,11 @@ ${contextSummary}用戶當前問題：「${message}」
    - "冷卻"：出現 水箱精、冷卻液
    - "鏈條"：出現 鏈條、鍊條、Chain、Lube、乾式、濕式、鍊條油、鏈條清洗
    
-3. **searchKeywords (搜尋關鍵字)**
-   - 必須包含中英文，用於資料庫模糊搜尋
-   - 問添加劑 -> ["添加劑", "Additive", "Shooter", "Cleaner"]
+3. **searchKeywords (關鍵字 - 自動化搜尋的核心)**
+   - 請提供 **3-5 個** 不同的關鍵字，用於資料庫廣泛搜尋。
+   - 包含：中文名稱、英文名稱 (重要!)、同義詞、德文名稱 (若知道)。
+   - 例如：鏈條油 -> ["Chain Lube", "Chain Spray", "鏈條油", "Ketten", "Lube"]
+   - 例如：水箱精 -> ["Coolant", "Radiator", "Antifreeze", "水箱", "冷卻"]
    
 4. **isGeneralProduct**
    - 洗車、煞車油、冷卻液等不限車型的產品設為 true
@@ -242,17 +244,43 @@ function generateWixQueries(analysis, keywords) {
         addQuery('sort', '【汽車】空調', 10);
     }
 
-    // === Fallback: 如果上面都沒有指令，或者是「其他」 ===
-    if (queries.length === 0) {
-        // 至少用關鍵字搜一下
-        keywords.slice(0, 2).forEach(kw => {
-            addQuery('title', kw, 10);
-        });
+    // === 策略 Z: 智慧動態搜尋 (Universal Smart Search) ===
+    // 自動將 AI 建議的關鍵字轉換為查詢指令，不管用戶輸入什麼都能動態適應
+    // 如果前面策略未命中(queries.length=0)，搜尋更多關鍵字(4個)；否則只搜前2個作為補充
 
-        // 如果是摩托車，加搜摩托車總類
+    const maxKeywords = queries.length === 0 ? 4 : 2;
+    // 簡單去重
+    const uniqueKw = keywords.filter((v, i, a) => a.indexOf(v) === i);
+
+    uniqueKw.slice(0, maxKeywords).forEach(kw => {
+        if (!kw || kw.length < 2) return; // 跳過過短關鍵字
+
         if (isBike) {
-            addQuery('sort', '摩托車', 20);
+            // 摩托車專屬過濾：標題含關鍵字 AND 分類含摩托車
+            // 這樣可以避免搜到同名的汽車產品 (ex: 同樣叫 Oil)
+            queries.push({
+                field: 'title', value: kw, limit: 15, method: 'contains',
+                andContains: { field: 'sort', value: '摩托車' }
+            });
+
+            // 額外嘗試：標題含關鍵字 AND 標題含 Motorbike (針對英文標題產品)
+            if (/^[a-zA-Z]+$/.test(kw)) { // 只有純英文關鍵字才試這個，減少查詢數
+                queries.push({
+                    field: 'title', value: kw, limit: 10, method: 'contains',
+                    andContains: { field: 'title', value: 'Motorbike' }
+                });
+            }
+        } else {
+            // 汽車或不分車型
+            // 排除明確標示為摩托車的產品
+            // 暫時不支援 not contains, 簡單搜 title 即可
+            queries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
         }
+    });
+
+    // 最後保底
+    if (queries.length === 0 && isBike) {
+        addQuery('sort', '摩托車', 20);
     }
 
     return queries;
