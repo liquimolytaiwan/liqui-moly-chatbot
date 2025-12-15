@@ -145,14 +145,19 @@ ${contextSummary}用戶當前問題：「${message}」
                 // 🛑 強制上下文補救 (Rule-based Context Override)
                 // ============================================
                 try {
-                    const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
-                    const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto'];
+                    // 只有當 AI 沒有明確判斷為其他特定車種時，才執行歷史回溯補救
+                    // 避免用戶問「那汽車呢？」時，因歷史紀錄有 JET 而被強制改回摩托車
+                    const explicitTypes = ['汽車', '船舶', '自行車'];
+                    if (!explicitTypes.includes(result.vehicleType)) {
+                        const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
+                        const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '速克達', 'bws', 'many', 'fiddle', 'saluto'];
 
-                    if (scooterKeywords.some(kw => historyText.includes(kw))) {
-                        console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
-                        result.vehicleType = '摩托車';
-                        if (!result.vehicleSubType || result.vehicleSubType === '未知' || !result.vehicleSubType.includes('速克達')) {
-                            result.vehicleSubType = (result.vehicleSubType || '') + ' 速克達';
+                        if (scooterKeywords.some(kw => historyText.includes(kw))) {
+                            console.log('Context Override: Detected Scooter keyword in history! Forcing Scooter mode.');
+                            result.vehicleType = '摩托車';
+                            if (!result.vehicleSubType || result.vehicleSubType === '未知' || !result.vehicleSubType.includes('速克達')) {
+                                result.vehicleSubType = (result.vehicleSubType || '') + ' 速克達';
+                            }
                         }
                     }
                 } catch (e) {
