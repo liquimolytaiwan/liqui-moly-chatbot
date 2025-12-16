@@ -11,6 +11,7 @@
 
 // 環境變數
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
+const INSTAGRAM_ACCESS_TOKEN = process.env.META_INSTAGRAM_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const APP_SECRET = process.env.META_APP_SECRET;
 
@@ -313,9 +314,13 @@ async function sendMessage(recipientId, text, source = 'facebook') {
 
     // 發送每段訊息
     for (const msg of messages) {
-        const endpoint = source === 'instagram'
-            ? 'https://graph.facebook.com/v18.0/me/messages'
-            : 'https://graph.facebook.com/v18.0/me/messages';
+        // Instagram 和 Facebook 使用相同的 endpoint
+        const endpoint = 'https://graph.facebook.com/v18.0/me/messages';
+
+        // 根據來源選擇正確的 Access Token
+        const accessToken = source === 'instagram'
+            ? (INSTAGRAM_ACCESS_TOKEN || PAGE_ACCESS_TOKEN)
+            : PAGE_ACCESS_TOKEN;
 
         try {
             const response = await fetch(endpoint, {
@@ -324,13 +329,15 @@ async function sendMessage(recipientId, text, source = 'facebook') {
                 body: JSON.stringify({
                     recipient: { id: recipientId },
                     message: { text: msg },
-                    access_token: PAGE_ACCESS_TOKEN
+                    access_token: accessToken
                 })
             });
 
             if (!response.ok) {
                 const error = await response.json();
-                console.error('[Meta Webhook] Send message error:', error);
+                console.error(`[Meta Webhook] Send message error (${source}):`, error);
+            } else {
+                console.log(`[Meta Webhook] Message sent successfully to ${source}`);
             }
         } catch (error) {
             console.error('[Meta Webhook] Send message failed:', error);
