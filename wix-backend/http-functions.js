@@ -455,19 +455,24 @@ async function searchProducts(query, searchInfo) {
         if (uniqueProducts.length > 0) {
             // 優先找 SKU 匹配的產品（通常是用戶最想查詢的）
             // 從用戶 query 中提取 SKU（4-5 位數字）
-            const skuMatch = query.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
+            // 支援多個 SKU 同時查詢 (Multi-SKU Support)
+            const skuPattern = /(?:lm|LM)?[- ]?(\d{4,5})/g;
+            const allSkuMatches = [...query.matchAll(skuPattern)];
             let titlesToExpand = [];
 
-            if (skuMatch) {
-                const skuNum = skuMatch[1];
-                const fullSku = `LM${skuNum}`;
-                console.log(`[Title Expansion] Looking for SKU: ${fullSku}`);
+            if (allSkuMatches.length > 0) {
+                // 為每個 SKU 尋找對應產品
+                for (const skuMatch of allSkuMatches) {
+                    const skuNum = skuMatch[1];
+                    const fullSku = `LM${skuNum}`;
+                    console.log(`[Title Expansion] Looking for SKU: ${fullSku}`);
 
-                // 在搜尋結果中找到 SKU 完全匹配的產品
-                const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
-                if (skuProduct && skuProduct.title) {
-                    titlesToExpand = [skuProduct.title];
-                    console.log(`[Title Expansion] Found SKU product, will expand title: "${skuProduct.title}"`);
+                    // 在搜尋結果中找到 SKU 完全匹配的產品
+                    const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
+                    if (skuProduct && skuProduct.title && !titlesToExpand.includes(skuProduct.title)) {
+                        titlesToExpand.push(skuProduct.title);
+                        console.log(`[Title Expansion] Found SKU product, will expand title: "${skuProduct.title}"`);
+                    }
                 }
             }
 
@@ -511,19 +516,34 @@ async function searchProducts(query, searchInfo) {
 
         if (uniqueProducts.length > 0) {
             // 如果有 SKU 搜尋，優先返回 SKU 相關產品
-            const skuMatch = query.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
-            if (skuMatch) {
-                const skuNum = skuMatch[1];
-                const fullSku = `LM${skuNum}`;
-                const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
+            // 支援多個 SKU 同時查詢 (Multi-SKU Support)
+            const skuPattern = /(?:lm|LM)?[- ]?(\d{4,5})/g;
+            const allSkuMatches = [...query.matchAll(skuPattern)];
+            if (allSkuMatches.length > 0) {
+                let allSkuProducts = [];
+                let allMatchedTitles = new Set();
 
-                if (skuProduct && skuProduct.title) {
-                    // 只返回與 SKU 產品相同 title 的所有容量 + 少量其他相關產品
-                    const sameTitle = uniqueProducts.filter(p => p.title === skuProduct.title);
-                    const others = uniqueProducts.filter(p => p.title !== skuProduct.title).slice(0, 5);
-                    const prioritized = [...sameTitle, ...others];
-                    console.log(`[Return] SKU mode: returning ${sameTitle.length} same-title products + ${others.length} others`);
-                    return formatProducts(prioritized.slice(0, 15));
+                // 為每個 SKU 收集對應產品
+                for (const skuMatch of allSkuMatches) {
+                    const skuNum = skuMatch[1];
+                    const fullSku = `LM${skuNum}`;
+                    const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
+
+                    if (skuProduct && skuProduct.title) {
+                        allMatchedTitles.add(skuProduct.title);
+                        // 收集所有與該 SKU 同 title 的產品（不同容量）
+                        const sameTitle = uniqueProducts.filter(p => p.title === skuProduct.title);
+                        allSkuProducts = allSkuProducts.concat(sameTitle);
+                    }
+                }
+
+                if (allSkuProducts.length > 0) {
+                    // 去重
+                    const skuProductsUnique = [...new Map(allSkuProducts.map(p => [p._id, p])).values()];
+                    const others = uniqueProducts.filter(p => !allMatchedTitles.has(p.title)).slice(0, 5);
+                    const prioritized = [...skuProductsUnique, ...others];
+                    console.log(`[Return] Multi-SKU mode: returning ${skuProductsUnique.length} SKU-related products + ${others.length} others`);
+                    return formatProducts(prioritized.slice(0, 20));
                 }
             }
 

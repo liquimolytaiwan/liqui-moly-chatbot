@@ -437,8 +437,10 @@ function generateWixQueries(analysis, keywords, message = '') {
         // === 0. 產品編號直達車 (SKU Direct Search) ===
         // 檢查是否為產品編號格式：4-5位數字，或 LM 開頭接數字
         // 如：9047, LM9047, lm-9047
-        const skuMatch = kw.match(/(?:lm|LM)?[- ]?(\d{4,5})/);
-        if (skuMatch) {
+        // 支援多個 SKU 同時查詢 (Multi-SKU Support)
+        const skuPattern = /(?:lm|LM)?[- ]?(\d{4,5})/g;
+        const skuMatches = [...kw.matchAll(skuPattern)];
+        for (const skuMatch of skuMatches) {
             const skuNum = skuMatch[1];
             // 補全 LM 前綴進行精確匹配，避免搜到錯誤產品
             const fullSku = `LM${skuNum}`;
