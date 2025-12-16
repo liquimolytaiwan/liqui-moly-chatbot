@@ -185,6 +185,19 @@ async function handleWebhook(req, res) {
 async function processMessagingEvent(event, source) {
     const senderId = event.sender?.id;
     const message = event.message;
+    const postback = event.postback;
+
+    // ======= 處理 Postback（按鈕點擊）=======
+    if (postback) {
+        await handlePostback(senderId, postback, source);
+        return;
+    }
+
+    // ======= 處理 Quick Reply =======
+    if (message?.quick_reply) {
+        await handleQuickReply(senderId, message.quick_reply, source);
+        return;
+    }
 
     // 忽略 echo 訊息（自己發的）
     if (message?.is_echo) {
@@ -244,6 +257,142 @@ async function processMessagingEvent(event, source) {
         // 發送錯誤訊息給用戶
         await sendMessage(senderId, '抱歉，系統暫時遇到問題。請稍後再試，或使用官網聯絡表單與我們聯繫。', source);
     }
+}
+
+// ============================================
+// 處理 Postback（按鈕點擊）
+// ============================================
+
+async function handlePostback(senderId, postback, source) {
+    const payload = postback.payload;
+    console.log(`[Meta Webhook] Postback received: ${payload}`);
+
+    switch (payload) {
+        case 'GET_STARTED':
+            await sendWelcomeMessage(senderId, source);
+            break;
+        case 'HUMAN_AGENT':
+            await switchToHumanAgent(senderId, source);
+            break;
+        case 'RESUME_AI':
+            await resumeAI(senderId, source);
+            break;
+        default:
+            console.log(`[Meta Webhook] Unknown postback: ${payload}`);
+    }
+}
+
+// ============================================
+// 處理 Quick Reply
+// ============================================
+
+async function handleQuickReply(senderId, quickReply, source) {
+    const payload = quickReply.payload;
+    console.log(`[Meta Webhook] Quick reply received: ${payload}`);
+
+    switch (payload) {
+        case 'AI_CONSULT':
+            await sendMessage(senderId, '好的！請直接輸入您的問題，我會盡力為您解答。\n\n例如：\n🔹 我的車是 Toyota Camry 2020，適合什麼機油？\n🔹 5W30 和 5W40 有什麼差別？', source);
+            break;
+        case 'HUMAN_AGENT':
+            await switchToHumanAgent(senderId, source);
+            break;
+        case 'RESUME_AI':
+            await resumeAI(senderId, source);
+            break;
+        default:
+            console.log(`[Meta Webhook] Unknown quick reply: ${payload}`);
+    }
+}
+
+// ============================================
+// 發送歡迎訊息
+// ============================================
+
+async function sendWelcomeMessage(senderId, source) {
+    const welcomeText = `您好！👋 歡迎來到 LIQUI MOLY Taiwan！
+
+我是 AI 產品諮詢助理，可以幫您：
+🔹 推薦適合您愛車的機油
+🔹 查詢產品資訊與規格
+🔹 提供購買管道指引
+
+請直接輸入問題，或選擇下方選項：`;
+
+    await sendMessageWithQuickReplies(senderId, welcomeText, [
+        { content_type: 'text', title: '🤖 AI 產品諮詢', payload: 'AI_CONSULT' },
+        { content_type: 'text', title: '👤 真人客服', payload: 'HUMAN_AGENT' }
+    ], source);
+}
+
+// ============================================
+// 切換真人客服
+// ============================================
+
+async function switchToHumanAgent(senderId, source) {
+    // 設定暫停狀態
+    await pauseUserForHumanHandover(senderId, 'user_request');
+
+    const confirmText = `已為您轉接真人客服 👤
+
+⏰ AI 助理將暫停 ${HUMAN_HANDOVER_PAUSE_MINUTES} 分鐘
+📞 服務時間：週一至週五 09:00-18:00
+📝 您也可以填寫聯絡表單：https://www.liqui-moly-tw.com/contact
+
+如需恢復 AI 自動回答，請點擊下方按鈕。`;
+
+    await sendMessageWithQuickReplies(senderId, confirmText, [
+        { content_type: 'text', title: '🤖 恢復 AI 自動回答', payload: 'RESUME_AI' }
+    ], source);
+
+    // 記錄到 CMS
+    await saveConversationToWix({
+        senderId,
+        source,
+        userMessage: '[用戶點擊真人客服]',
+        aiResponse: confirmText,
+        needsHumanReview: true,
+        isPaused: true
+    });
+}
+
+// ============================================
+// 恢復 AI 回覆
+// ============================================
+
+async function resumeAI(senderId, source) {
+    // 清除暫停狀態（透過設定 isPaused = false）
+    try {
+        await fetch(`${WIX_API_URL}/setPauseStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId,
+                isPaused: false
+            })
+        });
+        console.log(`[Resume] User ${senderId} AI resumed`);
+    } catch (error) {
+        console.error('[Resume] Error resuming AI:', error);
+    }
+
+    const confirmText = `AI 助理已恢復 🤖
+
+現在可以直接輸入問題，我會為您解答！`;
+
+    await sendMessageWithQuickReplies(senderId, confirmText, [
+        { content_type: 'text', title: '🤖 AI 產品諮詢', payload: 'AI_CONSULT' },
+        { content_type: 'text', title: '👤 真人客服', payload: 'HUMAN_AGENT' }
+    ], source);
+
+    // 記錄到 CMS
+    await saveConversationToWix({
+        senderId,
+        source,
+        userMessage: '[用戶恢復 AI]',
+        aiResponse: confirmText,
+        isPaused: false
+    });
 }
 
 // ============================================
@@ -328,13 +477,16 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
 ⏱️ AI 助理將暫停回覆 ${pauseMinutes} 分鐘，等待真人客服處理
 📝 您也可以填寫聯絡表單：https://www.liqui-moly-tw.com/contact
 
-請稍候，我們會盡快回覆您！`;
+如需恢復 AI 自動回答，請點擊下方按鈕。`;
 
-    await sendMessage(senderId, response, source);
+    // 發送帶有恢復按鈕的訊息
+    await sendMessageWithQuickReplies(senderId, response, [
+        { content_type: 'text', title: '🤖 恢復 AI 自動回答', payload: 'RESUME_AI' }
+    ], source);
 
     // ======= 啟動暫停機制 =======
     // 用戶傳送圖片後，暫停 AI 回覆 30 分鐘
-    pauseUserForHumanHandover(senderId, 'image_attachment');
+    await pauseUserForHumanHandover(senderId, 'image_attachment');
 
     // 記錄到 CMS（標記為需要真人處理）
     await saveConversationToWix({
@@ -411,6 +563,43 @@ async function sendMessage(recipientId, text, source = 'facebook') {
         } catch (error) {
             console.error('[Meta Webhook] Send message failed:', error);
         }
+    }
+}
+
+// ============================================
+// 發送帶有 Quick Replies 的訊息
+// ============================================
+
+async function sendMessageWithQuickReplies(recipientId, text, quickReplies, source = 'facebook') {
+    const endpoint = 'https://graph.facebook.com/v18.0/me/messages';
+
+    // 根據來源選擇正確的 Access Token
+    const accessToken = source === 'instagram'
+        ? (INSTAGRAM_ACCESS_TOKEN || PAGE_ACCESS_TOKEN)
+        : PAGE_ACCESS_TOKEN;
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                recipient: { id: recipientId },
+                message: {
+                    text: text,
+                    quick_replies: quickReplies
+                },
+                access_token: accessToken
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            console.error(`[Meta Webhook] Send quick reply error (${source}):`, error);
+        } else {
+            console.log(`[Meta Webhook] Quick reply message sent successfully to ${source}`);
+        }
+    } catch (error) {
+        console.error('[Meta Webhook] Send quick reply failed:', error);
     }
 }
 
