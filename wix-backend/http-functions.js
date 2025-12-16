@@ -974,9 +974,48 @@ export async function post_getConversationHistory(request) {
                 const userContent = item.userMessage.trim();
                 if (!seenUserMessages.has(userContent)) {
                     seenUserMessages.add(userContent);
+
+                    // 提取用戶訊息中的車型相關資訊
+                    let enhancedUserContent = userContent;
+                    const extractedInfo = [];
+
+                    // 提取年份 (2015-2025)
+                    const yearMatch = userContent.match(/20[1-2]\d/);
+                    if (yearMatch) extractedInfo.push(`年份:${yearMatch[0]}`);
+
+                    // 提取 CC 數 (1.0-5.0 或 1000-5000cc)
+                    const ccMatch = userContent.match(/(\d+\.?\d*)\s*(cc|公升|L)/i) ||
+                        userContent.match(/(\d+\.\d+)\s*(汽油|柴油)?/);
+                    if (ccMatch && parseFloat(ccMatch[1]) >= 0.8 && parseFloat(ccMatch[1]) <= 6.0) {
+                        extractedInfo.push(`排氣量:${ccMatch[1]}L`);
+                    }
+
+                    // 提取燃油類型
+                    if (/汽油|gasoline/i.test(userContent)) extractedInfo.push('燃油:汽油');
+                    if (/柴油|diesel/i.test(userContent)) extractedInfo.push('燃油:柴油');
+                    if (/油電|hybrid/i.test(userContent)) extractedInfo.push('燃油:油電');
+                    if (/電動|EV|electric/i.test(userContent)) extractedInfo.push('燃油:電動');
+
+                    // 提取常見車型品牌
+                    const carBrands = ['Toyota', 'Honda', 'Mazda', 'Ford', 'BMW', 'Benz', 'Mercedes',
+                        'Lexus', 'Nissan', 'Mitsubishi', 'VW', 'Volkswagen', 'Audi',
+                        'Hyundai', 'Kia', 'Subaru', 'Suzuki', 'Porsche', 'Volvo',
+                        'Camry', 'Altis', 'RAV4', 'CRV', 'Civic', 'Elantra', 'Kuga'];
+                    for (const brand of carBrands) {
+                        if (new RegExp(brand, 'i').test(userContent)) {
+                            extractedInfo.push(`車型:${brand}`);
+                            break;
+                        }
+                    }
+
+                    // 如果有提取到資訊，附加到訊息末尾（幫助 AI 記憶）
+                    if (extractedInfo.length > 0) {
+                        enhancedUserContent = `${userContent} [${extractedInfo.join(', ')}]`;
+                    }
+
                     conversationHistory.push({
                         role: 'user',
-                        content: userContent
+                        content: enhancedUserContent
                     });
 
                     // 添加對應的 AI 回覆（摘要）
