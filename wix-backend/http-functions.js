@@ -982,9 +982,20 @@ export async function post_getConversationHistory(request) {
                     // 添加對應的 AI 回覆（摘要）
                     if (item.aiResponse && item.aiResponse.trim() && !item.aiResponse.startsWith('[')) {
                         let assistantContent = item.aiResponse.trim();
-                        // 如果太長，只保留前 200 字
-                        if (assistantContent.length > 200) {
-                            assistantContent = assistantContent.substring(0, 200) + '...';
+
+                        // 提取產品編號（LM + 數字），確保 AI 記得討論過哪個產品
+                        const productNumbers = assistantContent.match(/LM\d{4,5}/gi) || [];
+                        const uniqueProducts = [...new Set(productNumbers.map(p => p.toUpperCase()))];
+
+                        // 如果太長，智慧截取
+                        if (assistantContent.length > 300) {
+                            // 保留前 250 字 + 產品編號提示
+                            assistantContent = assistantContent.substring(0, 250);
+                            if (uniqueProducts.length > 0) {
+                                assistantContent += `...（提到的產品：${uniqueProducts.join(', ')}）`;
+                            } else {
+                                assistantContent += '...';
+                            }
                         }
                         conversationHistory.push({
                             role: 'assistant',
