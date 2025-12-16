@@ -842,6 +842,97 @@ export async function post_checkPauseStatus(request) {
     }
 }
 
+// CORS OPTIONS for checkPauseStatus
+export function options_checkPauseStatus(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, X-Api-Key"
+        },
+        body: ""
+    });
+}
+
+/**
+ * POST /checkPauseStatus - 檢查用戶的 AI 暫停狀態
+ * 用於判斷是否要回覆 AI
+ */
+export async function post_checkPauseStatus(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+        const { senderId } = body;
+
+        if (!senderId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing senderId" })
+            });
+        }
+
+        // 查詢該用戶最近的暫停記錄
+        const results = await wixData.query("ChatbotConversations")
+            .eq("senderId", senderId)
+            .eq("source", "system")
+            .descending("createdAt")
+            .limit(1)
+            .find();
+
+        if (results.items.length === 0) {
+            // 沒有暫停記錄
+            return ok({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: true,
+                    isPaused: false
+                })
+            });
+        }
+
+        const latestRecord = results.items[0];
+        const now = new Date();
+
+        // 檢查是否仍在暫停期間
+        if (latestRecord.isPaused && latestRecord.pauseUntil) {
+            const pauseUntil = new Date(latestRecord.pauseUntil);
+            if (now < pauseUntil) {
+                return ok({
+                    headers: corsHeaders,
+                    body: JSON.stringify({
+                        success: true,
+                        isPaused: true,
+                        pauseUntil: pauseUntil.toISOString()
+                    })
+                });
+            }
+        }
+
+        // 暫停已過期或已恢復
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                isPaused: false
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /checkPauseStatus error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
+
 // CORS OPTIONS for setPauseStatus
 export function options_setPauseStatus(request) {
     return ok({
