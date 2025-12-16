@@ -402,10 +402,9 @@ async function resumeAI(senderId, source) {
 async function handleTextMessage(senderId, text, source, userProfile) {
     console.log(`[Meta Webhook] Processing text message: "${text.substring(0, 50)}..."`);
 
-    // 呼叫現有的 AI Chatbot 邏輯
     try {
-        // Step 1: 呼叫 analyze API 分析用戶意圖
-        const analyzeResponse = await fetch(`${VERCEL_API_URL}/api/analyze`, {
+        // 直接呼叫 Wix 的 chat API（完整包含產品搜尋邏輯）
+        const chatResponse = await fetch(`${WIX_API_URL}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -413,72 +412,9 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 conversationHistory: [] // TODO: 從 Wix CMS 取得對話歷史
             })
         });
-        const analyzeData = await analyzeResponse.json();
-        console.log('[Meta Webhook] Analyze result:', {
-            intent: analyzeData.intent,
-            hasWixQueries: !!(analyzeData.wixQueries && analyzeData.wixQueries.length > 0)
-        });
 
-        // Step 2: 呼叫 Wix 搜尋產品
-        let productContext = '';
-        if (analyzeData.wixQueries && analyzeData.wixQueries.length > 0) {
-            try {
-                // 呼叫 Wix searchProducts API
-                const searchPromises = analyzeData.wixQueries.map(async (queryInfo) => {
-                    const searchResponse = await fetch(`${WIX_API_URL}/products?query=${encodeURIComponent(queryInfo.query)}&searchInfo=${encodeURIComponent(JSON.stringify(queryInfo))}`, {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    if (searchResponse.ok) {
-                        return await searchResponse.json();
-                    }
-                    return { products: [] };
-                });
-
-                const searchResults = await Promise.all(searchPromises);
-
-                // 合併所有搜尋結果
-                const allProducts = [];
-                for (const result of searchResults) {
-                    if (result.products && result.products.length > 0) {
-                        allProducts.push(...result.products);
-                    }
-                }
-
-                // 去重（根據 productId）
-                const uniqueProducts = [];
-                const seenIds = new Set();
-                for (const product of allProducts) {
-                    if (!seenIds.has(product.productId)) {
-                        seenIds.add(product.productId);
-                        uniqueProducts.push(product);
-                    }
-                }
-
-                if (uniqueProducts.length > 0) {
-                    productContext = uniqueProducts.slice(0, 5).map(p =>
-                        `【${p.name}】\n價格: NT$${p.price}\n規格: ${p.size || 'N/A'}\n產品連結: ${p.link || ''}`
-                    ).join('\n\n');
-                    console.log(`[Meta Webhook] Found ${uniqueProducts.length} products`);
-                } else {
-                    console.log('[Meta Webhook] No products found');
-                }
-            } catch (e) {
-                console.error('[Meta Webhook] Product search error:', e.message);
-            }
-        }
-
-        // Step 3: 呼叫 chat API 取得 AI 回覆
-        const chatResponse = await fetch(`${VERCEL_API_URL}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: text,
-                conversationHistory: [],
-                productContext: productContext || '目前沒有找到相關產品資料'
-            })
-        });
         const chatData = await chatResponse.json();
+        console.log('[Meta Webhook] Chat response received:', { success: chatData.success });
 
         if (chatData.success && chatData.response) {
             // 發送 AI 回覆
