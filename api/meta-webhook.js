@@ -566,8 +566,9 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
 // ============================================
 
 async function sendMessage(recipientId, text, source = 'facebook') {
-    // 分割長訊息（Facebook 有 2000 字元限制）
-    const maxLength = 2000;
+    // 根據平台設定訊息長度限制
+    // Instagram: 1000 字元, Facebook: 2000 字元
+    const maxLength = source === 'instagram' ? 1000 : 2000;
     const messages = [];
 
     if (text.length <= maxLength) {
