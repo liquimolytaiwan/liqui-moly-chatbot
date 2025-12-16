@@ -238,42 +238,43 @@ async function processMessagingEvent(event, source) {
     // ======= 處理 Echo 訊息（管理者回覆）=======
     // 當管理者從 FB Page Inbox 回覆時，會收到 is_echo: true 的訊息
     if (message?.is_echo) {
-        // 檢查是否為管理者手動回覆（非 app 發送的訊息）
-        // app_id 存在時表示是 bot/app 發送的，我們只處理人工回覆
-        if (!message.app_id) {
-            console.log('[Meta Webhook] Admin reply detected, extending pause time');
-            // 取得用戶 ID（echo 訊息的 recipient 是用戶）
-            const recipientId = event.recipient?.id;
-            const userId = senderId; // 在 echo 中，sender 是 Page，recipient 是用戶
-            // 但實際上我們需要從 message 中取得原始用戶
-            // Facebook echo 訊息格式：sender = page, recipient = user
+        // app_id 存在時表示是 bot/app 發送的訊息，跳過不處理
+        // 只處理真人管理者手動回覆的訊息
+        if (message.app_id) {
+            console.log('[Meta Webhook] Bot echo message, skipping');
+            return; // 這是 bot 發的訊息，不需要記錄
+        }
 
-            // 延長該用戶的暫停時間
-            try {
-                await fetch(`${WIX_API_URL}/setPauseStatus`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        senderId: recipientId, // 用戶的 ID
-                        isPaused: true,
-                        pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES
-                    })
-                });
-                console.log(`[Meta Webhook] Pause extended for user ${recipientId} by admin reply`);
+        console.log('[Meta Webhook] Admin reply detected, extending pause time');
+        // Echo 訊息格式：sender = page, recipient = user
+        const recipientId = event.recipient?.id;
 
-                // 記錄管理者回覆到 CMS
-                await saveConversationToWix({
-                    senderId: recipientId,
-                    senderName: 'Admin',
-                    source,
-                    userMessage: '[管理者回覆]',
-                    aiResponse: message.text || '[附件]',
+        // 延長該用戶的暫停時間
+        try {
+            await fetch(`${WIX_API_URL}/setPauseStatus`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderId: recipientId, // 用戶的 ID
                     isPaused: true,
-                    needsHumanReview: false
-                });
-            } catch (error) {
-                console.error('[Meta Webhook] Error extending pause:', error);
-            }
+                    pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES
+                })
+            });
+            console.log(`[Meta Webhook] Pause extended for user ${recipientId} by admin reply`);
+
+            // 記錄管理者回覆到 CMS
+            // 注意：管理者的訊息存到 userMessage，aiResponse 標記為管理者回覆
+            await saveConversationToWix({
+                senderId: recipientId,
+                senderName: 'Admin',
+                source,
+                userMessage: message.text || '[管理者發送附件]',
+                aiResponse: '[真人客服回覆]',
+                isPaused: true,
+                needsHumanReview: false
+            });
+        } catch (error) {
+            console.error('[Meta Webhook] Error extending pause:', error);
         }
         return; // Echo 訊息不需要進一步處理
     }
