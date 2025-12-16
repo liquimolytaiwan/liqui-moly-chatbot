@@ -403,13 +403,30 @@ async function handleTextMessage(senderId, text, source, userProfile) {
     console.log(`[Meta Webhook] Processing text message: "${text.substring(0, 50)}..."`);
 
     try {
-        // 直接呼叫 Wix 的 chat API（完整包含產品搜尋邏輯）
+        // Step 1: 取得對話歷史
+        let conversationHistory = [];
+        try {
+            const historyResponse = await fetch(`${WIX_API_URL}/getConversationHistory`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senderId, limit: 10 })
+            });
+            const historyData = await historyResponse.json();
+            if (historyData.success && historyData.conversationHistory) {
+                conversationHistory = historyData.conversationHistory;
+                console.log(`[Meta Webhook] Loaded ${conversationHistory.length} history messages`);
+            }
+        } catch (e) {
+            console.error('[Meta Webhook] Failed to get conversation history:', e.message);
+        }
+
+        // Step 2: 呼叫 Wix 的 chat API（完整包含產品搜尋邏輯）
         const chatResponse = await fetch(`${WIX_API_URL}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: text,
-                conversationHistory: [] // TODO: 從 Wix CMS 取得對話歷史
+                conversationHistory
             })
         });
 

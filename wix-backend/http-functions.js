@@ -918,3 +918,86 @@ export async function post_setPauseStatus(request) {
         });
     }
 }
+
+// CORS OPTIONS for getConversationHistory
+export function options_getConversationHistory(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, X-Api-Key"
+        },
+        body: ""
+    });
+}
+
+/**
+ * POST /getConversationHistory - 取得用戶的對話歷史
+ * 用於 FB/IG Chatbot 讀取上下文
+ */
+export async function post_getConversationHistory(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+        const { senderId, limit = 10 } = body;
+
+        if (!senderId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing senderId" })
+            });
+        }
+
+        // 查詢最近的對話記錄（排除系統訊息）
+        const results = await wixData.query("ChatbotConversations")
+            .eq("senderId", senderId)
+            .ne("source", "system")
+            .descending("createdAt")
+            .limit(limit)
+            .find();
+
+        // 轉換為 conversationHistory 格式
+        const conversationHistory = [];
+        // 反轉順序（從舊到新）
+        const items = results.items.reverse();
+
+        for (const item of items) {
+            if (item.userMessage && item.userMessage.trim()) {
+                conversationHistory.push({
+                    role: 'user',
+                    content: item.userMessage
+                });
+            }
+            if (item.aiResponse && item.aiResponse.trim() && !item.aiResponse.startsWith('[')) {
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: item.aiResponse
+                });
+            }
+        }
+
+        console.log(`[getConversationHistory] Found ${conversationHistory.length} messages for ${senderId}`);
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                conversationHistory
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /getConversationHistory error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
