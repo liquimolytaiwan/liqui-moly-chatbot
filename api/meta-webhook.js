@@ -199,10 +199,47 @@ async function processMessagingEvent(event, source) {
         return;
     }
 
-    // 忽略 echo 訊息（自己發的）
+    // ======= 處理 Echo 訊息（管理者回覆）=======
+    // 當管理者從 FB Page Inbox 回覆時，會收到 is_echo: true 的訊息
     if (message?.is_echo) {
-        console.log('[Meta Webhook] Ignoring echo message');
-        return;
+        // 檢查是否為管理者手動回覆（非 app 發送的訊息）
+        // app_id 存在時表示是 bot/app 發送的，我們只處理人工回覆
+        if (!message.app_id) {
+            console.log('[Meta Webhook] Admin reply detected, extending pause time');
+            // 取得用戶 ID（echo 訊息的 recipient 是用戶）
+            const recipientId = event.recipient?.id;
+            const userId = senderId; // 在 echo 中，sender 是 Page，recipient 是用戶
+            // 但實際上我們需要從 message 中取得原始用戶
+            // Facebook echo 訊息格式：sender = page, recipient = user
+
+            // 延長該用戶的暫停時間
+            try {
+                await fetch(`${WIX_API_URL}/setPauseStatus`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderId: recipientId, // 用戶的 ID
+                        isPaused: true,
+                        pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES
+                    })
+                });
+                console.log(`[Meta Webhook] Pause extended for user ${recipientId} by admin reply`);
+
+                // 記錄管理者回覆到 CMS
+                await saveConversationToWix({
+                    senderId: recipientId,
+                    senderName: 'Admin',
+                    source,
+                    userMessage: '[管理者回覆]',
+                    aiResponse: message.text || '[附件]',
+                    isPaused: true,
+                    needsHumanReview: false
+                });
+            } catch (error) {
+                console.error('[Meta Webhook] Error extending pause:', error);
+            }
+        }
+        return; // Echo 訊息不需要進一步處理
     }
 
     // 忽略沒有訊息內容的事件
@@ -454,8 +491,11 @@ async function handleTextMessage(senderId, text, source, userProfile) {
         console.log('[Meta Webhook] Chat response received:', { success: chatData.success });
 
         if (chatData.success && chatData.response) {
+            // 在 AI 回覆前加上機器人標註，讓用戶能分辨 AI 和人工回覆
+            const aiPrefixedResponse = `🤖 ${chatData.response}`;
+
             // 發送 AI 回覆
-            await sendMessage(senderId, chatData.response, source);
+            await sendMessage(senderId, aiPrefixedResponse, source);
 
             // 記錄對話到 Wix CMS
             await saveConversationToWix({
@@ -630,8 +670,13 @@ async function getUserProfile(userId, source = 'facebook') {
             ? 'name,username'
             : 'first_name,last_name,profile_pic';
 
+        // 根據來源選擇正確的 Access Token
+        const accessToken = source === 'instagram'
+            ? (INSTAGRAM_ACCESS_TOKEN || PAGE_ACCESS_TOKEN)
+            : PAGE_ACCESS_TOKEN;
+
         const response = await fetch(
-            `https://graph.facebook.com/v18.0/${userId}?fields=${fields}&access_token=${PAGE_ACCESS_TOKEN}`
+            `https://graph.facebook.com/v18.0/${userId}?fields=${fields}&access_token=${accessToken}`
         );
 
         if (response.ok) {
@@ -641,6 +686,10 @@ async function getUserProfile(userId, source = 'facebook') {
                 username: data.username || null,
                 profilePic: data.profile_pic || null
             };
+        } else {
+            // 記錄錯誤以便調試
+            const error = await response.json();
+            console.error(`[Meta Webhook] Get user profile error (${source}):`, error);
         }
     } catch (error) {
         console.log('[Meta Webhook] Could not fetch user profile:', error.message);
