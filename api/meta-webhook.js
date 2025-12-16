@@ -238,13 +238,17 @@ async function processMessagingEvent(event, source) {
     // ======= 處理 Echo 訊息（管理者回覆）=======
     // 當管理者從 FB Page Inbox 回覆時，會收到 is_echo: true 的訊息
     if (message?.is_echo) {
-        // app_id 存在時表示是 bot/app 發送的訊息，跳過不處理
-        // 只處理真人管理者手動回覆的訊息
-        if (message.app_id) {
-            console.log('[Meta Webhook] Bot echo message, skipping');
+        // 判斷是否為 bot/app 發送的訊息，跳過不處理
+        // 1. app_id 存在表示是 app 發送
+        // 2. 訊息以 🤖 開頭表示是我們的 AI 回覆
+        const isBotMessage = message.app_id || (message.text && message.text.startsWith('🤖'));
+
+        if (isBotMessage) {
+            console.log('[Meta Webhook] Bot echo message detected, skipping');
             return; // 這是 bot 發的訊息，不需要記錄
         }
 
+        // 這是真人管理者手動回覆的訊息
         console.log('[Meta Webhook] Admin reply detected, extending pause time');
         // Echo 訊息格式：sender = page, recipient = user
         const recipientId = event.recipient?.id;
