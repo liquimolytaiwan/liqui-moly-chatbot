@@ -79,9 +79,9 @@ export async function post_chat(request) {
             });
         }
 
-        // 取得對話歷史（如果有 sessionId）
-        let conversationHistory = [];
-        if (body.sessionId) {
+        // 取得對話歷史（優先使用傳入的，否則從 sessionId 取得）
+        let conversationHistory = body.conversationHistory || [];
+        if (conversationHistory.length === 0 && body.sessionId) {
             try {
                 const session = await wixData.get('chatSessions', body.sessionId);
                 if (session && session.messages) {
