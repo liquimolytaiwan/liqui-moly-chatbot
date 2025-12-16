@@ -657,3 +657,264 @@ export async function get_cleanupSessions(request) {
         });
     }
 }
+
+// ============================================
+// Chatbot 對話記錄 API
+// ============================================
+
+// CORS OPTIONS for saveConversation
+export function options_saveConversation(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, X-Api-Key"
+        },
+        body: ""
+    });
+}
+
+/**
+ * POST /saveConversation - 儲存對話記錄
+ * 用於 FB/IG Chatbot 記錄對話
+ */
+export async function post_saveConversation(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+
+        // 驗證 API Key（簡單驗證）
+        const apiKey = request.headers['x-api-key'];
+        const expectedKey = await getSecret("CHATBOT_API_KEY").catch(() => null);
+        if (expectedKey && apiKey !== expectedKey) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Invalid API key" })
+            });
+        }
+
+        const {
+            senderId,
+            senderName = '',
+            source = 'website',
+            userMessage = '',
+            aiResponse = '',
+            hasAttachment = false,
+            needsHumanReview = false,
+            isPaused = false,
+            pauseUntil = null
+        } = body;
+
+        if (!senderId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing senderId" })
+            });
+        }
+
+        // 儲存到 CMS
+        const record = {
+            senderId,
+            senderName,
+            source,
+            userMessage,
+            aiResponse,
+            hasAttachment,
+            needsHumanReview,
+            isPaused,
+            pauseUntil: pauseUntil ? new Date(pauseUntil) : null,
+            createdAt: new Date()
+        };
+
+        const result = await wixData.insert("ChatbotConversations", record);
+
+        console.log('[saveConversation] Record saved:', result._id);
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                recordId: result._id
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /saveConversation error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
+
+// CORS OPTIONS for checkPauseStatus
+export function options_checkPauseStatus(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, X-Api-Key"
+        },
+        body: ""
+    });
+}
+
+/**
+ * POST /checkPauseStatus - 檢查用戶是否處於 AI 暫停狀態
+ * 用於 FB/IG Chatbot 判斷是否回覆
+ */
+export async function post_checkPauseStatus(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+        const { senderId } = body;
+
+        if (!senderId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing senderId" })
+            });
+        }
+
+        // 查詢最近的暫停記錄
+        const results = await wixData.query("ChatbotConversations")
+            .eq("senderId", senderId)
+            .eq("isPaused", true)
+            .descending("createdAt")
+            .limit(1)
+            .find();
+
+        if (results.items.length === 0) {
+            return ok({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: true,
+                    isPaused: false
+                })
+            });
+        }
+
+        const record = results.items[0];
+        const now = new Date();
+        const pauseUntil = record.pauseUntil ? new Date(record.pauseUntil) : null;
+
+        // 檢查暫停是否已過期
+        if (pauseUntil && now > pauseUntil) {
+            return ok({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: true,
+                    isPaused: false,
+                    expired: true
+                })
+            });
+        }
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                isPaused: true,
+                pauseUntil: pauseUntil ? pauseUntil.toISOString() : null
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /checkPauseStatus error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}
+
+// CORS OPTIONS for setPauseStatus
+export function options_setPauseStatus(request) {
+    return ok({
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, X-Api-Key"
+        },
+        body: ""
+    });
+}
+
+/**
+ * POST /setPauseStatus - 設定用戶的 AI 暫停狀態
+ * 用於圖片觸發真人客服時暫停 AI
+ */
+export async function post_setPauseStatus(request) {
+    const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    };
+
+    try {
+        const body = await request.body.json();
+        const { senderId, isPaused, pauseDurationMinutes = 30 } = body;
+
+        if (!senderId) {
+            return badRequest({
+                headers: corsHeaders,
+                body: JSON.stringify({ success: false, error: "Missing senderId" })
+            });
+        }
+
+        const pauseUntil = isPaused
+            ? new Date(Date.now() + pauseDurationMinutes * 60 * 1000)
+            : null;
+
+        // 建立暫停狀態記錄
+        const record = {
+            senderId,
+            senderName: '',
+            source: 'system',
+            userMessage: isPaused ? '[系統] AI 暫停' : '[系統] AI 恢復',
+            aiResponse: '',
+            hasAttachment: false,
+            needsHumanReview: isPaused,
+            isPaused,
+            pauseUntil,
+            createdAt: new Date()
+        };
+
+        const result = await wixData.insert("ChatbotConversations", record);
+
+        console.log('[setPauseStatus] Status set:', { senderId, isPaused, pauseUntil });
+
+        return ok({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: true,
+                isPaused,
+                pauseUntil: pauseUntil ? pauseUntil.toISOString() : null,
+                recordId: result._id
+            })
+        });
+
+    } catch (error) {
+        console.error('POST /setPauseStatus error:', error);
+        return serverError({
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: "Internal server error: " + error.message
+            })
+        });
+    }
+}

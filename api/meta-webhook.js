@@ -24,45 +24,88 @@ const VERCEL_API_URL = process.env.VERCEL_URL
 const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
 
 // ============================================
-// 真人客服暫停機制 (Human Handover Pause)
+// 真人客服暫停機制 (使用 Wix CMS 持久化)
 // ============================================
 
-// 暫停時間（毫秒）- 預設 30 分鐘
-const HUMAN_HANDOVER_PAUSE_DURATION = 30 * 60 * 1000;
+// 暫停時間（分鐘）- 預設 30 分鐘
+const HUMAN_HANDOVER_PAUSE_MINUTES = 30;
 
-// 記憶體快取：記錄哪些用戶正在等待真人客服
-// 格式: { senderId: { pauseUntil: timestamp, reason: string } }
-// 注意：Vercel Serverless 是 stateless，此快取在冷啟動時會重置
-// 未來可改用 Redis 或 Wix CMS 持久化存儲
-const humanHandoverCache = new Map();
+/**
+ * 檢查用戶是否在暫停期間（從 Wix CMS 查詢）
+ */
+async function isUserPaused(senderId) {
+    try {
+        const response = await fetch(`${WIX_API_URL}/checkPauseStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderId })
+        });
 
-// 檢查用戶是否在暫停期間
-function isUserPaused(senderId) {
-    const pauseInfo = humanHandoverCache.get(senderId);
-    if (!pauseInfo) return false;
+        if (!response.ok) {
+            console.error('[Pause] Failed to check pause status from Wix');
+            return false; // 失敗時預設不暫停，避免阻斷服務
+        }
 
-    if (Date.now() < pauseInfo.pauseUntil) {
-        console.log(`[Pause] User ${senderId} is paused until ${new Date(pauseInfo.pauseUntil).toISOString()}`);
-        return true;
+        const result = await response.json();
+        if (result.isPaused) {
+            console.log(`[Pause] User ${senderId} is paused until ${result.pauseUntil}`);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('[Pause] Error checking pause status:', error);
+        return false; // 異常時預設不暫停
     }
-
-    // 暫停已過期，清除記錄
-    humanHandoverCache.delete(senderId);
-    console.log(`[Pause] User ${senderId} pause expired, resuming AI`);
-    return false;
 }
 
-// 將用戶設為暫停狀態
-function pauseUserForHumanHandover(senderId, reason = 'image_attachment') {
-    const pauseUntil = Date.now() + HUMAN_HANDOVER_PAUSE_DURATION;
-    humanHandoverCache.set(senderId, { pauseUntil, reason });
-    console.log(`[Pause] User ${senderId} paused for ${HUMAN_HANDOVER_PAUSE_DURATION / 60000} minutes. Reason: ${reason}`);
+/**
+ * 將用戶設為暫停狀態（存到 Wix CMS）
+ */
+async function pauseUserForHumanHandover(senderId, reason = 'image_attachment') {
+    try {
+        const response = await fetch(`${WIX_API_URL}/setPauseStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId,
+                isPaused: true,
+                pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES
+            })
+        });
+
+        if (response.ok) {
+            console.log(`[Pause] User ${senderId} paused for ${HUMAN_HANDOVER_PAUSE_MINUTES} minutes. Reason: ${reason}`);
+        } else {
+            console.error('[Pause] Failed to set pause status to Wix');
+        }
+    } catch (error) {
+        console.error('[Pause] Error setting pause status:', error);
+    }
 }
 
-// 手動恢復用戶的 AI 回覆
-function resumeUserAI(senderId) {
-    humanHandoverCache.delete(senderId);
-    console.log(`[Pause] User ${senderId} manually resumed`);
+/**
+ * 儲存對話記錄到 Wix CMS
+ */
+async function saveConversationToWix(data) {
+    try {
+        const response = await fetch(`${WIX_API_URL}/saveConversation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log(`[Conversation] Saved to Wix: ${result.recordId}`);
+            return result.recordId;
+        } else {
+            console.error('[Conversation] Failed to save to Wix');
+            return null;
+        }
+    } catch (error) {
+        console.error('[Conversation] Error saving conversation:', error);
+        return null;
+    }
 }
 
 // ============================================
@@ -164,11 +207,20 @@ async function processMessagingEvent(event, source) {
     try {
         // ======= 暫停檢查 (Pause Check) =======
         // 如果用戶已被標記為等待真人客服，則不進行 AI 回覆
-        if (isUserPaused(senderId)) {
+        if (await isUserPaused(senderId)) {
             console.log(`[Meta Webhook] User ${senderId} is waiting for human agent, skipping AI response`);
             // 記錄對話但不回覆
             const userProfile = await getUserProfile(senderId, source);
-            await saveConversation(senderId, message.text || '[附件]', '[等待真人客服中，AI 暫停回覆]', source, userProfile, true);
+            await saveConversationToWix({
+                senderId,
+                senderName: userProfile?.name || '',
+                source,
+                userMessage: message.text || '[附件]',
+                aiResponse: '[等待真人客服中，AI 暫停回覆]',
+                hasAttachment: !!message.attachments,
+                needsHumanReview: true,
+                isPaused: true
+            });
             return;
         }
 
@@ -240,7 +292,15 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             await sendMessage(senderId, chatData.response, source);
 
             // 記錄對話到 Wix CMS
-            await saveConversation(senderId, text, chatData.response, source, userProfile);
+            await saveConversationToWix({
+                senderId,
+                senderName: userProfile?.name || '',
+                source,
+                userMessage: text,
+                aiResponse: chatData.response,
+                hasAttachment: false,
+                needsHumanReview: false
+            });
         } else {
             throw new Error('Chat API failed');
         }
@@ -259,7 +319,7 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
     console.log(`[Meta Webhook] Received ${attachments.length} attachment(s)`);
 
     // 目前不支援圖片辨識，切換到真人客服
-    const pauseMinutes = HUMAN_HANDOVER_PAUSE_DURATION / 60000;
+    const pauseMinutes = HUMAN_HANDOVER_PAUSE_MINUTES;
     const response = `感謝您傳送圖片！🖼️
 
 目前 AI 助理尚未支援圖片辨識功能，系統將自動為您轉接真人客服。
@@ -277,7 +337,16 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
     pauseUserForHumanHandover(senderId, 'image_attachment');
 
     // 記錄到 CMS（標記為需要真人處理）
-    await saveConversation(senderId, '[用戶傳送圖片]', response, source, userProfile, true);
+    await saveConversationToWix({
+        senderId,
+        senderName: userProfile?.name || '',
+        source,
+        userMessage: '[用戶傳送圖片]',
+        aiResponse: response,
+        hasAttachment: true,
+        needsHumanReview: true,
+        isPaused: true
+    });
 
     // TODO: 執行 Handover Protocol 切換真人客服
     // await handoverToInbox(senderId, source);
