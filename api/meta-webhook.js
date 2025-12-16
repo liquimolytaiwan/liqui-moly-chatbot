@@ -30,6 +30,36 @@ const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
 // 暫停時間（分鐘）- 預設 30 分鐘
 const HUMAN_HANDOVER_PAUSE_MINUTES = 30;
 
+// ============================================
+// 訊息去重機制 (防止 Meta webhook 重試造成重複回覆)
+// ============================================
+const processedMessages = new Map(); // 儲存已處理的 message ID
+const MESSAGE_CACHE_TTL = 60 * 1000; // 快取 60 秒
+
+/**
+ * 檢查訊息是否已處理過
+ */
+function isMessageProcessed(messageId) {
+    if (!messageId) return false;
+
+    // 清理過期的快取
+    const now = Date.now();
+    for (const [id, timestamp] of processedMessages.entries()) {
+        if (now - timestamp > MESSAGE_CACHE_TTL) {
+            processedMessages.delete(id);
+        }
+    }
+
+    if (processedMessages.has(messageId)) {
+        console.log(`[Dedup] Message ${messageId} already processed, skipping`);
+        return true;
+    }
+
+    // 標記為已處理
+    processedMessages.set(messageId, now);
+    return false;
+}
+
 /**
  * 檢查用戶是否在暫停期間（從 Wix CMS 查詢）
  */
@@ -186,6 +216,12 @@ async function processMessagingEvent(event, source) {
     const senderId = event.sender?.id;
     const message = event.message;
     const postback = event.postback;
+
+    // ======= 訊息去重檢查 =======
+    // Meta webhook 可能會重試，使用 message ID 防止重複處理
+    if (message?.mid && isMessageProcessed(message.mid)) {
+        return; // 已處理過，跳過
+    }
 
     // ======= 處理 Postback（按鈕點擊）=======
     if (postback) {
@@ -566,9 +602,9 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
 // ============================================
 
 async function sendMessage(recipientId, text, source = 'facebook') {
-    // 根據平台設定訊息長度限制
-    // Instagram: 1000 字元, Facebook: 2000 字元
-    const maxLength = source === 'instagram' ? 1000 : 2000;
+    // 根據平台設定訊息長度限制（減少發送時間避免 webhook 超時）
+    // Instagram: 800 字元, Facebook: 1500 字元
+    const maxLength = source === 'instagram' ? 800 : 1500;
     const messages = [];
 
     if (text.length <= maxLength) {

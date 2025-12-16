@@ -449,7 +449,13 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 - **語言原則**：預設繁體中文，但隨用戶語言調整 (Speak user's language)。
 - 適時使用表情符號增加親和力
 - 產品連結必須來自資料庫的「產品連結」欄位
-- 保持回覆精簡但完整`;
+- 保持回覆精簡但完整
+
+## 📏 回覆長度限制（極重要！）
+- **產品推薦數量**：最多推薦 **3-5 個產品**，挑選最相關的即可
+- **回覆字數**：盡量控制在 **500 字以內**
+- **簡潔原則**：不要列出所有符合條件的產品，只列出最推薦的幾款
+- **優先順序**：按相關性排序，最符合需求的產品放前面`;
 
 export default async function handler(req, res) {
     // Handle CORS preflight
@@ -562,7 +568,7 @@ async function callGemini(apiKey, contents) {
             temperature: 0.1,
             topK: 20,
             topP: 0.8,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 1500,
         },
         safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
