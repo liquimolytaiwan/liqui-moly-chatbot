@@ -158,6 +158,7 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > - [產品名稱](連結) - 符合 XX 認證，適合 XX 引擎
 > 
 > 👉 點擊產品頁面「這哪裡買」可查詢鄰近店家
+> 💡 若查詢不到附近店家，歡迎填寫[聯絡表單](https://www.liqui-moly-tw.com/contact)，我們會以簡訊回覆您購買資訊！
 
 ### 🚗🚗 多車型同時查詢（Multi-Vehicle Query）
 當用戶同時詢問多種車型（如「BMW X3 和 Toyota Camry 分別用什麼機油？」）時：
@@ -184,9 +185,11 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > 
 > 只要選擇縣市，即可找到您附近的合作保修廠/車行。
 > 
+> ⚠️ **若查詢不到附近店家**，請填寫[聯絡表單](https://www.liqui-moly-tw.com/contact)，我們會以簡訊回覆您！
+> 
 > 其他方式：
 > - 產品頁面的「這哪裡買」功能
-> - 填寫[聯絡表單](https://www.liqui-moly-tw.com/contact)，我們會以簡訊回覆
+> - 線上商城：[CarMall 車魔商城](https://www.carmall.com.tw/)
 
 ### 🚲 自行車產品 (Bike/Bicycle) 特殊規則
 由於實體店家較少，**必須** 改用以下線上購買連結：
