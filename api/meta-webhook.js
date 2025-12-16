@@ -246,8 +246,28 @@ async function processMessagingEvent(event, source) {
             return;
         }
 
-        // 純文字訊息 → AI 回覆
+        // 純文字訊息
         if (message.text) {
+            // ======= 真人客服關鍵字偵測 =======
+            const humanKeywords = ['真人', '客服', '人工', '專人', '轉接', '找人', '活人'];
+            const textLower = message.text.toLowerCase();
+            if (humanKeywords.some(kw => textLower.includes(kw))) {
+                console.log(`[Meta Webhook] Human agent keyword detected: "${message.text}"`);
+                await switchToHumanAgent(senderId, source);
+                // 記錄到 CMS
+                await saveConversationToWix({
+                    senderId,
+                    senderName: userProfile?.name || '',
+                    source,
+                    userMessage: message.text,
+                    aiResponse: '[偵測到真人客服關鍵字，已自動切換]',
+                    needsHumanReview: true,
+                    isPaused: true
+                });
+                return;
+            }
+
+            // AI 回覆
             await handleTextMessage(senderId, message.text, source, userProfile);
             return;
         }
