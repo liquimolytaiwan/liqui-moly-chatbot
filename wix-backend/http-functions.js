@@ -965,28 +965,45 @@ export async function post_getConversationHistory(request) {
         // 反轉順序（從舊到新）
         const items = results.items.reverse();
 
+        // 用於去重
+        const seenMessages = new Set();
+
         for (const item of items) {
+            // 添加用戶訊息（去重）
             if (item.userMessage && item.userMessage.trim()) {
-                conversationHistory.push({
-                    role: 'user',
-                    content: item.userMessage
-                });
+                const userContent = item.userMessage.trim();
+                if (!seenMessages.has('user:' + userContent)) {
+                    seenMessages.add('user:' + userContent);
+                    conversationHistory.push({
+                        role: 'user',
+                        content: userContent
+                    });
+                }
             }
+            // 添加 AI 回覆（去重，且排除太長的回覆和以 [ 開頭的系統訊息）
             if (item.aiResponse && item.aiResponse.trim() && !item.aiResponse.startsWith('[')) {
-                conversationHistory.push({
-                    role: 'assistant',
-                    content: item.aiResponse
-                });
+                const assistantContent = item.aiResponse.trim();
+                // 只保留較短的回覆作為上下文（避免產品推薦長文造成混淆）
+                if (assistantContent.length < 200 && !seenMessages.has('assistant:' + assistantContent)) {
+                    seenMessages.add('assistant:' + assistantContent);
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: assistantContent
+                    });
+                }
             }
         }
 
-        console.log(`[getConversationHistory] Found ${conversationHistory.length} messages for ${senderId}`);
+        // 限制最終訊息數量，避免過多上下文
+        const finalHistory = conversationHistory.slice(-10);
+
+        console.log(`[getConversationHistory] Found ${finalHistory.length} messages for ${senderId}`);
 
         return ok({
             headers: corsHeaders,
             body: JSON.stringify({
                 success: true,
-                conversationHistory
+                conversationHistory: finalHistory
             })
         });
 

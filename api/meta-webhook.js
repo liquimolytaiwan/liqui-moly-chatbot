@@ -409,7 +409,7 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             const historyResponse = await fetch(`${WIX_API_URL}/getConversationHistory`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId, limit: 10 })
+                body: JSON.stringify({ senderId, limit: 5 })
             });
             const historyData = await historyResponse.json();
             if (historyData.success && historyData.conversationHistory) {
