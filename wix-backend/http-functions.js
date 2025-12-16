@@ -982,9 +982,9 @@ export async function post_getConversationHistory(request) {
                     // 添加對應的 AI 回覆（摘要）
                     if (item.aiResponse && item.aiResponse.trim() && !item.aiResponse.startsWith('[')) {
                         let assistantContent = item.aiResponse.trim();
-                        // 如果太長，只保留前 200 字 + 提示
+                        // 如果太長，只保留前 200 字
                         if (assistantContent.length > 200) {
-                            assistantContent = assistantContent.substring(0, 200) + '...（已推薦產品）';
+                            assistantContent = assistantContent.substring(0, 200) + '...';
                         }
                         conversationHistory.push({
                             role: 'assistant',
