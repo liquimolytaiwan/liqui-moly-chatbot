@@ -960,29 +960,42 @@ export async function post_getConversationHistory(request) {
             .limit(limit)
             .find();
 
-        // 只保留 userMessage（不保留 aiResponse，避免混淆）
+        // 轉換為對話歷史格式
         const conversationHistory = [];
         // 反轉順序（從舊到新）
         const items = results.items.reverse();
 
         // 用於去重
-        const seenMessages = new Set();
+        const seenUserMessages = new Set();
 
         for (const item of items) {
-            // 只添加用戶訊息（去重）
+            // 添加用戶訊息（去重）
             if (item.userMessage && item.userMessage.trim() && !item.userMessage.startsWith('[')) {
                 const userContent = item.userMessage.trim();
-                if (!seenMessages.has(userContent)) {
-                    seenMessages.add(userContent);
+                if (!seenUserMessages.has(userContent)) {
+                    seenUserMessages.add(userContent);
                     conversationHistory.push({
                         role: 'user',
                         content: userContent
                     });
+
+                    // 添加對應的 AI 回覆（摘要）
+                    if (item.aiResponse && item.aiResponse.trim() && !item.aiResponse.startsWith('[')) {
+                        let assistantContent = item.aiResponse.trim();
+                        // 如果太長，只保留前 200 字 + 提示
+                        if (assistantContent.length > 200) {
+                            assistantContent = assistantContent.substring(0, 200) + '...（已推薦產品）';
+                        }
+                        conversationHistory.push({
+                            role: 'assistant',
+                            content: assistantContent
+                        });
+                    }
                 }
             }
         }
 
-        console.log(`[getConversationHistory] Found ${conversationHistory.length} user messages for ${senderId}`);
+        console.log(`[getConversationHistory] Found ${conversationHistory.length} messages for ${senderId}`);
 
         return ok({
             headers: corsHeaders,
