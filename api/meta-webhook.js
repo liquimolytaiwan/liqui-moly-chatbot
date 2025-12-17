@@ -89,6 +89,69 @@ async function isUserPaused(senderId) {
 }
 
 /**
+ * 處理 standby 事件（Handover Protocol）
+ * 當 Page Inbox 是 Primary Receiver 時，管理員從 Page Inbox 發送的訊息會觸發此事件
+ */
+async function handleStandbyEvent(event, source) {
+    const message = event.message;
+    const userId = event.recipient?.id; // standby 事件中 recipient 是用戶
+    const senderId = event.sender?.id;  // sender 是頁面
+
+    // 只處理有訊息內容的事件
+    if (!message || !userId) {
+        return;
+    }
+
+    console.log('[Meta Webhook] Standby event received:', JSON.stringify({
+        senderId,
+        userId,
+        hasAppId: !!message.app_id,
+        textPreview: message.text?.substring(0, 30)
+    }));
+
+    // 判斷是否為 bot/app 發送的訊息
+    const isBotMessage = message.app_id ||
+        (message.text && message.text.startsWith('🤖')) ||
+        (message.text && message.text.includes('如需更多協助'));
+
+    if (isBotMessage) {
+        console.log('[Meta Webhook] Standby: Bot message detected, skipping');
+        return;
+    }
+
+    // 這是管理員從 Page Inbox 發送的訊息
+    console.log(`[Meta Webhook] Standby: Admin reply detected to user ${userId}: "${message.text?.substring(0, 30)}..."`);
+
+    // 設定（或重置）該用戶的暫停時間為 30 分鐘
+    try {
+        await fetch(`${WIX_API_URL}/setPauseStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: userId,
+                isPaused: true,
+                pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES,
+                resetTimer: true
+            })
+        });
+        console.log(`[Meta Webhook] Standby: AI paused for user ${userId} for ${HUMAN_HANDOVER_PAUSE_MINUTES} minutes (reset by admin reply via standby)`);
+
+        // 記錄管理者回覆到 CMS
+        await saveConversationToWix({
+            senderId: userId,
+            senderName: 'Admin',
+            source,
+            userMessage: message.text || '[管理者發送附件]',
+            aiResponse: '[真人客服回覆]',
+            isPaused: true,
+            needsHumanReview: false
+        });
+    } catch (error) {
+        console.error('[Meta Webhook] Standby: Error processing admin reply:', error);
+    }
+}
+
+/**
  * 將用戶設為暫停狀態（存到 Wix CMS）
  */
 async function pauseUserForHumanHandover(senderId, reason = 'image_attachment') {
@@ -198,6 +261,13 @@ async function handleWebhook(req, res) {
             // 處理每個 messaging 事件
             for (const event of entry.messaging || []) {
                 await processMessagingEvent(event, source);
+            }
+
+            // ======= 處理 standby 事件 (Handover Protocol) =======
+            // 當 Page Inbox 是 Primary Receiver 時，其他 app 會收到 standby 事件
+            // 這可以用來偵測管理員從 Page Inbox 發送的訊息
+            for (const event of entry.standby || []) {
+                await handleStandbyEvent(event, source);
             }
         }
 
