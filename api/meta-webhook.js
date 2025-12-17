@@ -563,11 +563,25 @@ async function handleTextMessage(senderId, text, source, userProfile) {
         console.log('[Meta Webhook] Chat response received:', { success: chatData.success });
 
         if (chatData.success && chatData.response) {
+            // 將 Markdown 格式轉換為純文字（FB/IG 不支援 Markdown）
+            // [文字](連結) → 文字 連結
+            // **粗體** → 粗體
+            let plainTextResponse = chatData.response
+                // 移除 Markdown 連結格式，只保留文字和連結
+                .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1\n👉 $2')
+                // 移除粗體標記
+                .replace(/\*\*([^*]+)\*\*/g, '$1')
+                // 移除斜體標記
+                .replace(/\*([^*]+)\*/g, '$1');
+
             // 在 AI 回覆前加上機器人標註，讓用戶能分辨 AI 和人工回覆
-            const aiPrefixedResponse = `🤖 ${chatData.response}`;
+            const aiPrefixedResponse = `🤖 ${plainTextResponse}`;
 
             // 先發送完整 AI 回覆（sendMessage 會自動分段處理長訊息）
             await sendMessage(senderId, aiPrefixedResponse, source);
+
+            // 等待一下再發送真人客服按鈕，確保順序正確
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             // 再單獨發送真人客服按鈕
             await sendMessageWithQuickReplies(senderId, '如需更多協助，可以點擊下方按鈕：', [
@@ -643,9 +657,9 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
 // ============================================
 
 async function sendMessage(recipientId, text, source = 'facebook') {
-    // 根據平台設定訊息長度限制
-    // Instagram: 1000 字元, Facebook: 2000 字元 (Meta 官方限制)
-    const maxLength = source === 'instagram' ? 1000 : 2000;
+    // 根據平台設定訊息長度限制（保留緩衝空間）
+    // Instagram: 800 字元, Facebook: 1800 字元
+    const maxLength = source === 'instagram' ? 800 : 1800;
     const messages = [];
 
     if (text.length <= maxLength) {
