@@ -3,7 +3,7 @@
  * 主要聊天 API - 處理用戶訊息並返回 AI 回覆
  */
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
 
 // CORS headers
@@ -582,7 +582,7 @@ async function callGemini(apiKey, contents) {
             temperature: 0.1,
             topK: 20,
             topP: 0.8,
-            maxOutputTokens: 2500,
+            maxOutputTokens: 4096,
         },
         safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
