@@ -249,11 +249,12 @@ async function processMessagingEvent(event, source) {
         }
 
         // 這是真人管理者手動回覆的訊息
-        console.log('[Meta Webhook] Admin reply detected, extending pause time');
+        // 無論用戶是否已在暫停中，都重置暫停時間為 30 分鐘
+        console.log('[Meta Webhook] Admin reply detected, setting/resetting pause time to 30 minutes');
         // Echo 訊息格式：sender = page, recipient = user
         const recipientId = event.recipient?.id;
 
-        // 延長該用戶的暫停時間
+        // 設定（或重置）該用戶的暫停時間為 30 分鐘
         try {
             await fetch(`${WIX_API_URL}/setPauseStatus`, {
                 method: 'POST',
@@ -261,10 +262,11 @@ async function processMessagingEvent(event, source) {
                 body: JSON.stringify({
                     senderId: recipientId, // 用戶的 ID
                     isPaused: true,
-                    pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES
+                    pauseDurationMinutes: HUMAN_HANDOVER_PAUSE_MINUTES,
+                    resetTimer: true // 重置計時器而非延長
                 })
             });
-            console.log(`[Meta Webhook] Pause extended for user ${recipientId} by admin reply`);
+            console.log(`[Meta Webhook] AI paused for user ${recipientId} for ${HUMAN_HANDOVER_PAUSE_MINUTES} minutes (reset by admin reply)`);
 
             // 記錄管理者回覆到 CMS
             // 注意：管理者的訊息存到 userMessage，aiResponse 標記為管理者回覆
@@ -278,7 +280,7 @@ async function processMessagingEvent(event, source) {
                 needsHumanReview: false
             });
         } catch (error) {
-            console.error('[Meta Webhook] Error extending pause:', error);
+            console.error('[Meta Webhook] Error setting pause:', error);
         }
         return; // Echo 訊息不需要進一步處理
     }
@@ -507,7 +509,7 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             const historyResponse = await fetch(`${WIX_API_URL}/getConversationHistory`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId, limit: 5 })
+                body: JSON.stringify({ senderId, limit: 10 })
             });
             const historyData = await historyResponse.json();
             if (historyData.success && historyData.conversationHistory) {
