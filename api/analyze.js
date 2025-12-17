@@ -459,6 +459,20 @@ function generateWixQueries(analysis, keywords, message = '') {
     // 簡單去重
     const uniqueKw = keywords.filter((v, i, a) => a.indexOf(v) === i);
 
+    // === EV 電動車特殊處理 (EV Context Hook) ===
+    // 偵測是否為電動車相關查詢
+    const evKeywords = ['ev', 'electric', 'tesla', 'model 3', 'model y', 'model s', 'model x', 'ionic', 'kona', 'taycan', 'etron', 'i4', 'ix', 'eqe', 'eqs', '電動車', '純電'];
+    const isEV = uniqueKw.some(k => evKeywords.some(evK => k.toLowerCase().includes(evK)));
+
+    if (isEV) {
+        console.log('Context Hook: EV Detected! Adjusting search strategy.');
+        // 如果是 EV 且問煞車油，優先找 DOT 5.1 EV
+        if (uniqueKw.some(k => k.includes('煞車') || k.includes('brake'))) {
+            priorityQueries.push({ field: 'title', value: 'DOT 5.1 EV', limit: 5, method: 'contains' });
+            priorityQueries.push({ field: 'title', value: 'DOT 5.1', limit: 5, method: 'contains' });
+        }
+    }
+
     uniqueKw.slice(0, maxKeywords).forEach(kw => {
         if (!kw || kw.length < 2) return; // 跳過過短關鍵字
 
