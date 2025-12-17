@@ -582,7 +582,7 @@ async function callGemini(apiKey, contents) {
             temperature: 0.1,
             topK: 20,
             topP: 0.8,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 2500,
         },
         safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
