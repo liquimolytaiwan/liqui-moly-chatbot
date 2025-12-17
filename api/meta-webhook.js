@@ -345,26 +345,51 @@ async function processMessagingEvent(event, source) {
     });
 
     try {
+        // 取得用戶資料（名稱等）
+        const userProfile = await getUserProfile(senderId, source);
+
+        // ======= 恢復 AI 關鍵字偵測（優先於暫停檢查！）=======
+        // 必須在暫停檢查之前，否則暫停時無法恢復
+        if (message.text) {
+            const textLower = message.text.toLowerCase();
+            // 新增更多恢復關鍵字，包含全形/半形空格
+            const resumeKeywords = [
+                '恢復ai', '恢復 ai', '恢復ＡＩ', '恢復 ＡＩ',
+                'ai回答', 'ai 回答', 'ai諮詢', 'ai 諮詢',
+                'ai產品', 'ai 產品', '啟動ai', '啟動 ai',
+                '開啟ai', '開啟 ai', '繼續ai', '繼續 ai'
+            ];
+            if (resumeKeywords.some(kw => textLower.includes(kw))) {
+                console.log(`[Meta Webhook] Resume AI keyword detected: "${message.text}"`);
+                await resumeAI(senderId, source);
+                return;
+            }
+        }
+
         // ======= 暫停檢查 (Pause Check) =======
         // 如果用戶已被標記為等待真人客服，則不進行 AI 回覆
         if (await isUserPaused(senderId)) {
             console.log(`[Meta Webhook] User ${senderId} is waiting for human agent, skipping AI response`);
-            // 記錄對話但不回覆
-            const userProfile = await getUserProfile(senderId, source);
+
+            // 發送提示訊息，附帶「恢復 AI」按鈕
+            const pauseMessage = '⏳ 目前由真人客服為您服務中...\n\n如需恢復 AI 自動回答，請點擊下方按鈕或輸入「恢復AI」。';
+            await sendMessageWithQuickReplies(senderId, pauseMessage, [
+                { content_type: 'text', title: '🤖 恢復 AI', payload: 'RESUME_AI' },
+                { content_type: 'text', title: '👤 繼續等待客服', payload: 'WAIT_HUMAN' }
+            ], source);
+
+            // 記錄對話
             await saveConversationToWix({
                 senderId,
                 senderName: userProfile?.name || '',
                 source,
                 userMessage: message.text || '[附件]',
-                aiResponse: '[等待真人客服中，AI 暫停回覆]',
+                aiResponse: pauseMessage,
                 hasAttachment: !!message.attachments,
                 isPaused: true
             });
             return;
         }
-
-        // 取得用戶資料（名稱等）
-        const userProfile = await getUserProfile(senderId, source);
 
         // 檢查是否有附件（圖片、影片等）
         if (message.attachments && message.attachments.length > 0) {
@@ -375,14 +400,6 @@ async function processMessagingEvent(event, source) {
         // 純文字訊息
         if (message.text) {
             const textLower = message.text.toLowerCase();
-
-            // ======= 恢復 AI 關鍵字偵測 =======
-            const resumeKeywords = ['恢復 ai', '恢復ai', 'ai回答', 'ai 回答', 'ai諮詢', 'ai 諮詢', 'ai產品', 'ai 產品', '啟動ai', '啟動 ai', '開啟ai', '開啟 ai'];
-            if (resumeKeywords.some(kw => textLower.includes(kw))) {
-                console.log(`[Meta Webhook] Resume AI keyword detected: "${message.text}"`);
-                await resumeAI(senderId, source);
-                return;
-            }
 
             // ======= 真人客服關鍵字偵測 =======
             const humanKeywords = ['真人', '客服', '人工', '專人', '轉接', '找人', '活人'];
