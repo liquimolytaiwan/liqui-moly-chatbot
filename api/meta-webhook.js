@@ -242,6 +242,15 @@ async function processMessagingEvent(event, source) {
     // 2. sender.id 是頁面 ID（不是用戶 ID）
     // 3. recipient.id 是用戶 ID
     if (message?.is_echo) {
+        // 詳細記錄 is_echo 事件以便調試
+        console.log('[Meta Webhook] is_echo event received:', JSON.stringify({
+            senderId: event.sender?.id,
+            recipientId: event.recipient?.id,
+            hasAppId: !!message.app_id,
+            appId: message.app_id,
+            textPreview: message.text?.substring(0, 30)
+        }));
+
         // 判斷是否為 bot/app 發送的訊息，跳過不處理
         // 1. app_id 存在表示是 app 發送
         // 2. 訊息以 🤖 開頭表示是我們的 AI 回覆

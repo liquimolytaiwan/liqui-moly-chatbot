@@ -568,7 +568,7 @@ async function callGemini(apiKey, contents) {
             temperature: 0.1,
             topK: 20,
             topP: 0.8,
-            maxOutputTokens: 1500,
+            maxOutputTokens: 4096,
         },
         safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -594,6 +594,15 @@ async function callGemini(apiKey, contents) {
 
     if (data.candidates && data.candidates[0]) {
         const candidate = data.candidates[0];
+
+        // 檢查 finishReason 來診斷截斷問題
+        if (candidate.finishReason) {
+            console.log('[Gemini] finishReason:', candidate.finishReason);
+            if (candidate.finishReason === 'MAX_TOKENS') {
+                console.warn('[Gemini] Response was truncated due to MAX_TOKENS limit!');
+            }
+        }
+
         if (candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) {
             return candidate.content.parts[0].text;
         }
