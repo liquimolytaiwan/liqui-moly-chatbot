@@ -594,7 +594,8 @@ function formatProducts(products) {
     products.forEach((p, i) => {
         // 修正連結邏輯：優先使用 partno 或 sku 構造 URL
         // 有些產品可能原本 partno 為空，嘗試使用 sku
-        const pid = p.partno || p.sku;
+        // 增加對不同大小寫 Field Key 的支援
+        const pid = p.partno || p.partNo || p.Partno || p.PartNo || p.sku || p.SKU;
 
         let url = p.productPageUrl || 'https://www.liqui-moly-tw.com/products/';
 
