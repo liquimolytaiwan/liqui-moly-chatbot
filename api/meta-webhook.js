@@ -537,8 +537,11 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             // 在 AI 回覆前加上機器人標註，讓用戶能分辨 AI 和人工回覆
             const aiPrefixedResponse = `🤖 ${chatData.response}`;
 
-            // 發送 AI 回覆，附帶真人客服按鈕
-            await sendMessageWithQuickReplies(senderId, aiPrefixedResponse, [
+            // 先發送完整 AI 回覆（sendMessage 會自動分段處理長訊息）
+            await sendMessage(senderId, aiPrefixedResponse, source);
+
+            // 再單獨發送真人客服按鈕
+            await sendMessageWithQuickReplies(senderId, '如需更多協助，可以點擊下方按鈕：', [
                 { content_type: 'text', title: '👤 真人客服', payload: 'HUMAN_AGENT' }
             ], source);
 
