@@ -564,11 +564,13 @@ async function handleTextMessage(senderId, text, source, userProfile) {
 
         if (chatData.success && chatData.response) {
             // 將 Markdown 格式轉換為純文字（FB/IG 不支援 Markdown）
-            // [文字](連結) → 文字\n連結\n（確保連結獨立一行）
+            // [文字](連結) → 文字\n連結（確保連結獨立一行）
             // **粗體** → 粗體
             let plainTextResponse = chatData.response
-                // 移除 Markdown 連結格式，文字和連結各佔一行
-                .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1\n$2\n')
+                // 移除 Markdown 連結格式，連結後如有標點符號則保留在下一行
+                .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)([，。！？、])?/g, (match, text, url, punct) => {
+                    return punct ? `${text}\n${url}\n${punct}` : `${text}\n${url}`;
+                })
                 // 移除粗體標記
                 .replace(/\*\*([^*]+)\*\*/g, '$1')
                 // 移除斜體標記
