@@ -643,9 +643,9 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
 // ============================================
 
 async function sendMessage(recipientId, text, source = 'facebook') {
-    // 根據平台設定訊息長度限制（減少發送時間避免 webhook 超時）
-    // Instagram: 800 字元, Facebook: 1500 字元
-    const maxLength = source === 'instagram' ? 800 : 1500;
+    // 根據平台設定訊息長度限制
+    // Instagram: 1000 字元, Facebook: 2000 字元 (Meta 官方限制)
+    const maxLength = source === 'instagram' ? 1000 : 2000;
     const messages = [];
 
     if (text.length <= maxLength) {
@@ -658,18 +658,34 @@ async function sendMessage(recipientId, text, source = 'facebook') {
                 messages.push(remaining);
                 break;
             }
-            // 找最近的換行符號
+            // 優先找換行符號分割，確保語意完整
             let splitIndex = remaining.lastIndexOf('\n', maxLength);
+            // 如果找不到換行，嘗試找句號或逗號
+            if (splitIndex === -1 || splitIndex < maxLength / 2) {
+                splitIndex = remaining.lastIndexOf('。', maxLength);
+            }
+            if (splitIndex === -1 || splitIndex < maxLength / 2) {
+                splitIndex = remaining.lastIndexOf('，', maxLength);
+            }
             if (splitIndex === -1 || splitIndex < maxLength / 2) {
                 splitIndex = maxLength;
             }
-            messages.push(remaining.substring(0, splitIndex));
-            remaining = remaining.substring(splitIndex).trim();
+            messages.push(remaining.substring(0, splitIndex + 1));
+            remaining = remaining.substring(splitIndex + 1).trim();
         }
     }
 
-    // 發送每段訊息
-    for (const msg of messages) {
+    console.log(`[Meta Webhook] Sending ${messages.length} message segment(s) to ${source}, total length: ${text.length}`);
+
+    // 依序發送每段訊息（加入延遲確保順序）
+    for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+
+        // 第二段以後加入延遲，避免順序錯亂
+        if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         // Instagram 和 Facebook 使用相同的 endpoint
         const endpoint = 'https://graph.facebook.com/v18.0/me/messages';
 
