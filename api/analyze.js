@@ -485,9 +485,8 @@ function generateWixQueries(analysis, keywords, message = '') {
             // 搜尋 cert 欄位 (認證資訊可能包含編號)
             priorityQueries.push({ field: 'cert', value: skuNum, limit: 3, method: 'contains' });
 
-            // 搜尋 content/description 欄位 (描述可能包含編號)
+            // 搜尋 content 欄位 (產品說明可能包含編號)
             priorityQueries.push({ field: 'content', value: skuNum, limit: 3, method: 'contains' });
-            priorityQueries.push({ field: 'description', value: skuNum, limit: 3, method: 'contains' });
 
             // === 大包裝搜尋擴展 (Large Package Search Extension) ===
             // 若用戶問「大包裝」，需要找同產品的大容量版本
@@ -595,7 +594,7 @@ function generateWixQueries(analysis, keywords, message = '') {
 
             [...new Set(variants)].forEach(v => {
                 priorityQueries.push({ field: 'cert', value: v, limit: 20, method: 'contains' });
-                priorityQueries.push({ field: 'description', value: v, limit: 10, method: 'contains' });
+                priorityQueries.push({ field: 'content', value: v, limit: 10, method: 'contains' });
             });
         }
     });
