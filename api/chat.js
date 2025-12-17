@@ -227,10 +227,11 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 
 ### 📦 產品推薦格式規範 (Strict Format)
 **絕對禁止** 編造產品標題或連結。
-**必須** 完全照抄「可用產品資料庫」中的資訊：
+**必須** 完全照抄「可用產品資料庫」中的資訊。
+**警告：以下範例僅供格式參考，禁止直接用於回答！**
 - ❌ 錯誤：推薦您使用 DOT 4 [https://example.com]
-- ✅ 正確：
-  1. Brake Fluid DOT 4 煞車油
+- ✅ 正確（格式參考）：
+  1. Brake Fluid DOT 5.1 EV 煞車油
      - 產品連結：https://www.liqui-moly-tw.com/products/lm21730
 
 
