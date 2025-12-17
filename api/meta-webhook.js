@@ -252,30 +252,33 @@ async function processMessagingEvent(event, source) {
         }));
 
         // 判斷是否為真人管理員回覆
-        // 規則：
-        // 1. 沒有 app_id → 真人管理員（Meta Business Suite 可能沒有 app_id）
-        // 2. app_id 是 Page Inbox (263902037430900) → 真人管理員
-        // 3. 有 app_id 且不是 Page Inbox → 可能是我們的 chatbot，檢查內容
+        // 規則：先檢查訊息內容是否像 bot，因為 IG 可能沒有 app_id
         const PAGE_INBOX_APP_ID = '263902037430900';
         const appIdStr = String(message.app_id || '');
         const hasAppId = !!message.app_id;
         const isPageInboxMessage = appIdStr === PAGE_INBOX_APP_ID;
 
-        // 判斷是否為 bot 訊息
-        // 只有在有 app_id 且不是 Page Inbox，並且訊息內容符合 bot 特徵時才視為 bot
-        let isBotMessage = false;
-        if (hasAppId && !isPageInboxMessage) {
-            // 有 app_id 且不是 Page Inbox，進一步檢查內容是否像 bot
-            isBotMessage =
-                (message.text && message.text.startsWith('🤖')) ||
-                (message.text && message.text.includes('如需更多協助')) ||
-                (message.text && message.text.includes('如需恢復 AI 自動回答')) ||
-                (message.text && message.text.includes('您好！👋')) ||
-                (message.text && message.text.includes('選擇下方選項')) ||
-                (message.text && message.text.includes('AI 助理已恢復'));
-        }
+        // 檢查訊息內容是否像 bot 回覆
+        // 不管有沒有 app_id，只要訊息內容符合 bot 特徵就視為 bot
+        const messageText = message.text || '';
+        const isBotMessage =
+            messageText.startsWith('🤖') ||
+            messageText.startsWith('您好！請問') ||
+            messageText.startsWith('好的！請') ||
+            messageText.startsWith('AI 助理') ||
+            messageText.startsWith('已為您轉接') ||
+            messageText.includes('如需更多協助') ||
+            messageText.includes('如需恢復 AI 自動回答') ||
+            messageText.includes('您好！👋') ||
+            messageText.includes('選擇下方選項') ||
+            messageText.includes('AI 助理已恢復') ||
+            messageText.includes('請直接輸入您的問題') ||
+            messageText.includes('我會為您解答') ||
+            messageText.includes('為您服務') ||
+            // 有 app_id 且不是 Page Inbox 也視為 bot
+            (hasAppId && !isPageInboxMessage);
 
-        console.log('[Meta Webhook] is_echo analysis:', { hasAppId, appIdStr, isPageInboxMessage, isBotMessage });
+        console.log('[Meta Webhook] is_echo analysis:', { hasAppId, appIdStr, isPageInboxMessage, isBotMessage, textPreview: messageText.substring(0, 50) });
 
         if (isBotMessage) {
             console.log('[Meta Webhook] Bot echo message detected, skipping');
