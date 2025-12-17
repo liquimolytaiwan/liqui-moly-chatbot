@@ -785,17 +785,22 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        // 查詢最近有設定 pauseUntil 的記錄（包含所有暫停來源）
-        // 這樣可以處理：用戶點擊真人客服、系統暫停、管理員回覆等情況
+        // 查詢最近的暫停/恢復記錄
+        // 包含：isPaused=true（暫停）和 isPaused=false（恢復）的記錄
+        // 關鍵：不管是否有 pauseUntil，只要有 isPaused 欄位就算
         const results = await wixData.query("ChatbotConversations")
             .eq("senderId", senderId)
-            .isNotEmpty("pauseUntil")
             .descending("createdAt")
-            .limit(1)
+            .limit(20)  // 取多筆，找最近有 isPaused 欄位的記錄
             .find();
 
-        // 如果沒有任何暫停記錄，表示未暫停
-        if (results.items.length === 0) {
+        // 找到最近有明確 isPaused 欄位的記錄
+        const pauseRecord = results.items.find(item =>
+            typeof item.isPaused === 'boolean' || item.pauseUntil
+        );
+
+        // 如果沒有任何暫停相關記錄，表示未暫停
+        if (!pauseRecord) {
             return ok({
                 headers: corsHeaders,
                 body: JSON.stringify({
@@ -805,9 +810,21 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        const record = results.items[0];
         const now = new Date();
-        const pauseUntil = record.pauseUntil ? new Date(record.pauseUntil) : null;
+        const pauseUntil = pauseRecord.pauseUntil ? new Date(pauseRecord.pauseUntil) : null;
+
+        // 優先檢查 isPaused 欄位（最可靠的判斷）
+        // 如果最新記錄明確設定為 false，表示用戶已恢復 AI
+        if (pauseRecord.isPaused === false) {
+            return ok({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: true,
+                    isPaused: false,
+                    resumed: true
+                })
+            });
+        }
 
         // 檢查暫停時間是否已過期
         if (pauseUntil && now > pauseUntil) {
@@ -821,25 +838,24 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        // 檢查 isPaused 欄位（如果有設定為 false，表示已恢復）
-        if (record.isPaused === false) {
+        // 如果 isPaused=true 且有 pauseUntil 且未過期，暫停中
+        if (pauseRecord.isPaused === true && pauseUntil) {
             return ok({
                 headers: corsHeaders,
                 body: JSON.stringify({
                     success: true,
-                    isPaused: false,
-                    resumed: true
+                    isPaused: true,
+                    pauseUntil: pauseUntil.toISOString()
                 })
             });
         }
 
-        // 暫停中且未過期
+        // 預設未暫停
         return ok({
             headers: corsHeaders,
             body: JSON.stringify({
                 success: true,
-                isPaused: true,
-                pauseUntil: pauseUntil ? pauseUntil.toISOString() : null
+                isPaused: false
             })
         });
 
