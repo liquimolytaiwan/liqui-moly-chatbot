@@ -559,7 +559,21 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             })
         });
 
-        const chatData = await chatResponse.json();
+        // 檢查 HTTP 狀態碼
+        if (!chatResponse.ok) {
+            const errorText = await chatResponse.text();
+            console.error('[Meta Webhook] Wix Chat API HTTP error:', chatResponse.status, errorText);
+            throw new Error(`Wix Chat API error: ${chatResponse.status}`);
+        }
+
+        // 嘗試解析 JSON
+        let chatData;
+        try {
+            chatData = await chatResponse.json();
+        } catch (jsonError) {
+            console.error('[Meta Webhook] Failed to parse Wix Chat API response as JSON');
+            throw new Error('Invalid JSON response from Wix Chat API');
+        }
         console.log('[Meta Webhook] Chat response received:', { success: chatData.success });
 
         if (chatData.success && chatData.response) {
