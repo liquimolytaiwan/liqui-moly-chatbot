@@ -254,28 +254,26 @@ async function processMessagingEvent(event, source) {
         // 判斷是否為 bot/app 發送的訊息，跳過不處理
         // 1. app_id 存在表示是 app 發送
         // 2. 訊息以 🤖 開頭表示是我們的 AI 回覆
-        const isBotMessage = message.app_id || (message.text && message.text.startsWith('🤖'));
+        // 3. 訊息包含「如需更多協助」表示是我們發送的提示
+        const isBotMessage = message.app_id ||
+            (message.text && message.text.startsWith('🤖')) ||
+            (message.text && message.text.includes('如需更多協助'));
 
         if (isBotMessage) {
             console.log('[Meta Webhook] Bot echo message detected, skipping');
             return; // 這是 bot 發的訊息，不需要記錄
         }
 
-        // 判斷是否真的是管理員回覆（sender 是頁面，recipient 是用戶）
-        // 頁面 ID 通常和 entry.id 相同
-        const pageId = senderId; // 在 is_echo 情況下，sender 是頁面
-        const userId = event.recipient?.id; // recipient 是用戶
+        // 不是 bot 訊息，視為管理員回覆
+        // 取得用戶 ID（在 is_echo 情況下，recipient 是用戶）
+        const userId = event.recipient?.id;
 
-        // 檢查：sender 和 recipient 應該不同（頁面 → 用戶）
-        // 如果相同，可能是測試帳號的問題
-        if (!userId || pageId === userId) {
-            console.log(`[Meta Webhook] Skipping echo - sender (${pageId}) equals recipient or recipient missing`);
+        if (!userId) {
+            console.log('[Meta Webhook] is_echo missing recipient.id, skipping');
             return;
         }
 
-        // 額外檢查：確認這是從頁面發出的訊息
-        // is_echo 訊息如果沒有 app_id，且不是 bot 訊息，才是真人管理員回覆
-        console.log(`[Meta Webhook] Admin reply detected from page ${pageId} to user ${userId}`);
+        console.log(`[Meta Webhook] Admin reply detected to user ${userId}: "${message.text?.substring(0, 30)}..."`);
 
         // 這是真人管理者手動回覆的訊息
         // 無論用戶是否已在暫停中，都重置暫停時間為 30 分鐘
