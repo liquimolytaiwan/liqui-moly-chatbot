@@ -314,6 +314,27 @@ ${contextSummary}用戶當前問題：「${message}」
                 }
 
                 // ============================================
+                // 🔢 自動 SKU 偵測 (Automatic SKU Detection)
+                // 無論 AI 是否識別，都從用戶訊息中提取 SKU
+                // ============================================
+                const skuPattern = /(?:LM|lm)?[- ]?(\d{4,5})/g;
+                const skuMatches = [...message.matchAll(skuPattern)];
+                for (const match of skuMatches) {
+                    const skuNum = match[1];
+                    const fullSku = `LM${skuNum}`;
+                    console.log(`Auto SKU Detection: Found ${skuNum} -> Adding ${fullSku} to searchKeywords`);
+                    // 確保 searchKeywords 存在
+                    if (!result.searchKeywords) result.searchKeywords = [];
+                    // 如果還沒有這個 SKU，加入
+                    if (!result.searchKeywords.includes(fullSku)) {
+                        result.searchKeywords.unshift(fullSku); // 放在最前面，優先搜尋
+                    }
+                    if (!result.searchKeywords.includes(skuNum)) {
+                        result.searchKeywords.unshift(skuNum);
+                    }
+                }
+
+                // ============================================
                 // 生成 Wix 查詢指令 (Logic moved from Wix to here!)
                 // ============================================
                 result.wixQueries = generateWixQueries(result, result.searchKeywords || [], message);
