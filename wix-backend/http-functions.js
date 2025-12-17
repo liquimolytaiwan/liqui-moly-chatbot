@@ -785,15 +785,16 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        // 查詢最近的暫停/恢復記錄（使用 userMessage 來識別系統狀態記錄）
+        // 查詢最近有設定 pauseUntil 的記錄（包含所有暫停來源）
+        // 這樣可以處理：用戶點擊真人客服、系統暫停、管理員回覆等情況
         const results = await wixData.query("ChatbotConversations")
             .eq("senderId", senderId)
-            .hasSome("userMessage", ["[系統] AI 暫停", "[系統] AI 恢復"])
+            .isNotEmpty("pauseUntil")
             .descending("createdAt")
             .limit(1)
             .find();
 
-        // 如果沒有暫停/恢復記錄，表示未暫停
+        // 如果沒有任何暫停記錄，表示未暫停
         if (results.items.length === 0) {
             return ok({
                 headers: corsHeaders,
@@ -808,19 +809,7 @@ export async function post_checkPauseStatus(request) {
         const now = new Date();
         const pauseUntil = record.pauseUntil ? new Date(record.pauseUntil) : null;
 
-        // 如果最新記錄是「恢復」，表示未暫停
-        if (!record.isPaused) {
-            return ok({
-                headers: corsHeaders,
-                body: JSON.stringify({
-                    success: true,
-                    isPaused: false,
-                    resumed: true
-                })
-            });
-        }
-
-        // 如果是暫停記錄，檢查是否已過期
+        // 檢查暫停時間是否已過期
         if (pauseUntil && now > pauseUntil) {
             return ok({
                 headers: corsHeaders,
@@ -828,6 +817,18 @@ export async function post_checkPauseStatus(request) {
                     success: true,
                     isPaused: false,
                     expired: true
+                })
+            });
+        }
+
+        // 檢查 isPaused 欄位（如果有設定為 false，表示已恢復）
+        if (record.isPaused === false) {
+            return ok({
+                headers: corsHeaders,
+                body: JSON.stringify({
+                    success: true,
+                    isPaused: false,
+                    resumed: true
                 })
             });
         }
