@@ -592,15 +592,25 @@ function formatProducts(products) {
 `;
 
     products.forEach((p, i) => {
-        // 修正連結邏輯：優先使用 partno 構造 URL
-        // 使用 toLowerCase() 確保格式正確
-        // 範例：https://www.liqui-moly-tw.com/products/lm21730
-        const url = p.partno
-            ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}`
-            : (p.productPageUrl || 'https://www.liqui-moly-tw.com/products/');
+        // 修正連結邏輯：優先使用 partno 或 sku 構造 URL
+        // 有些產品可能原本 partno 為空，嘗試使用 sku
+        const pid = p.partno || p.sku;
+
+        let url = p.productPageUrl || 'https://www.liqui-moly-tw.com/products/';
+
+        if (pid) {
+            url = `${PRODUCT_BASE_URL}${pid.toLowerCase()}`;
+        } else if (p.title) {
+            // 嘗試從標題提取編號 (例如 "LM21730" 或 "9047")
+            const match = p.title.match(/(?:LM|lm)?[- ]?(\d{4,5})/);
+            if (match) {
+                const num = match[1];
+                url = `${PRODUCT_BASE_URL}lm${num}`;
+            }
+        }
 
         context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
-        context += `- 產品編號: ${p.partno || 'N/A'}\n`;
+        context += `- 產品編號: ${pid || 'N/A'}\n`;
         context += `- 容量/尺寸: ${p.size || 'N/A'}\n`;
         context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
