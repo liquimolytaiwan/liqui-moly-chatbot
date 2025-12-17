@@ -363,9 +363,18 @@ async function processMessagingEvent(event, source) {
 
         // 純文字訊息
         if (message.text) {
+            const textLower = message.text.toLowerCase();
+
+            // ======= 恢復 AI 關鍵字偵測 =======
+            const resumeKeywords = ['恢復 ai', '恢復ai', 'ai回答', 'ai 回答', 'ai諮詢', 'ai 諮詢', 'ai產品', 'ai 產品', '啟動ai', '啟動 ai', '開啟ai', '開啟 ai'];
+            if (resumeKeywords.some(kw => textLower.includes(kw))) {
+                console.log(`[Meta Webhook] Resume AI keyword detected: "${message.text}"`);
+                await resumeAI(senderId, source);
+                return;
+            }
+
             // ======= 真人客服關鍵字偵測 =======
             const humanKeywords = ['真人', '客服', '人工', '專人', '轉接', '找人', '活人'];
-            const textLower = message.text.toLowerCase();
             if (humanKeywords.some(kw => textLower.includes(kw))) {
                 console.log(`[Meta Webhook] Human agent keyword detected: "${message.text}"`);
                 await switchToHumanAgent(senderId, source);

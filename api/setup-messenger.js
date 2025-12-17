@@ -60,6 +60,11 @@ export default async function handler(req, res) {
                         call_to_actions: [
                             {
                                 type: 'postback',
+                                title: '🤖 AI 產品諮詢',
+                                payload: 'RESUME_AI'
+                            },
+                            {
+                                type: 'postback',
                                 title: '👤 真人客服',
                                 payload: 'HUMAN_AGENT'
                             },
