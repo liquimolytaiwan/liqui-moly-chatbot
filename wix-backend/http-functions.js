@@ -704,7 +704,6 @@ export async function post_saveConversation(request) {
             userMessage = '',
             aiResponse = '',
             hasAttachment = false,
-            needsHumanReview = false,
             isPaused = false,
             pauseUntil = null
         } = body;
@@ -724,7 +723,6 @@ export async function post_saveConversation(request) {
             userMessage,
             aiResponse,
             hasAttachment,
-            needsHumanReview,
             isPaused,
             pauseUntil: pauseUntil ? new Date(pauseUntil) : null,
             createdAt: new Date()
@@ -901,7 +899,6 @@ export async function post_setPauseStatus(request) {
             userMessage: isPaused ? '[系統] AI 暫停' : '[系統] AI 恢復',
             aiResponse: '',
             hasAttachment: false,
-            needsHumanReview: isPaused,
             isPaused,
             pauseUntil,
             createdAt: new Date()

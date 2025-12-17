@@ -309,8 +309,7 @@ async function processMessagingEvent(event, source) {
                 source,
                 userMessage: message.text || '[管理者發送附件]',
                 aiResponse: '[真人客服回覆]',
-                isPaused: true,
-                needsHumanReview: false
+                isPaused: true
             });
         } catch (error) {
             console.error('[Meta Webhook] Error setting pause:', error);
@@ -344,7 +343,6 @@ async function processMessagingEvent(event, source) {
                 userMessage: message.text || '[附件]',
                 aiResponse: '[等待真人客服中，AI 暫停回覆]',
                 hasAttachment: !!message.attachments,
-                needsHumanReview: true,
                 isPaused: true
             });
             return;
@@ -374,7 +372,6 @@ async function processMessagingEvent(event, source) {
                     source,
                     userMessage: message.text,
                     aiResponse: '[偵測到真人客服關鍵字，已自動切換]',
-                    needsHumanReview: true,
                     isPaused: true
                 });
                 return;
@@ -484,7 +481,6 @@ async function switchToHumanAgent(senderId, source) {
         source,
         userMessage: '[用戶點擊真人客服]',
         aiResponse: confirmText,
-        needsHumanReview: true,
         isPaused: true
     });
 }
@@ -611,8 +607,7 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 source,
                 userMessage: text,
                 aiResponse: chatData.response,
-                hasAttachment: false,
-                needsHumanReview: false
+                hasAttachment: false
             });
         } else {
             throw new Error('Chat API failed');
@@ -660,7 +655,6 @@ async function handleAttachment(senderId, attachments, source, userProfile) {
         userMessage: '[用戶傳送圖片]',
         aiResponse: response,
         hasAttachment: true,
-        needsHumanReview: true,
         isPaused: true
     });
 
@@ -908,15 +902,14 @@ async function getUserProfile(userId, source = 'facebook') {
 // 儲存對話到 Wix CMS
 // ============================================
 
-async function saveConversation(senderId, userMessage, aiResponse, source, userProfile, needsHumanReview = false) {
+async function saveConversation(senderId, userMessage, aiResponse, source, userProfile) {
     try {
         // 呼叫 Wix HTTP Function 儲存對話
         // TODO: 需要在 Wix 建立對應的 API 端點
         console.log('[Meta Webhook] Saving conversation:', {
             senderId,
             source,
-            userName: userProfile?.name,
-            needsHumanReview
+            userName: userProfile?.name
         });
 
         // 暫時只記錄 log，等 Wix API 建立後再實作
@@ -930,7 +923,6 @@ async function saveConversation(senderId, userMessage, aiResponse, source, userP
                 userName: userProfile?.name || 'Unknown',
                 userMessage,
                 aiResponse,
-                needsHumanReview,
                 timestamp: new Date().toISOString()
             })
         });
