@@ -237,6 +237,10 @@ async function processMessagingEvent(event, source) {
 
     // ======= 處理 Echo 訊息（管理者回覆）=======
     // 當管理者從 FB Page Inbox 回覆時，會收到 is_echo: true 的訊息
+    // 真正的管理員回覆特徵：
+    // 1. is_echo: true
+    // 2. sender.id 是頁面 ID（不是用戶 ID）
+    // 3. recipient.id 是用戶 ID
     if (message?.is_echo) {
         // 判斷是否為 bot/app 發送的訊息，跳過不處理
         // 1. app_id 存在表示是 app 發送
@@ -247,6 +251,22 @@ async function processMessagingEvent(event, source) {
             console.log('[Meta Webhook] Bot echo message detected, skipping');
             return; // 這是 bot 發的訊息，不需要記錄
         }
+
+        // 判斷是否真的是管理員回覆（sender 是頁面，recipient 是用戶）
+        // 頁面 ID 通常和 entry.id 相同
+        const pageId = senderId; // 在 is_echo 情況下，sender 是頁面
+        const userId = event.recipient?.id; // recipient 是用戶
+
+        // 檢查：sender 和 recipient 應該不同（頁面 → 用戶）
+        // 如果相同，可能是測試帳號的問題
+        if (!userId || pageId === userId) {
+            console.log(`[Meta Webhook] Skipping echo - sender (${pageId}) equals recipient or recipient missing`);
+            return;
+        }
+
+        // 額外檢查：確認這是從頁面發出的訊息
+        // is_echo 訊息如果沒有 app_id，且不是 bot 訊息，才是真人管理員回覆
+        console.log(`[Meta Webhook] Admin reply detected from page ${pageId} to user ${userId}`);
 
         // 這是真人管理者手動回覆的訊息
         // 無論用戶是否已在暫停中，都重置暫停時間為 30 分鐘
