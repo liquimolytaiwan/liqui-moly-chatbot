@@ -785,49 +785,54 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        // 查詢最近的暫停/恢復記錄
-        // 包含：isPaused=true（暫停）和 isPaused=false（恢復）的記錄
-        // 關鍵：不管是否有 pauseUntil，只要有 isPaused 欄位就算
-        const results = await wixData.query("ChatbotConversations")
+        // === 新策略：分開查詢暫停和恢復記錄 ===
+
+        // 1. 查詢最近的「明確暫停記錄」（有 pauseUntil 的記錄）
+        const pauseResults = await wixData.query("ChatbotConversations")
             .eq("senderId", senderId)
+            .isNotEmpty("pauseUntil")
             .descending("createdAt")
-            .limit(20)  // 取多筆，找最近有 isPaused 欄位的記錄
+            .limit(1)
             .find();
 
-        // 找到最近有明確 isPaused 欄位的記錄
-        const pauseRecord = results.items.find(item =>
-            typeof item.isPaused === 'boolean' || item.pauseUntil
-        );
+        // 2. 查詢最近的「明確恢復記錄」（isPaused=false 且 source=system 或包含恢復標記）
+        const resumeResults = await wixData.query("ChatbotConversations")
+            .eq("senderId", senderId)
+            .eq("isPaused", false)
+            .descending("createdAt")
+            .limit(1)
+            .find();
 
-        // 如果沒有任何暫停相關記錄，表示未暫停
-        if (!pauseRecord) {
-            return ok({
-                headers: corsHeaders,
-                body: JSON.stringify({
-                    success: true,
-                    isPaused: false
-                })
-            });
-        }
+        const latestPause = pauseResults.items[0];
+        const latestResume = resumeResults.items[0];
 
-        const now = new Date();
-        const pauseUntil = pauseRecord.pauseUntil ? new Date(pauseRecord.pauseUntil) : null;
+        console.log('[checkPauseStatus] Debug:', {
+            senderId,
+            hasPauseRecord: !!latestPause,
+            hasResumeRecord: !!latestResume,
+            pauseCreatedAt: latestPause?.createdAt,
+            resumeCreatedAt: latestResume?.createdAt
+        });
 
-        // 優先檢查 isPaused 欄位（最可靠的判斷）
-        // 如果最新記錄明確設定為 false，表示用戶已恢復 AI
-        if (pauseRecord.isPaused === false) {
+        // 如果沒有任何暫停記錄，表示未暫停
+        if (!latestPause) {
             return ok({
                 headers: corsHeaders,
                 body: JSON.stringify({
                     success: true,
                     isPaused: false,
-                    resumed: true
+                    reason: 'no_pause_record'
                 })
             });
         }
 
+        const now = new Date();
+        const pauseUntil = new Date(latestPause.pauseUntil);
+        const pauseCreatedAt = new Date(latestPause.createdAt);
+        const resumeCreatedAt = latestResume ? new Date(latestResume.createdAt) : null;
+
         // 檢查暫停時間是否已過期
-        if (pauseUntil && now > pauseUntil) {
+        if (now > pauseUntil) {
             return ok({
                 headers: corsHeaders,
                 body: JSON.stringify({
@@ -838,24 +843,25 @@ export async function post_checkPauseStatus(request) {
             });
         }
 
-        // 如果 isPaused=true 且有 pauseUntil 且未過期，暫停中
-        if (pauseRecord.isPaused === true && pauseUntil) {
+        // 如果有恢復記錄，且恢復時間比暫停時間更新，返回未暫停
+        if (resumeCreatedAt && resumeCreatedAt > pauseCreatedAt) {
             return ok({
                 headers: corsHeaders,
                 body: JSON.stringify({
                     success: true,
-                    isPaused: true,
-                    pauseUntil: pauseUntil.toISOString()
+                    isPaused: false,
+                    resumed: true
                 })
             });
         }
 
-        // 預設未暫停
+        // 暫停中且未過期
         return ok({
             headers: corsHeaders,
             body: JSON.stringify({
                 success: true,
-                isPaused: false
+                isPaused: true,
+                pauseUntil: pauseUntil.toISOString()
             })
         });
 
