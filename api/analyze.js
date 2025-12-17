@@ -470,13 +470,24 @@ function generateWixQueries(analysis, keywords, message = '') {
         const skuMatches = [...kw.matchAll(skuPattern)];
         for (const skuMatch of skuMatches) {
             const skuNum = skuMatch[1];
-            // 補全 LM 前綴進行精確匹配，避免搜到錯誤產品
+            // 補全 LM 前綴進行精確匹配
             const fullSku = `LM${skuNum}`;
-            console.log(`Detected SKU Keyword: ${kw} -> Searching PartNo: ${fullSku}`);
-            // 使用 eq 精確匹配 partno，確保找到正確產品
+            console.log(`Detected SKU Keyword: ${kw} -> Searching: ${fullSku}, ${skuNum}`);
+
+            // 搜尋 partno 欄位 (主要)
             priorityQueries.push({ field: 'partno', value: fullSku, limit: 5, method: 'eq' });
-            // 同時用 contains 作為備援（以防 partno 格式不一致）
-            priorityQueries.push({ field: 'partno', value: skuNum, limit: 3, method: 'contains' });
+            priorityQueries.push({ field: 'partno', value: skuNum, limit: 5, method: 'contains' });
+
+            // 搜尋 title 欄位 (產品名稱可能包含編號)
+            priorityQueries.push({ field: 'title', value: fullSku, limit: 5, method: 'contains' });
+            priorityQueries.push({ field: 'title', value: skuNum, limit: 5, method: 'contains' });
+
+            // 搜尋 cert 欄位 (認證資訊可能包含編號)
+            priorityQueries.push({ field: 'cert', value: skuNum, limit: 3, method: 'contains' });
+
+            // 搜尋 content/description 欄位 (描述可能包含編號)
+            priorityQueries.push({ field: 'content', value: skuNum, limit: 3, method: 'contains' });
+            priorityQueries.push({ field: 'description', value: skuNum, limit: 3, method: 'contains' });
 
             // === 大包裝搜尋擴展 (Large Package Search Extension) ===
             // 若用戶問「大包裝」，需要找同產品的大容量版本
