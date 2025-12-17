@@ -253,12 +253,17 @@ async function processMessagingEvent(event, source) {
 
         // 判斷是否為 bot/app 發送的訊息，跳過不處理
         // Page Inbox 的 app_id 是 263902037430900，這是真人管理員，不是 bot
-        // 只有當 app_id 存在且不是 Page Inbox 時，才視為 bot
+        // 只有當訊息內容明顯是 bot 發送時才跳過
         const PAGE_INBOX_APP_ID = '263902037430900';
-        const isPageInboxMessage = message.app_id === PAGE_INBOX_APP_ID;
-        const isBotMessage = (message.app_id && !isPageInboxMessage) ||
-            (message.text && message.text.startsWith('🤖')) ||
-            (message.text && message.text.includes('如需更多協助'));
+        const appIdStr = String(message.app_id || '');
+        const isPageInboxMessage = appIdStr === PAGE_INBOX_APP_ID;
+
+        // 只有當訊息以 🤖 開頭或包含特定 bot 提示語時，才視為 bot
+        const isBotMessage = (message.text && message.text.startsWith('🤖')) ||
+            (message.text && message.text.includes('如需更多協助')) ||
+            (message.text && message.text.includes('如需恢復 AI 自動回答'));
+
+        console.log('[Meta Webhook] is_echo analysis:', { appIdStr, isPageInboxMessage, isBotMessage });
 
         if (isBotMessage) {
             console.log('[Meta Webhook] Bot echo message detected, skipping');
