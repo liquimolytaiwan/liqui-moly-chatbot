@@ -371,20 +371,13 @@ async function processMessagingEvent(event, source) {
         if (await isUserPaused(senderId)) {
             console.log(`[Meta Webhook] User ${senderId} is waiting for human agent, skipping AI response`);
 
-            // 發送提示訊息，附帶「恢復 AI」按鈕
-            const pauseMessage = '⏳ 目前由真人客服為您服務中...\n\n如需恢復 AI 自動回答，請點擊下方按鈕或輸入「恢復AI」。';
-            await sendMessageWithQuickReplies(senderId, pauseMessage, [
-                { content_type: 'text', title: '🤖 恢復 AI', payload: 'RESUME_AI' },
-                { content_type: 'text', title: '👤 繼續等待客服', payload: 'WAIT_HUMAN' }
-            ], source);
-
-            // 記錄對話
+            // 靜默記錄對話，不發送提示訊息（避免打擾真人客服對話）
             await saveConversationToWix({
                 senderId,
                 senderName: userProfile?.name || '',
                 source,
                 userMessage: message.text || '[附件]',
-                aiResponse: pauseMessage,
+                aiResponse: '[等待真人客服中，AI 暫停回覆]',
                 hasAttachment: !!message.attachments,
                 isPaused: true
             });

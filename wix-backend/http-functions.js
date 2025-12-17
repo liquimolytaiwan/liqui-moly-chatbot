@@ -385,20 +385,8 @@ async function searchProducts(query, searchInfo) {
         // 1. 讀取 Vercel 傳來的「搜尋指令」 (Remote Instructions)
         const queries = searchInfo?.wixQueries || [];
 
-        // console.log('執行遠端搜尋策略:', JSON.stringify(queries));
-
-        if (queries.length === 0) {
-            // console.log('警告：未收到搜尋指令，使用預設關鍵字搜尋 (Fallback)');
-            const keywords = searchInfo?.searchKeywords || [query];
-            for (const kw of keywords.slice(0, 2)) {
-                try {
-                    const res = await wixData.query('products').contains('title', kw).limit(10).find();
-                    allResults = allResults.concat(res.items);
-                } catch (e) {
-                    console.log('Fallback search error:', e);
-                }
-            }
-        } else {
+        // 執行搜尋
+        if (queries.length > 0) {
             // 2. 依序執行 Vercel 指派的任務
             for (const task of queries) {
                 try {
@@ -411,7 +399,7 @@ async function searchProducts(query, searchInfo) {
                         q = q.eq(task.field, task.value);
                     }
 
-                    // 2b. 設定附加條件 (例如: 既要機油又要含 Scooter)
+                    // 2b. 設定附加條件
                     if (task.andContains) {
                         q = q.contains(task.andContains.field, task.andContains.value);
                     }
@@ -427,11 +415,32 @@ async function searchProducts(query, searchInfo) {
                         );
                     }
 
-                    // console.log(`指令完成 [${task.value}]: 找到 ${items.length} 筆`);
                     allResults = allResults.concat(items);
-
                 } catch (taskError) {
                     console.error(`執行個別指令失敗 [${task.value}]:`, taskError);
+                }
+            }
+        }
+
+        // 如果上述指令沒有找到任何結果，執行 Fallback 搜尋
+        // 這能解決某些 SKU 搜尋不到，或者關鍵字太模糊的問題
+        if (allResults.length === 0) {
+            // console.log('未找到結果，使用預設關鍵字搜尋 (Fallback)');
+            const keywords = searchInfo?.searchKeywords || [query];
+            // 只取前 2 個關鍵字嘗試搜尋
+            for (const kw of keywords.slice(0, 2)) {
+                if (!kw) continue;
+                try {
+                    // 同時搜尋 title 和 content 欄位
+                    // 使用 contains 增加命中率
+                    const resTitle = await wixData.query('products').contains('title', kw).limit(5).find();
+                    allResults = allResults.concat(resTitle.items);
+
+                    // 如果還是沒有，嘗試 partno
+                    const resPart = await wixData.query('products').contains('partno', kw).limit(5).find();
+                    allResults = allResults.concat(resPart.items);
+                } catch (e) {
+                    console.log('Fallback search error:', e);
                 }
             }
         }
@@ -583,9 +592,12 @@ function formatProducts(products) {
 `;
 
     products.forEach((p, i) => {
+        // 修正連結邏輯：優先使用 partno 構造 URL
+        // 使用 toLowerCase() 確保格式正確
+        // 範例：https://www.liqui-moly-tw.com/products/lm21730
         const url = p.partno
             ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}`
-            : 'https://www.liqui-moly-tw.com/products/';
+            : (p.productPageUrl || 'https://www.liqui-moly-tw.com/products/');
 
         context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
         context += `- 產品編號: ${p.partno || 'N/A'}\n`;
