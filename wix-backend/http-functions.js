@@ -415,6 +415,16 @@ async function searchProducts(query, searchInfo) {
                         );
                     }
 
+                    // 2e. 容量篩選 (Size Filtering)
+                    // 當用戶問「有800ml嗎」時，只保留對應容量的產品
+                    if (task.filterSize) {
+                        const sizeKeyword = task.filterSize.toLowerCase();
+                        items = items.filter(item =>
+                            item.size && item.size.toLowerCase().includes(sizeKeyword)
+                        );
+                        console.log(`[Size Filter] Filtered by "${sizeKeyword}", remaining: ${items.length} items`);
+                    }
+
                     allResults = allResults.concat(items);
                 } catch (taskError) {
                     console.error(`執行個別指令失敗 [${task.value}]:`, taskError);

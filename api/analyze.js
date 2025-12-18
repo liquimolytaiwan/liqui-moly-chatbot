@@ -531,9 +531,35 @@ function generateWixQueries(analysis, keywords, message = '') {
         largePackageKeywords.some(lpk => messageLower.includes(lpk)) ||
         keywords.some(kw => largePackageKeywords.some(lpk => kw.toLowerCase().includes(lpk)));
 
-    // Helper to add query
-    const addQuery = (field, value, limit = 20, method = 'contains') => {
-        queries.push({ field, value, limit, method });
+    // === 容量提取邏輯 (Volume Extraction) ===
+    // 提取用戶詢問的具體容量 (如 800ml, 1L, 4L)
+    let requestedSize = null;
+    const sizePatterns = [
+        /(\d+)\s*(ml|毫升)/i,   // 800ml, 800毫升
+        /(\d+)\s*(l|公升|升)/i, // 4L, 4公升, 4升
+    ];
+    for (const pattern of sizePatterns) {
+        const match = messageLower.match(pattern);
+        if (match) {
+            const num = match[1];
+            const unit = match[2].toLowerCase();
+            if (unit === 'ml' || unit === '毫升') {
+                requestedSize = `${num}ml`;
+            } else {
+                requestedSize = `${num}L`;
+            }
+            console.log(`[Volume Extraction] Detected size request: ${requestedSize}`);
+            break;
+        }
+    }
+
+    // Helper to add query (now includes optional filterSize)
+    const addQuery = (field, value, limit = 20, method = 'contains', filterSize = null) => {
+        const query = { field, value, limit, method };
+        if (filterSize || requestedSize) {
+            query.filterSize = filterSize || requestedSize;
+        }
+        queries.push(query);
     };
 
     // === 策略 A: 摩托車添加劑 ===
