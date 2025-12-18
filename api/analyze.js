@@ -344,6 +344,33 @@ ${contextSummary}用戶當前問題：「${message}」
                     const isSpecificCarModel = result.vehicleType === '汽車' && result.vehicleSubType && result.vehicleSubType !== '未知';
                     const isExplicitCarSwitch = isExplicitKeyword || isSpecificCarModel;
 
+                    // ============================================
+                    // 🏍️ 當前訊息摩托車關鍵字優先檢查 (Current Message Priority)
+                    // 如果當前訊息包含摩托車車型（如 MT-03, R3），直接強制摩托車模式
+                    // ============================================
+                    const currentMessageLower = message.toLowerCase();
+                    const motorcycleKeywordsInMessage = [
+                        // YAMAHA 檔車/重機
+                        'mt-03', 'mt-07', 'mt-09', 'mt-10', 'mt-15', 'r1', 'r3', 'r6', 'r7', 'r15', 'xsr', 'tracer', 'tenere', 'fz', 'xmax', 'tmax', 'nmax',
+                        // KAWASAKI
+                        'ninja', 'z400', 'z650', 'z900', 'zx-6r', 'zx-10r', 'versys', 'vulcan', 'w800', 'er-6n',
+                        // HONDA
+                        'cbr', 'cb300', 'cb500', 'cb650', 'cb1000', 'crf', 'rebel', 'nc750', 'africa twin', 'goldwing', 'forza', 'pcx', 'adv',
+                        // SUZUKI
+                        'gsx-r', 'gsx-s', 'sv650', 'v-strom', 'katana', 'hayabusa', 'burgman',
+                        // DUCATI / BMW / KTM / TRIUMPH / HARLEY
+                        'ducati', 'panigale', 'monster', 'scrambler', 'multistrada', 'bmw gs', 'r1250', 's1000', 'ktm', 'duke', 'rc', 'adventure', 'triumph', 'street triple', 'tiger', 'harley', 'sportster', 'iron', 'softail',
+                        // 通用摩托車關鍵字
+                        'yamaha', '機車', '摩托車', 'motorcycle', 'motorbike', '重機', '檔車', '速克達', 'scooter'
+                    ];
+                    const hasMotorcycleInCurrentMessage = motorcycleKeywordsInMessage.some(kw => currentMessageLower.includes(kw));
+
+                    if (hasMotorcycleInCurrentMessage && !isExplicitCarSwitch) {
+                        console.log(`Context Override: Detected motorcycle keyword in CURRENT message! Forcing Motorcycle mode. (keyword found in: "${message.substring(0, 50)}...")`);
+                        result.vehicleType = '摩托車';
+                        // 重置可能錯誤的 productCategory
+                    }
+
                     if ((!explicitTypes.includes(result.vehicleType) || isDefaultCar) && !isExplicitCarSwitch) {
                         const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
 
@@ -561,6 +588,14 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
         queries.push(query);
     };
+
+    // === 策略 0: SHOOTER 關鍵字專用搜尋 ===
+    // 當用戶提到 SHOOTER 時，直接搜尋 Shooter 產品標題
+    const hasShooterKeyword = messageLower.includes('shooter') || keywords.some(k => k.toLowerCase().includes('shooter'));
+    if (hasShooterKeyword) {
+        console.log('[generateWixQueries] SHOOTER keyword detected, adding Shooter title search');
+        queries.push({ field: 'title', value: 'Shooter', limit: 20, method: 'contains' });
+    }
 
     // === 策略 A: 摩托車添加劑 ===
     if (isBike && productCategory === '添加劑') {
