@@ -651,14 +651,16 @@ function generateWixQueries(analysis, keywords, message = '') {
 
     // === 策略 B: 摩托車機油 ===
     else if (isBike && productCategory === '機油') {
+        console.log('[策略B] 摩托車機油搜尋! vehicleType:', vehicleType, 'isBike:', isBike);
+        
+        // 優先搜尋標題含 Motorbike 的機油 (最精確)
+        queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+        
         if (isScooter) {
-            // 速克達優先
             queries.push({ field: 'sort', value: '【摩托車】機油', limit: 20, method: 'contains', andContains: { field: 'title', value: 'Scooter' } });
-            // 其他備選
-            addQuery('sort', '【摩托車】機油', 30);
-        } else {
-            addQuery('sort', '【摩托車】機油', 50);
         }
+        addQuery('sort', '【摩托車】機油', 30);
+        console.log('[策略B] 已加入 Motorbike 標題搜尋');
     }
 
     // === 策略 C: 汽車添加劑 ===
