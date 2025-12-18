@@ -156,6 +156,24 @@ function searchProducts(products, message, searchInfo) {
     }
 
     console.log('Search results before expansion:', results.length);
+    
+    // === 摩托車過濾 (Motorcycle Filter) - 最終防線 ===
+    // 若 vehicleType = 摩托車 且 productCategory = 機油，過濾掉非 Motorbike 產品
+    const vehicleType = searchInfo?.vehicleType;
+    const productCategory = searchInfo?.productCategory;
+    
+    if (vehicleType === '摩托車' && productCategory === '機油') {
+        const filteredResults = results.filter(p => {
+            const title = (p.title || '').toLowerCase();
+            const sort = (p.sort || '').toLowerCase();
+            return title.includes('motorbike') || sort.includes('摩托車');
+        });
+        console.log('[Motorcycle Filter] Filtered', results.length, '->', filteredResults.length, 'products');
+        if (filteredResults.length > 0) {
+            return filteredResults;
+        }
+    }
+    
     return results;
 }
 
