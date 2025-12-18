@@ -395,7 +395,7 @@ ${contextSummary}用戶當前問題：「${message}」
                     const currentMessageLower = message.toLowerCase();
                     const motorcycleKeywordsInMessage = [
                         // YAMAHA 檔車/重機
-                        'mt-03', 'mt-07', 'mt-09', 'mt-10', 'mt-15', 'r1', 'r3', 'r6', 'r7', 'r15', 'xsr', 'tracer', 'tenere', 'fz', 'xmax', 'tmax', 'nmax',
+                        'mt-03', 'mt03', 'mt-07', 'mt07', 'mt-09', 'mt09', 'mt-10', 'mt10', 'mt-15', 'mt15', 'r1', 'r3', 'r6', 'r7', 'r15', 'xsr', 'tracer', 'tenere', 'fz', 'xmax', 'tmax', 'nmax',
                         // KAWASAKI
                         'ninja', 'z400', 'z650', 'z900', 'zx-6r', 'zx-10r', 'versys', 'vulcan', 'w800', 'er-6n',
                         // HONDA
