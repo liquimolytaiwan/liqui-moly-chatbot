@@ -209,13 +209,20 @@ ${contextSummary}用戶當前問題：「${message}」
    - **一旦車型確定，除非用戶明確換車，否則後續所有搜尋都必須保留該車型設定。**
    - **關鍵：若歷史紀錄中提及特定認證（如 948B, LL-04, 504/507），務必將其加入 searchKeywords！**
 
-2. **vehicleType (車型判斷)**
-   - "摩托車"：出現 機車、摩托車、重機、檔車、速克達、跑山、
-     以及熱門車款：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur
+2. **vehicleType (車型判斷) - 利用你的內建知識！**
+   - **重要：請用你對全球汽機車品牌的知識來判斷，不要只依賴下方列表！**
+   - "摩托車"：出現 機車、摩托車、重機、檔車、街車、仿賽、速克達、跑山、
+     - 🛵 **速克達**：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur, Burgman, PCX, Forza, ADV
+     - 🏍️ **檔車/街車**：MT-03, MT-07, MT-09, MT-10, MT-15, XSR, Tracer, Tenere (YAMAHA), Z400, Z650, Z900, ER, Versys, W800, Vulcan (KAWASAKI), CB300, CB500, CB650, CB1000, Rebel, NC750 (HONDA), SV650, GSX-S, V-Strom, Katana (SUZUKI), Duke, Svartpilen, Vitpilen (KTM), Street Triple, Trident, Speed Twin (TRIUMPH), Monster, Scrambler (DUCATI), R nineT, F900 (BMW)
+     - 🏁 **仿賽/跑車**：R1, R3, R6, R7, R15, YZF (YAMAHA), Ninja, ZX-6R, ZX-10R, ZX-4R (KAWASAKI), CBR, RC (HONDA), GSX-R, Hayabusa (SUZUKI), RC, RC8 (KTM), Daytona (TRIUMPH), Panigale, SuperSport (DUCATI), S1000RR (BMW)
+     - 🛣️ **多功能/ADV**：Africa Twin, Goldwing (HONDA), Super Adventure (KTM), Tiger, Scrambler XE (TRIUMPH), Multistrada, DesertX (DUCATI), GS, R1250GS, F850GS (BMW)
+     - 🇺🇸 **美式/巡航**：Harley, Sportster, Iron, Softail, Fat Boy, Street Glide, Electra Glide, Indian, Scout, Chief
    - "船舶"：出現 船, Marine, Boat, Yacht, 艦艇, 遊艇, 船外機, Outboard, Inboard, Jet Ski, 水上摩托車
    - "自行車"：出現 自行車, 腳踏車, 單車, Bike, Bicycle, MTB, 公路車, 登山車
    - "汽車"：預設值，或出現 汽車, 轎車, SUV, MPV, 卡車, 跑車
-     以及熱門車款：Toyota, Altis, Corolla Cross, RAV4, Yaris, Vios, Camry, Town Ace, Honda, CRV, HRV, Fit, Civic, Ford, Kuga, Focus, Nissan, X-Trail, Kicks, Sentra, Lexus, NX, RX, UX, LBX, ES, Mazda, CX-5, CX-30, Mazda3, Benz, GLC, C-Class, E-Class, A-Class, BMW, X3, X4, X1, 3 Series, 5 Series, Volvo, XC40, XC60, Hyundai, Tucson, Custin, Kia, Sportage, MG, HS, ZS
+     以及熱門車款：Toyota, Altis, Corolla Cross, RAV4, Yaris, Vios, Camry, Town Ace, Honda CRV, Honda HRV, Fit, Civic, Ford, Kuga, Focus, Nissan, X-Trail, Kicks, Sentra, Lexus, NX, RX, UX, LBX, ES, Mazda, CX-5, CX-30, Mazda3, Benz, GLC, C-Class, E-Class, A-Class, BMW X3, BMW X4, BMW X1, BMW 3 Series, BMW 5 Series, Volvo, XC40, XC60, Hyundai, Tucson, Custin, Kia, Sportage, MG, HS, ZS
+   - **注意區分**：Honda CBR, Honda CB = 摩托車；Honda CRV, Honda Civic = 汽車
+   - **注意區分**：BMW S1000RR, BMW R1250GS = 摩托車；BMW X3, BMW 3 Series = 汽車
 
 2.5 **isElectricVehicle (電動車偵測) - 極重要！**
    - 若出現以下關鍵字，必須設為 true：
