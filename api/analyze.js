@@ -242,7 +242,24 @@ ${contextSummary}用戶當前問題：「${message}」
    - "鏈條"：鏈條, 鍊條, Chain, Lube, 乾式, 濕式, 鍊條油, 鏈條清洗
    - "船舶"：船用機油, 2T, 4T, Marine Oil, Gear Lube
    - "自行車"：單車保養, Bike Lube, Bike Cleaner
+
+3.5 **🧠 產品名稱智慧識別 (Product Name Intelligence) - 極重要！**
+   **你必須利用你對 LIQUI MOLY 產品線的知識來識別產品！**
    
+   - 若用戶提到以下 LIQUI MOLY 產品系列，**必須**將它們加入 searchKeywords：
+     - **添加劑系列**：Shooter (4T/2T), Engine Flush, Cera Tec, MOS2, Viscoplus, Oil Additiv, Speed Tec, Super Diesel, Injection Cleaner, Valve Clean, Catalytic-System Clean, Pro-Line, Fuel Protect, Oil Saver, Stop Leak, ATF Additive
+     - **機油系列**：Molygen, Special Tec, Top Tec, Synthoil, Leichtlauf, MoS2, Racing Synth, Longtime, Optimal, Super Leichtlauf
+     - **摩托車系列**：Motorbike, Street, Offroad, Scooter, 4T, 2T, Chain Lube, Chain Cleaner
+     - **化學品系列**：DOT, Brake Fluid, Coolant, Kühlerfrostschutz, ATF
+   
+   - **用戶輸入分析**：
+     - 當用戶輸入可能是產品名稱但你不確定時，**直接將其加入 searchKeywords** 讓資料庫搜尋
+     - 範例：用戶說「SHOOTER」→ searchKeywords 加入 ["Shooter", "4T Shooter", "2T Shooter"]
+     - 範例：用戶說「Molygen」→ searchKeywords 加入 ["Molygen", "Molygen New Generation"]
+     - 範例：用戶說「快樂跑」→ searchKeywords 加入 ["快樂跑", "Fuel Additive", "Speed Tec"]
+   
+   - **容錯機制**：即使你不認識的詞彙，只要看起來像產品名稱，就加入 searchKeywords！
+    
 4. **isGeneralProduct (通用產品判定)**
    - **必填 true**：當類別為「美容」、「化學品」、「清潔」時 (除非明確指定是摩托車專用，如"重機鍊條油")。
    - **必填 true**：煞車油、水箱精、洗手膏、雨刷水通常不分車種。
@@ -289,6 +306,26 @@ ${contextSummary}用戶當前問題：「${message}」
        - 鍊條異音/生鏽 -> 搜 "Chain Lube", "Chain Cleaner", "Bike Lube", "LM 40", "鍊條"
        - 煞車異音 (單車) -> 搜 "Brake Cleaner", "煞車"
        - 電子接點氧化 -> 搜 "Electronic Spray", "LM 40", "接點"
+
+   - **🔄 跨品牌產品比對 (Cross-Brand Product Matching) - 智慧推薦！**
+     **當用戶提到其他品牌產品時，利用你的知識分析該產品特性，推薦類似的 LIQUI MOLY 產品：**
+     
+     - **用戶問法範例**：「有類似嘉實多磁護的產品嗎？」「跟 Mobil 1 差不多的？」
+     - **你的任務**：
+       1. 分析該競品的特性（合成/礦物、黏度、定位、認證）
+       2. 找出 LIQUI MOLY 中定位相近的產品
+       3. 將對應的 LIQUI MOLY 產品名加入 searchKeywords
+     
+     - **常見競品對應（利用你的知識擴展）**：
+       - 嘉實多磁護 (Castrol Magnatec) → Molygen New Generation
+       - 嘉實多極護 (Castrol EDGE) → Synthoil
+       - 美孚1號 (Mobil 1) → Top Tec / Synthoil
+       - Shell Helix Ultra → Top Tec / Special Tec
+       - 出光 (Idemitsu) → Special Tec AA
+       - Motul (機車) → Motorbike Racing Synth
+       - YAMALUBE/原廠油 → Motorbike 4T
+     
+     - **重要**：即使競品不在列表，請用你的知識推斷！
    - 當找特定認證 (948B) 時，同時提供拆解版本 ["948B", "948", "948-B"]。
    - **⚠️ 注意車種差異**：
      - 若 'vehicleType' 是「摩托車」，嚴禁搜尋 "ATF Additive", "Hybrid Additive" 等汽車專用詞。
