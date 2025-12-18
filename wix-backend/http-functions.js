@@ -442,17 +442,17 @@ async function searchProducts(query, searchInfo) {
         if (allResults.length === 0) {
             // console.log('未找到結果，使用預設關鍵字搜尋 (Fallback)');
             const keywords = searchInfo?.searchKeywords || [query];
-            // 只取前 2 個關鍵字嘗試搜尋
-            for (const kw of keywords.slice(0, 2)) {
+            // 處理前 4 個關鍵字 (從 2 提升至 4，增加找到產品的機會)
+            for (const kw of keywords.slice(0, 4)) {
                 if (!kw) continue;
                 try {
                     // 同時搜尋 title 和 content 欄位
                     // 使用 contains 增加命中率
-                    const resTitle = await wixData.query('products').contains('title', kw).limit(5).find();
+                    const resTitle = await wixData.query('products').contains('title', kw).limit(10).find();
                     allResults = allResults.concat(resTitle.items);
 
                     // 如果還是沒有，嘗試 partno
-                    const resPart = await wixData.query('products').contains('partno', kw).limit(5).find();
+                    const resPart = await wixData.query('products').contains('partno', kw).limit(10).find();
                     allResults = allResults.concat(resPart.items);
                 } catch (e) {
                     console.log('Fallback search error:', e);
