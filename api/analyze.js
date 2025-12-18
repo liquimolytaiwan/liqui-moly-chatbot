@@ -839,8 +839,8 @@ function generateWixQueries(analysis, keywords, message = '') {
                     andContains: { field: 'title', value: 'Motorbike' }
                 });
             }
-        } else {
-            // 汽車或不分車型
+        } else if (!isBike) {
+            // 汽車或不分車型 (修正: 加入 !isBike 雙重檢查，確保不會對摩托車執行汽車搜尋)
             // === 嚴格類別過濾 (Strict Category Filter) ===
             // 針對容易混淆的類別 (如機油 vs 添加劑)，強制加上類別過濾
             const strictCategories = ['機油', '添加劑', '變速箱', '煞車', '冷卻'];
@@ -856,8 +856,12 @@ function generateWixQueries(analysis, keywords, message = '') {
 
         // === Fallback: 寬鬆搜尋 (Relaxed Search) ===
         // 為了避免因分類錯誤或過濾太嚴格而漏掉產品，額外搜尋僅標題匹配的結果
-        // 這讓 AI 能夠看到「雖然分類不符但標題吻合」的產品，進而正確引導用戶（而不是說找不到）
-        priorityQueries.push({ field: 'title', value: kw, limit: 5, method: 'contains' });
+        // 修正: 對摩托車加入 Motorbike 過濾，避免返回汽車產品
+        if (isBike && productCategory === '機油') {
+            priorityQueries.push({ field: 'title', value: kw, limit: 5, method: 'contains', andContains: { field: 'title', value: 'Motorbike' } });
+        } else {
+            priorityQueries.push({ field: 'title', value: kw, limit: 5, method: 'contains' });
+        }
 
         // === 關鍵修正：針對「認證/規格」類關鍵字，追加搜尋 Description 欄位 ===
         // 判斷方式：含該關鍵字混合了數字與字母 (如 948B, 504.00, LL-04) 或是顯著的特殊規格
