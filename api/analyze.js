@@ -693,6 +693,32 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
+    // === SKU 優先處理 (SKU Priority Search) ===
+    // 在 maxKeywords 限制之前，先為所有 SKU 格式的關鍵字生成搜尋指令
+    // 這確保「LM7820跟LM7822」這類查詢能找到所有產品
+    const skuPattern = /^(?:lm|LM)?(\d{4,5})$/;
+    const processedSkus = new Set();
+
+    for (const kw of uniqueKw) {
+        const match = kw.match(skuPattern);
+        if (match) {
+            const skuNum = match[1];
+            const fullSku = `LM${skuNum}`;
+
+            // 避免重複處理同一個 SKU
+            if (processedSkus.has(skuNum)) continue;
+            processedSkus.add(skuNum);
+
+            console.log(`[SKU Priority] Processing SKU: ${kw} -> ${fullSku}`);
+
+            // 直接用 partno 精確搜尋
+            priorityQueries.push({ field: 'partno', value: fullSku, limit: 5, method: 'eq' });
+            priorityQueries.push({ field: 'partno', value: skuNum, limit: 5, method: 'contains' });
+            // 標題搜尋備份
+            priorityQueries.push({ field: 'title', value: fullSku, limit: 5, method: 'contains' });
+        }
+    }
+
     uniqueKw.slice(0, maxKeywords).forEach(kw => {
         if (!kw || kw.length < 2) return; // 跳過過短關鍵字
 
