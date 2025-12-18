@@ -408,6 +408,60 @@ ${contextSummary}用戶當前問題：「${message}」
                 }
 
                 // ============================================
+                // 📦 容量/包裝 Follow-up 偵測 (Volume Follow-up Detection)
+                // 當用戶問「60L」「4L」「有大容量嗎」時，從歷史提取產品名重新搜尋
+                // ============================================
+                const volumeKeywords = ['1l', '4l', '5l', '20l', '60l', '205l', '大容量', '大包裝', '小包裝', '有幾升', '有幾公升', '容量', '包裝', 'liter', 'litre'];
+                const lowerMessage = message.toLowerCase();
+                const hasVolumeQuestion = volumeKeywords.some(kw => lowerMessage.includes(kw));
+
+                if (hasVolumeQuestion && conversationHistory && conversationHistory.length > 0) {
+                    console.log('[Volume Follow-up] Detected volume question, scanning history for product name...');
+
+                    // 從對話歷史中提取產品名稱
+                    // 尋找常見的產品系列名稱
+                    const productPatterns = [
+                        /Special Tec[^,\n]*/gi,
+                        /Top Tec[^,\n]*/gi,
+                        /Molygen[^,\n]*/gi,
+                        /Leichtlauf[^,\n]*/gi,
+                        /Synthoil[^,\n]*/gi,
+                        /Motor Oil[^,\n]*/gi,
+                        /Motorbike[^,\n]*/gi,
+                        /\d+W-?\d+/gi  // 黏度規格如 0W-20, 5W-30
+                    ];
+
+                    const historyText = conversationHistory.map(m => m.content).join(' ');
+                    let foundProductNames = [];
+
+                    for (const pattern of productPatterns) {
+                        const matches = historyText.match(pattern);
+                        if (matches) {
+                            foundProductNames = foundProductNames.concat(matches);
+                        }
+                    }
+
+                    // 去重並取前 3 個
+                    foundProductNames = [...new Set(foundProductNames)].slice(0, 3);
+
+                    if (foundProductNames.length > 0) {
+                        console.log(`[Volume Follow-up] Found product names in history: ${foundProductNames.join(', ')}`);
+                        if (!result.searchKeywords) result.searchKeywords = [];
+
+                        // 將產品名稱加入搜尋關鍵字
+                        for (const name of foundProductNames) {
+                            if (!result.searchKeywords.includes(name)) {
+                                result.searchKeywords.push(name);
+                            }
+                        }
+
+                        // 標記這是容量查詢，讓回覆時列出所有容量
+                        result.isVolumeQuery = true;
+                        console.log(`[Volume Follow-up] Added to searchKeywords: ${foundProductNames.join(', ')}`);
+                    }
+                }
+
+                // ============================================
                 // 🧪 添加劑指南匹配 (Additive Guide Matching)
                 // ============================================
                 const additiveMatches = matchAdditiveGuide(message);
