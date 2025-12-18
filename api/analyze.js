@@ -210,7 +210,9 @@ ${contextSummary}用戶當前問題：「${message}」
    - **關鍵：若歷史紀錄中提及特定認證（如 948B, LL-04, 504/507），務必將其加入 searchKeywords！**
 
 2. **vehicleType (車型判斷) - 利用你的內建知識！**
-   - **重要：請用你對全球汽機車品牌的知識來判斷，不要只依賴下方列表！**
+   - **🔴 極重要：你是 AI，擁有全球汽機車的完整知識庫！**
+   - **即使車型名稱不在下方列表中，請用你對品牌/車款的知識來判斷是汽車還是摩托車！**
+   - **舉例：如果用戶說 "Yamaha Bolt" 或 "Royal Enfield"，雖然不在列表中，你應該知道這些是摩托車**
    - "摩托車"：出現 機車、摩托車、重機、檔車、街車、仿賽、速克達、跑山、
      - 🛵 **速克達**：JET, 勁戰, MMBCU, DRG, Force, SMAX, BWS, Cygnus, RCS, Racing, RomaGT, RTS, KRV, Like, Many, Nice, Woo, Vivo, Fiddle, Saluto, Swish, Access, Address, Vespa, JBUBU, Tigra, Spring, 4MICA, KRN, Dollar, Augur, Burgman, PCX, Forza, ADV
      - 🏍️ **檔車/街車**：MT-03, MT-07, MT-09, MT-10, MT-15, XSR, Tracer, Tenere (YAMAHA), Z400, Z650, Z900, ER, Versys, W800, Vulcan (KAWASAKI), CB300, CB500, CB650, CB1000, Rebel, NC750 (HONDA), SV650, GSX-S, V-Strom, Katana (SUZUKI), Duke, Svartpilen, Vitpilen (KTM), Street Triple, Trident, Speed Twin (TRIUMPH), Monster, Scrambler (DUCATI), R nineT, F900 (BMW)
