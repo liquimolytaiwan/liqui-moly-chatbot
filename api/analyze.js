@@ -407,7 +407,32 @@ ${contextSummary}用戶當前問題：「${message}」
                         // 通用摩托車關鍵字
                         'yamaha', '機車', '摩托車', 'motorcycle', 'motorbike', '重機', '檔車', '速克達', 'scooter'
                     ];
-                    const hasMotorcycleInCurrentMessage = motorcycleKeywordsInMessage.some(kw => currentMessageLower.includes(kw));
+
+                    // === 智慧模糊匹配 (Fuzzy Matching) ===
+                    // 正規化用戶輸入：移除連字號、空格，統一小寫
+                    const normalizedMessage = currentMessageLower.replace(/[-\s]/g, '');
+
+                    // 匹配模式車型 (支援各種變體如 mt03, mt-03, mt 03)
+                    const motorcyclePatterns = [
+                        /mt0?[3579]|mt1[05]/i,        // MT-03, MT03, MT-07, MT-10, MT-15 等
+                        /[rz][134679]00?/i,           // R3, R6, Z400, Z650, Z900
+                        /ninja\d*/i,                  // Ninja, Ninja400, Ninja650
+                        /cbr?\d*/i,                   // CB, CBR, CB300, CBR650
+                        /gsx[rs]?\d*/i,               // GSX, GSX-R, GSX-S750
+                        /duke\d*/i,                   // Duke, Duke390, Duke790
+                        /panigale/i, /monster/i,      // Ducati
+                        /r1250?gs|s1000rr/i,          // BMW
+                        /africatwin/i,                // Africa Twin
+                        /harley|sportster|softail/i,  // Harley
+                    ];
+
+                    // 先用模式匹配檢查
+                    const hasMotorcyclePattern = motorcyclePatterns.some(pattern => pattern.test(normalizedMessage));
+
+                    // 再用關鍵字列表匹配（支援正規化後的字串）
+                    const normalizedKeywords = motorcycleKeywordsInMessage.map(kw => kw.replace(/[-\s]/g, ''));
+                    const hasMotorcycleInCurrentMessage = hasMotorcyclePattern ||
+                        normalizedKeywords.some(kw => normalizedMessage.includes(kw));
 
                     if (hasMotorcycleInCurrentMessage && !isExplicitCarSwitch) {
                         console.log(`Context Override: Detected motorcycle keyword in CURRENT message! Forcing Motorcycle mode. (keyword found in: "${message.substring(0, 50)}...")`);
@@ -652,10 +677,10 @@ function generateWixQueries(analysis, keywords, message = '') {
     // === 策略 B: 摩托車機油 ===
     else if (isBike && productCategory === '機油') {
         console.log('[策略B] 摩托車機油搜尋! vehicleType:', vehicleType, 'isBike:', isBike);
-        
+
         // 優先搜尋標題含 Motorbike 的機油 (最精確)
         queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
-        
+
         if (isScooter) {
             queries.push({ field: 'sort', value: '【摩托車】機油', limit: 20, method: 'contains', andContains: { field: 'title', value: 'Scooter' } });
         }
