@@ -3,6 +3,9 @@
  * AI 分析用戶問題，判斷車型類別和需要的規格
  */
 
+const fs = require('fs');
+const path = require('path');
+
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // CORS headers
@@ -12,6 +15,76 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json'
 };
+
+// ============================================
+// 添加劑指南資料庫 (Additive Guide Database)
+// ============================================
+let additiveGuide = [];
+try {
+    const guidePath = path.join(process.cwd(), 'data', 'additive-guide.json');
+    additiveGuide = JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
+    console.log(`[Additive Guide] Loaded ${additiveGuide.length} items`);
+} catch (e) {
+    console.warn('[Additive Guide] Failed to load:', e.message);
+}
+
+/**
+ * 匹配添加劑指南
+ * 根據用戶訊息中的關鍵字，找出對應的添加劑推薦
+ * @param {string} message - 用戶訊息
+ * @returns {Array} - 匹配到的指南項目
+ */
+function matchAdditiveGuide(message) {
+    if (!additiveGuide.length) return [];
+
+    const lowerMsg = message.toLowerCase();
+    const matched = [];
+
+    // 定義問題關鍵字映射 (擴展匹配能力)
+    const keywordMap = {
+        '漏油': ['漏油', '滲油', '油封', '止漏'],
+        '異音': ['異音', '聲音', '噪音', '達達聲', '敲擊'],
+        '吃機油': ['吃機油', '機油消耗', '排藍煙', '冒藍煙'],
+        '積碳': ['積碳', '除碳', '清潔', '清洗'],
+        '怠速': ['怠速', '抖動', '不穩'],
+        '啟動': ['啟動', '發動', '難發'],
+        '過熱': ['過熱', '水溫高', '水溫過高'],
+        '磨損': ['磨損', '保護', '抗磨'],
+        '變速箱': ['變速箱', '換檔', '打滑', '頓挫'],
+        '冷卻': ['冷卻', '水箱', '水溫'],
+        'DPF': ['dpf', '再生', '柴油濾芯'],
+        '黑煙': ['黑煙', '冒煙', '排煙'],
+        '油泥': ['油泥', '乳化', '乳黃色'],
+        '缸壓': ['缸壓', '壓縮', '活塞環'],
+    };
+
+    for (const item of additiveGuide) {
+        const problem = (item.problem || '').toLowerCase();
+        const explanation = (item.explanation || '').toLowerCase();
+
+        // 直接匹配問題描述
+        if (lowerMsg.includes(problem.substring(0, 4))) {
+            matched.push(item);
+            continue;
+        }
+
+        // 關鍵字擴展匹配
+        for (const [key, synonyms] of Object.entries(keywordMap)) {
+            if (synonyms.some(s => lowerMsg.includes(s))) {
+                if (problem.includes(key) || explanation.includes(key) || synonyms.some(s => problem.includes(s))) {
+                    if (!matched.find(m => m.problem === item.problem)) {
+                        matched.push(item);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // 最多返回 3 個最相關的結果
+    return matched.slice(0, 3);
+}
+
 
 export default async function handler(req, res) {
     // Handle CORS preflight
@@ -331,6 +404,38 @@ ${contextSummary}用戶當前問題：「${message}」
                     }
                     if (!result.searchKeywords.includes(skuNum)) {
                         result.searchKeywords.unshift(skuNum);
+                    }
+                }
+
+                // ============================================
+                // 🧪 添加劑指南匹配 (Additive Guide Matching)
+                // ============================================
+                const additiveMatches = matchAdditiveGuide(message);
+                if (additiveMatches.length > 0) {
+                    console.log(`[Additive Guide] Matched ${additiveMatches.length} items for: "${message.substring(0, 30)}..."`);
+                    result.additiveGuideMatch = {
+                        matched: true,
+                        items: additiveMatches.map(item => ({
+                            problem: item.problem,
+                            explanation: item.explanation,
+                            solutions: item.solutions,
+                            hasProduct: item.hasProduct,
+                            area: item.area,
+                            type: item.type
+                        }))
+                    };
+                    // 將產品編號加入搜尋關鍵字
+                    if (!result.searchKeywords) result.searchKeywords = [];
+                    for (const item of additiveMatches) {
+                        for (const sku of item.solutions) {
+                            if (!result.searchKeywords.includes(sku)) {
+                                result.searchKeywords.push(sku);
+                            }
+                        }
+                    }
+                    // 如果有匹配添加劑，更新產品類別
+                    if (result.productCategory !== '添加劑') {
+                        result.productCategory = '添加劑';
                     }
                 }
 

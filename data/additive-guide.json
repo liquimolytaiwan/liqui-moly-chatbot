@@ -1,0 +1,1112 @@
+[
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "液壓頂桿(氣門舉桿)異音",
+    "explanation": "通常是因為通往液壓頂桿的細小油道被油泥或積碳堵塞。導致頂桿無法獲得足夠的機油壓力，因而產生明顯的「達達」金屬敲擊聲。我們的液壓頂桿添加劑可清除這些沉積物並保持油道暢通。",
+    "solutions": [
+      "LM1009"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "機油蓋上有乳黃色油泥(乳化)",
+    "explanation": "短途行駛會導致冷凝水積聚在油底殼中，與機油混合後形成黃色乳狀油泥，常見於氣門蓋或機油蓋上。我們的油泥清洗劑利用機油循環的離心力來清潔這些汙染。",
+    "solutions": [
+      "LM2657"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎外部漏油(油封老化)",
+    "explanation": "引擎油封(橡膠/塑膠材質)會隨時間和溫度變化而失去增塑劑，導致硬化、收縮與變脆，進而引發漏油。我們的機油止漏劑可活化橡膠/塑膠油封，恢復其彈性與密封性。",
+    "solutions": [
+      "LM5182"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎啟動困難",
+    "explanation": "隨著年份或里程增加，噴油嘴或化油器上會形成沉積物，導致燃油霧化效果變差。良好的霧化對啟動至關重要。清潔油路可改善燃燒效率與啟動性能。",
+    "solutions": [
+      "LM5129",
+      "LM1803",
+      "LM1818"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環卡滯導致缸壓不足",
+    "explanation": "活塞環上的積碳嚴重限制了其活動性。如果活塞環卡死，就無法與氣缸壁形成完全密封，導致動力流失與機油消耗增加。這可以使用 Motor Clean 解決，它能清除活塞環上的沉積物，恢復其活動性。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "進氣門積碳導致缸壓不足",
+    "explanation": "由於厚重的積碳，進氣門無法正確關閉。這會導致壓縮壓力下降，進而造成引擎性能衰退。針對歧管噴射引擎，我們建議使用 Valve Clean 清潔氣門。",
+    "solutions": [
+      "LM2952"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "燃油系統形成沉積物",
+    "explanation": "隨著時間或里程累積，噴油嘴或化油器會形成沉積物。結果導致燃油霧化變差，燃油無法與足夠空氣混合。這最終導致性能下降、油耗增加和廢氣排放惡化。我們的清潔添加劑可去除頑固沉積物，確保燃燒完全。",
+    "solutions": [
+      "LM5129",
+      "LM1803",
+      "LM1818"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環咬死導致缸壓流失",
+    "explanation": "活塞環上的積碳嚴重限制了其活動性。如果活塞環卡死，就無法與氣缸壁形成完全密封，導致動力流失與機油消耗增加。Motor Clean 可清除積碳並恢復活塞環運作。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "磨損導致缸壓不足",
+    "explanation": "隨著引擎里程增加，零件磨損會導致缸壓大幅下降。通常建議使用較黏的機油。使用 LM2502 可以提升高溫下的黏度特性(約提升一個 SAE 等級)，透過改善密封效果來減少壓縮損失，無需立即更換機油。",
+    "solutions": [
+      "LM2502"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎過熱",
+    "explanation": "冷卻系統堵塞會阻礙散熱。水箱清潔劑可去除水垢、油漬或油脂等沉積物，在不更換零件的情況下恢復熱傳導效率。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻系統中有機油(油水混合)",
+    "explanation": "機油可能透過損壞的汽缸床墊片進入冷卻液。水箱清潔劑可以包覆並清除冷卻迴路中的油漬。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻液外漏(外部)",
+    "explanation": "細微裂縫或石頭撞擊導致洩漏。水箱止漏劑可以密封這些微小洩漏點。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "廢氣排放檢驗不合格",
+    "explanation": "噴油嘴/化油器積碳導致霧化不佳和燃燒不完全，惡化排放數據。清潔添加劑可恢復乾淨的燃燒。",
+    "solutions": [
+      "LM5129",
+      "LM1803",
+      "LM1818"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環導致吃機油",
+    "explanation": "活塞環積碳限制其活動，導致密封不全與吃機油。Motor Clean 可清除積碳恢復密封。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "汽門油封老化導致吃機油",
+    "explanation": "隨著時間和溫度頻繁變化，汽門油封內的增塑劑流失，導致收縮變硬。後果就是機油消耗增加。機油止漏劑含有特殊成分，可讓油封重新膨脹恢復彈性，確保密封效果。",
+    "solutions": [
+      "LM2501"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "磨損導致吃機油",
+    "explanation": "隨著里程增加，零件磨損導致密封變差。LM2502 可提升機油高溫黏度，改善密封性並減少機油消耗。",
+    "solutions": [
+      "LM2502"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "老車燃油缺乏鉛成分",
+    "explanation": "在需要含鉛汽油的老式引擎中，缺乏鉛會導致汽缸頭磨損，影響缸壓甚至損壞引擎。若無硬化汽門座，磨損風險更高。建議添加代鉛劑，潤滑並保護汽門座。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "燃油老化/變質",
+    "explanation": "現代燃油隨時間會失去揮發性添加劑，降低點火性能。汽油穩定劑可保存燃油並防止存放期間的腐蝕。",
+    "solutions": [
+      "LM5107"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "怠速抖動/不穩",
+    "explanation": "積碳導致霧化不佳，使 ECU 供油波動。超級柴油添加劑可清潔噴油嘴，恢復平穩怠速。",
+    "solutions": [
+      "LM2504"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "機油蓋上有乳黃色油泥",
+    "explanation": "短途行駛導致冷凝水積聚。油泥清洗劑可清潔油路。",
+    "solutions": [
+      "LM2657"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎啟動困難",
+    "explanation": "噴油嘴積碳惡化霧化效果。柴油系統清潔劑可清潔噴油嘴，改善啟動。",
+    "solutions": [
+      "LM5128"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環導致缸壓不足",
+    "explanation": "活塞環積碳導致密封不全與動力流失。Motor Clean 可清除積碳恢復缸壓。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "燃油系統積碳",
+    "explanation": "噴油嘴積碳導致霧化變差、性能下降與油耗增加。柴油系統清潔劑可去除頑固積碳。",
+    "solutions": [
+      "LM5128"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環卡死導致缸壓流失",
+    "explanation": "Motor Clean 可清除限制活塞環活動的積碳。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎過熱",
+    "explanation": "冷卻系統堵塞。水箱清潔劑可去除水垢/油泥。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻水中有機油",
+    "explanation": "機油透過洩漏進入。水箱清潔劑可包覆並清除機油。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻水洩漏(外部)",
+    "explanation": "細微裂縫/石頭撞擊。水箱止漏劑可密封系統。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "排放黑煙 (無DPF車款)",
+    "explanation": "Diesel Smoke Stop 可加速煤灰/碳微粒燃燒，降低黑煙排放。",
+    "solutions": [
+      "LM2521"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "DPF 再生頻繁",
+    "explanation": "市區行駛導致排溫不足，無法自然再生。DPF保護劑 可降低碳微粒燃燒溫度，保持濾芯清潔並減少再生頻率。",
+    "solutions": [
+      "LM5148"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環導致吃機油",
+    "explanation": "活塞環積碳導致密封不全。Motor Clean 可清除積碳解決吃機油問題。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "汽門油封老化導致吃機油",
+    "explanation": "汽門油封老化硬化導致吃機油。機油止漏劑可活化油封恢復彈性。",
+    "solutions": [
+      "LM2501"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "磨損導致吃機油",
+    "explanation": "磨損導致缸壓下降。LM2502 可提升機油黏度，改善密封性。",
+    "solutions": [
+      "LM2502"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "燃油膠化 (柴油菌)",
+    "explanation": "車輛長期停放加上生物柴油成分，易滋生細菌導致燃油膠化堵塞系統。抗菌柴油添加劑可防止細菌滋生。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "換檔噪音",
+    "explanation": "磨損跡象。齒輪油添加劑 (MoS2) 可改善潤滑，補償磨損並抑制噪音。",
+    "solutions": [
+      "LM1040"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "負載時有噪音",
+    "explanation": "磨損跡象。齒輪油添加劑 (MoS2) 確保運轉更平順安靜。",
+    "solutions": [
+      "LM1040"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "軸承磨損異音",
+    "explanation": "磨損跡象。齒輪油添加劑 (MoS2) 可抑制噪音並提升抗壓性。",
+    "solutions": [
+      "LM1040"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "入檔困難",
+    "explanation": "同步齒環磨損或表面粗糙。齒輪油添加劑 (MoS2) 可平滑表面並減少摩擦。",
+    "solutions": [
+      "LM1040"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "油封漏油",
+    "explanation": "油封老化收縮。齒輪油止漏劑可活化油封，停止洩漏。",
+    "solutions": [
+      "LM1042"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "換檔延遲",
+    "explanation": "沉積物堵塞敏感的液壓通道。LM5101可清除沉積物，確保操作順暢。",
+    "solutions": [
+      "LM5101"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "換檔噪音",
+    "explanation": "磨損跡象。ATF 添加劑可保護組件並抑制噪音 (僅限 ATF II / III 規格)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "負載時有噪音",
+    "explanation": "磨損跡象。ATF 添加劑可保護組件並抑制噪音 (僅限 ATF II / III 規格)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "怠速異音",
+    "explanation": "磨損跡象。ATF 添加劑可保護組件並抑制噪音 (僅限 ATF II / III 規格)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱疑難雜症",
+    "problem": "油封漏油",
+    "explanation": "油封變脆。ATF 添加劑可活化油封防止洩漏 (僅限 ATF II / III 規格)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機疑難雜症",
+    "problem": "轉向異音",
+    "explanation": "磨損跡象。方向機止漏劑可延緩磨損與噪音 (須先排除機械故障)。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機疑難雜症",
+    "problem": "方向機漏油",
+    "explanation": "油封老化變脆收縮。方向機止漏劑可活化油封防止洩漏。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機疑難雜症",
+    "problem": "轉向抖動",
+    "explanation": "磨損跡象。若無機械故障，方向機止漏劑可能有助於改善。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "性能優化",
+    "explanation": "降低燃油表面張力，實現更細緻的霧化與更好的燃燒。",
+    "solutions": [
+      "LM3720"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "燃油系統清潔",
+    "explanation": "防止積碳堆積導致的系統故障。定期使用清潔添加劑。",
+    "solutions": [
+      "LM5129",
+      "LM1803"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "防鏽保護",
+    "explanation": "保護燃油系統中的金屬零件免受腐蝕。",
+    "solutions": [
+      "LM5129",
+      "LM5105"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "油電混合車保護",
+    "explanation": "防止燃油腐蝕與變質 (對混合動力車尤為重要)。",
+    "solutions": [
+      "LM1001"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "燃油穩定/保存",
+    "explanation": "防止長時間停放(如季節性車輛)期間的燃油老化與氧化。",
+    "solutions": [
+      "LM5107"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "代鉛劑",
+    "explanation": "保護需要含鉛汽油的老式引擎汽門座。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "冷啟動磨損保護",
+    "explanation": "二硫化鉬(MoS2)油精吸附在金屬表面，防止乾摩擦並減少冷啟動磨損。",
+    "solutions": [
+      "LM2591"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "表面平滑/抗磨損",
+    "explanation": "Motor Protect 使用化學摩擦改進劑，在高壓下平滑表面，減少磨損。",
+    "solutions": [
+      "LM21494"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "陶瓷科技雙重保護",
+    "explanation": "Cera Tec 結合了化學平滑劑與固體陶瓷潤滑劑，提供最高等級的抗磨損保護與效率。",
+    "solutions": [
+      "LM2321"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "機油油道清潔",
+    "explanation": "在換油前清除油泥與膠質。",
+    "solutions": [
+      "LM1019"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "油封保養",
+    "explanation": "保持油封柔軟，預防洩漏 (預防性使用)。",
+    "solutions": [
+      "LM2501"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "汽油引擎",
+    "sort": "引擎預防保養",
+    "problem": "水箱預防止漏",
+    "explanation": "水箱止漏劑可預防微小滲漏，且不會硬化阻塞。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "性能優化",
+    "explanation": "改善霧化效果，提升燃燒效率與動力。",
+    "solutions": [
+      "LM3722"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "燃油系統清潔",
+    "explanation": "防止積碳與系統故障。",
+    "solutions": [
+      "LM2504",
+      "LM3722"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "防鏽保護",
+    "explanation": "保護金屬零件。",
+    "solutions": [
+      "LM2504",
+      "LM3722"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "細菌防護",
+    "explanation": "防止生物柴油在儲存期間滋生細菌/真菌。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "抗凝固 (冬季)",
+    "explanation": "防止柴油在低溫下(低至-31°C)析出石蠟(結蠟)。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "DPF 保護",
+    "explanation": "降低煤灰燃燒溫度，防止市區行駛時濾芯堵塞。",
+    "solutions": [
+      "LM5148"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "冷啟動磨損保護",
+    "explanation": "二硫化鉬(MoS2)油精確保冷啟動期間的潤滑。",
+    "solutions": [
+      "LM2591"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "表面平滑/抗磨損",
+    "explanation": "Motor Protect 化學平滑表面以減少磨損。",
+    "solutions": [
+      "LM21494"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "陶瓷科技雙重保護",
+    "explanation": "Cera Tec 結合化學與固體陶瓷保護。",
+    "solutions": [
+      "LM2321"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "油封保養",
+    "explanation": "保持油封柔軟以防止洩漏。",
+    "solutions": [
+      "LM2501"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "柴油引擎",
+    "sort": "引擎預防保養",
+    "problem": "水箱預防止漏",
+    "explanation": "防止冷卻系統洩漏。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "冷啟動磨損保護",
+    "explanation": "MoS2 沉積在表面，確保初期運轉時的潤滑。",
+    "solutions": [
+      "LM1040"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "油封保養",
+    "explanation": "保持油封柔軟以防止洩漏。",
+    "solutions": [
+      "LM1042"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "新車磨合保護",
+    "explanation": "Gear Protect 在磨合期(前2-3千公里)平滑表面，減少初期磨損。",
+    "solutions": [
+      "LM1007"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "手排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "陶瓷科技保護",
+    "explanation": "Cera Tec 提供化學平滑+固體潤滑，減少摩擦與磨損。",
+    "solutions": [
+      "LM2321"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "預防性清潔",
+    "explanation": "換油時清除沉積物，維持換檔性能。",
+    "solutions": [
+      "LM5101"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "油封保養",
+    "explanation": "保持油封柔軟並減緩老化 (僅限 ATF II / III)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "預防機油氧化",
+    "explanation": "減緩機油老化/黏度衰退 (僅限 ATF II / III)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "自排變速箱",
+    "sort": "變速箱預防保養",
+    "problem": "防鏽保護",
+    "explanation": "防止變速箱內部腐蝕 (僅限 ATF II / III)。",
+    "solutions": [
+      "LM5135"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機預防保養",
+    "problem": "油封保養",
+    "explanation": "保持油封柔軟並減緩老化。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機預防保養",
+    "problem": "預防機油氧化",
+    "explanation": "維持潤滑性與黏度，減緩油品老化。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "汽車",
+    "type": "方向機系統",
+    "sort": "方向機預防保養",
+    "problem": "防鏽保護",
+    "explanation": "防止組件腐蝕。",
+    "solutions": [],
+    "hasProduct": false
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "機油蓋乳化油泥",
+    "explanation": "短途行駛導致冷凝水在油底殼積聚，與機油混合產生黃色乳狀油泥，常積聚在汽門蓋。建議使用機車引擎內部清洗劑。",
+    "solutions": [
+      "LM20597"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "啟動困難",
+    "explanation": "隨時間累積，噴油嘴或化油器積碳導致霧化變差。精細霧化對啟動至關重要。建議使用 4T Bike-Additive 改善燃燒與啟動。",
+    "solutions": [
+      "LM7822"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "燃油系統積碳",
+    "explanation": "噴油嘴或化油器積碳導致霧化變差，進氣量減少。這會導致性能下降與油耗增加。",
+    "solutions": [
+      "LM7822"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "進氣門積碳導致缸壓流失",
+    "explanation": "厚重的積碳導致進氣門無法緊閉。這會造成缸壓下降與性能衰退。",
+    "solutions": [
+      "LM20597"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "活塞環導致缸壓流失",
+    "explanation": "活塞環積碳限制其活動性。若活塞環卡死，無法完全密封，導致動力流失與吃機油。",
+    "solutions": [
+      "LM20597"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "引擎過熱",
+    "explanation": "冷卻系統堵塞(水垢/油泥)導致散熱不良。水箱清潔劑可清除沉積物，確保最佳散熱。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻水中有機油",
+    "explanation": "機油透過損壞的墊片進入冷卻系統。水箱清潔劑可可靠地包覆並清除機油汙染。",
+    "solutions": [
+      "LM2506"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "冷卻水減少(漏水)",
+    "explanation": "水箱損傷(裂縫/石頭/動物咬傷)導致漏水與過熱。水箱止漏劑可解決此問題。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "廢氣排放超標",
+    "explanation": "噴油嘴/化油器積碳導致霧化不佳，性能下降且油耗增加。4T Bike-Additive 可清除頑固積碳確保乾淨燃燒。",
+    "solutions": [
+      "LM7822"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎疑難雜症",
+    "problem": "機油消耗過高(吃機油)",
+    "explanation": "活塞環積碳限制活動性導致密封不全。Engine Flush 可清除積碳，恢復活塞環活動性。",
+    "solutions": [
+      "LM20597"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "變速/傳動",
+    "sort": "齒輪疑難雜症",
+    "problem": "換檔過程異音",
+    "explanation": "噪音通常是磨損的結果。添加二硫化鉬(MoS2)油精可潤滑、補償磨損並抑制噪音。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "變速/傳動",
+    "sort": "齒輪疑難雜症",
+    "problem": "負載時有異音",
+    "explanation": "磨損導致噪音。MoS2 油精可改善潤滑與抗壓性，使變速箱運轉更平順安靜。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "變速/傳動",
+    "sort": "齒輪疑難雜症",
+    "problem": "軸承磨損異音",
+    "explanation": "磨損導致噪音。MoS2 油精可改善潤滑與抗壓性，進而抑制噪音。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "變速/傳動",
+    "sort": "齒輪疑難雜症",
+    "problem": "換檔困難",
+    "explanation": "同步齒環表面磨損或粗糙導致入檔困難。添加固體潤滑劑(MoS2)可平滑表面減少摩擦，消除換檔困難。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "預防冷卻水流失",
+    "explanation": "預防因裂縫或石頭撞擊導致的漏水。建議添加水箱止漏劑。",
+    "solutions": [
+      "LM2533"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "清潔機油油道",
+    "explanation": "預防油道沉積物導致的故障。建議換油時使用 Engine Flush 清洗。",
+    "solutions": [
+      "LM20597"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "平滑金屬表面/減少磨損",
+    "explanation": "冷啟動時機油尚未到位會造成磨損。MoS2 油精附著在金屬表面，大幅減少冷啟動磨損。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "預防燃油老化",
+    "explanation": "現代汽油易揮發變質影響點火。汽油穩定劑可延緩揮發並含有防鏽劑。",
+    "solutions": [
+      "LM21600"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "燃油系統防鏽",
+    "explanation": "保護燃油系統金屬表面免受腐蝕。",
+    "solutions": [
+      "LM7822"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "清潔燃油系統",
+    "explanation": "預防沉積物累積導致噴射系統或汽油泵浦故障。",
+    "solutions": [
+      "LM7822"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "引擎",
+    "sort": "引擎預防保養",
+    "problem": "優化引擎性能",
+    "explanation": "Speed Additive 降低燃油表面張力，使霧化更細緻，燃燒更完全，提升動力。",
+    "solutions": [
+      "LM7820"
+    ],
+    "hasProduct": true
+  },
+  {
+    "area": "機車",
+    "type": "變速/傳動",
+    "sort": "變速箱預防保養",
+    "problem": "平滑表面/減少磨損",
+    "explanation": "冷啟動時變速箱組件磨損大。MoS2 沉積在表面，確保啟動後初期轉動的潤滑。",
+    "solutions": [
+      "LM3444"
+    ],
+    "hasProduct": true
+  }
+]
