@@ -379,6 +379,10 @@ export async function get_products(request) {
 // ============================================
 
 async function searchProducts(query, searchInfo) {
+    // === 除錯日誌 ===
+    console.log('[searchProducts] vehicleType:', searchInfo?.vehicleType);
+    console.log('[searchProducts] productCategory:', searchInfo?.productCategory);
+    
     try {
         let allResults = [];
 
