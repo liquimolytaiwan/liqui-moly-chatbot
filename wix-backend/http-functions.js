@@ -408,6 +408,11 @@ async function searchProducts(query, searchInfo) {
                     const res = await q.limit(task.limit || 20).find();
                     let items = res.items;
 
+                    // 日誌：追蹤每個查詢的執行結果
+                    if (items.length > 0) {
+                        console.log(`[Search] ${task.method}(${task.field}, "${task.value}") => Found ${items.length} items: ${items.map(p => p.partno).join(', ')}`);
+                    }
+
                     // 2d. 記憶體後處理 (Post-processing)
                     if (task.filterTitle && Array.isArray(task.filterTitle)) {
                         items = items.filter(item =>
