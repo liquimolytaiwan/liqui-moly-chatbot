@@ -498,11 +498,12 @@ async function searchProducts(query, searchInfo) {
                     const searchKey = exactTitle.substring(0, 20);
                     console.log(`[Title Expansion] Step 1: contains search for "${searchKey}"`);
 
+                    // 提高 limit 到 100，確保找到所有容量版本
                     const res = await wixData.query('products')
                         .contains('title', searchKey)
-                        .limit(50)
+                        .limit(100)
                         .find();
-                    console.log(`[Title Expansion] Step 1 found ${res.items.length} items`);
+                    console.log(`[Title Expansion] Step 1 found ${res.items.length} items, titles: ${res.items.map(p => p.partno + ':' + p.size).join(', ')}`);
 
                     // Step 2: 記憶體精確過濾 - 只保留 title 完全相同的產品
                     // 這樣就不會誤匹配到 DPF 等類似產品
