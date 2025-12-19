@@ -690,6 +690,20 @@ function generateWixQueries(analysis, keywords, message = '') {
         queries.push({ field: 'title', value: 'Shooter', limit: 20, method: 'contains' });
     }
 
+    // === 策略 0.5: Harley-Davidson 獨立搜尋 (不依賴 productCategory) ===
+    // 確保當用戶提到 Harley/Sportster 時，無論 productCategory 為何都會搜尋 HD 產品
+    const harleyKeywordsGlobal = ['harley', 'sportster', 'softail', 'iron', 'street glide', 'fat boy', 'electra', '哈雷'];
+    const isHarleyGlobal = harleyKeywordsGlobal.some(k => messageLower.includes(k)) ||
+        keywords.some(k => harleyKeywordsGlobal.includes(k.toLowerCase()));
+    if (isHarleyGlobal) {
+        console.log('[策略0.5-Harley] 偵測到 Harley 車型，加入獨立 HD 搜尋');
+        queries.push({ field: 'title', value: 'HD', limit: 30, method: 'contains' });
+        queries.push({ field: 'title', value: '20W-50', limit: 30, method: 'contains' });
+        queries.push({ field: 'title', value: 'SAE 50', limit: 20, method: 'contains' });
+        // 同時搜尋一般 Motorbike 機油作為替代
+        queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+    }
+
     // === 策略 A: 摩托車添加劑 ===
     if (isBike && productCategory === '添加劑') {
         addQuery('sort', '【摩托車】添加劑', 30);
