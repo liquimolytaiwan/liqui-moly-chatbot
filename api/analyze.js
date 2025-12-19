@@ -30,15 +30,21 @@ try {
 
 /**
  * 匹配添加劑指南
- * 根據用戶訊息中的關鍵字，找出對應的添加劑推薦
  * @param {string} message - 用戶訊息
+ * @param {string} vehicleType - 車型：'摩托車'、'汽車' 等
  * @returns {Array} - 匹配到的指南項目
  */
-function matchAdditiveGuide(message) {
+function matchAdditiveGuide(message, vehicleType = null) {
     if (!additiveGuide.length) return [];
 
     const lowerMsg = message.toLowerCase();
     const matched = [];
+
+    // 根據 vehicleType 決定要匹配的 area
+    // 摩托車 → 機車區域
+    // 其他 → 汽車區域（預設）
+    const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
+    console.log(`[matchAdditiveGuide] vehicleType: ${vehicleType}, targetArea: ${targetArea}`);
 
     // 定義問題關鍵字映射 (擴展匹配能力)
     const keywordMap = {
@@ -59,6 +65,11 @@ function matchAdditiveGuide(message) {
     };
 
     for (const item of additiveGuide) {
+        // ⚠️ 根據車型過濾 area
+        if (item.area !== targetArea) {
+            continue;
+        }
+
         const problem = (item.problem || '').toLowerCase();
         const explanation = (item.explanation || '').toLowerCase();
 
@@ -81,6 +92,7 @@ function matchAdditiveGuide(message) {
         }
     }
 
+    console.log(`[matchAdditiveGuide] Found ${matched.length} matches for area: ${targetArea}`);
     // 最多返回 3 個最相關的結果
     return matched.slice(0, 3);
 }
@@ -562,7 +574,7 @@ ${contextSummary}用戶當前問題：「${message}」
                 // ============================================
                 // 🧪 添加劑指南匹配 (Additive Guide Matching)
                 // ============================================
-                const additiveMatches = matchAdditiveGuide(message);
+                const additiveMatches = matchAdditiveGuide(message, result.vehicleType);
                 if (additiveMatches.length > 0) {
                     console.log(`[Additive Guide] Matched ${additiveMatches.length} items for: "${message.substring(0, 30)}..."`);
                     result.additiveGuideMatch = {
