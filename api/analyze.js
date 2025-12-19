@@ -631,6 +631,16 @@ function generateWixQueries(analysis, keywords, message = '') {
         keywords.some(k => ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter'].includes(k.toLowerCase()))
     );
 
+    // === 策略 -1: SKU 精確搜尋 (最高優先級) ===
+    // 當 keywords 中包含產品編號 (如 LM3444, LM1040) 時，直接用 partno 精確搜尋
+    // 這確保添加劑指南匹配的產品一定會被搜尋到
+    for (const kw of keywords) {
+        if (/^LM\d+/i.test(kw)) {
+            console.log(`[SKU Search] Adding precise partno search for: ${kw}`);
+            queries.push({ field: 'partno', value: kw.toUpperCase(), limit: 5, method: 'eq' });
+        }
+    }
+
     // === 大包裝搜尋邏輯 (Large Package Search) ===
     // 當用戶問「有大包裝嗎」、「4L」、「5L」等，同時有產品編號時
     // 需要額外搜尋產品名稱 (title) 以找到同系列不同容量的產品
