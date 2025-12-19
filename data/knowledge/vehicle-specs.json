@@ -1,0 +1,454 @@
+{
+    "Toyota": {
+        "Altis": [
+            {
+                "years": "2019+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20"
+            },
+            {
+                "years": "2014-2018",
+                "fuel": "汽油",
+                "certification": [
+                    "API SN"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "Corolla Cross": [
+            {
+                "years": "2020+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "RAV4": [
+            {
+                "years": "2019+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20"
+            },
+            {
+                "years": "2013-2018",
+                "fuel": "汽油",
+                "certification": [
+                    "API SN"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "Camry": [
+            {
+                "years": "2018+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "Yaris Cross": [
+            {
+                "years": "2021+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    },
+    "Lexus": {
+        "NX": [
+            {
+                "years": "2021+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "RX": [
+            {
+                "years": "2019+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "ES": [
+            {
+                "years": "2018+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "UX": [
+            {
+                "years": "2018+",
+                "fuel": "汽油/油電",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    },
+    "Honda": {
+        "CR-V": [
+            {
+                "years": "2017+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20"
+            },
+            {
+                "years": "2012-2016",
+                "fuel": "汽油",
+                "certification": [
+                    "API SN"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "HR-V": [
+            {
+                "years": "2016+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "Fit": [
+            {
+                "years": "2015+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "Civic": [
+            {
+                "years": "2016+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    },
+    "Ford": {
+        "Focus MK4": [
+            {
+                "years": "2019+",
+                "fuel": "1.5T EcoBoost",
+                "certification": [
+                    "Ford WSS-M2C948-B"
+                ],
+                "viscosity": "5W-20",
+                "recommendedSKU": "LM3840",
+                "note": "EcoBoost 引擎專用"
+            }
+        ],
+        "Focus MK3": [
+            {
+                "years": "2012-2018",
+                "fuel": "汽油",
+                "certification": [
+                    "Ford WSS-M2C913-D"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "Kuga MK3": [
+            {
+                "years": "2020+",
+                "fuel": "1.5T/2.0T EcoBoost",
+                "certification": [
+                    "Ford WSS-M2C948-B"
+                ],
+                "viscosity": "5W-20",
+                "recommendedSKU": "LM3840",
+                "note": "EcoBoost 引擎專用"
+            }
+        ],
+        "Kuga MK2": [
+            {
+                "years": "2013-2019",
+                "fuel": "汽油",
+                "certification": [
+                    "Ford WSS-M2C913-D"
+                ],
+                "viscosity": "5W-30"
+            }
+        ]
+    },
+    "Mazda": {
+        "Mazda3": [
+            {
+                "years": "2019+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            },
+            {
+                "years": "2014-2018",
+                "fuel": "汽油",
+                "certification": [
+                    "API SN"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "CX-5": [
+            {
+                "years": "2017+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "CX-30": [
+            {
+                "years": "2019+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "CX-60": [
+            {
+                "years": "2022+",
+                "fuel": "柴油",
+                "certification": [
+                    "ACEA C5"
+                ],
+                "viscosity": "0W-30"
+            }
+        ]
+    },
+    "Nissan": {
+        "X-Trail": [
+            {
+                "years": "2014+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "Kicks": [
+            {
+                "years": "2018+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "Sentra": [
+            {
+                "years": "2020+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    },
+    "Hyundai": {
+        "Tucson": [
+            {
+                "years": "2015+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "Elantra": [
+            {
+                "years": "2016+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    },
+    "Kia": {
+        "Sportage": [
+            {
+                "years": "2016+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "5W-30"
+            }
+        ]
+    },
+    "MG": {
+        "HS": [
+            {
+                "years": "2020+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP",
+                    "ACEA A5"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "ZS": [
+            {
+                "years": "2020+",
+                "fuel": "汽油",
+                "certification": [
+                    "API SP"
+                ],
+                "viscosity": "5W-30"
+            }
+        ]
+    },
+    "Mercedes-Benz": {
+        "C-Class": [
+            {
+                "years": "2021+",
+                "fuel": "汽油",
+                "certification": [
+                    "MB 229.5"
+                ],
+                "viscosity": "5W-40"
+            }
+        ],
+        "GLC": [
+            {
+                "years": "2015+",
+                "fuel": "汽油",
+                "certification": [
+                    "MB 229.5"
+                ],
+                "viscosity": "5W-40"
+            },
+            {
+                "years": "2015+",
+                "fuel": "柴油",
+                "certification": [
+                    "MB 229.51"
+                ],
+                "viscosity": "5W-30"
+            }
+        ]
+    },
+    "BMW": {
+        "3 Series": [
+            {
+                "years": "2019+",
+                "fuel": "汽油",
+                "certification": [
+                    "BMW LL-01"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "X1": [
+            {
+                "years": "2015+",
+                "fuel": "汽油",
+                "certification": [
+                    "BMW LL-01"
+                ],
+                "viscosity": "5W-30"
+            }
+        ],
+        "X3": [
+            {
+                "years": "2017+",
+                "fuel": "汽油",
+                "certification": [
+                    "BMW LL-01"
+                ],
+                "viscosity": "5W-30"
+            },
+            {
+                "years": "2017+",
+                "fuel": "柴油",
+                "certification": [
+                    "BMW LL-04"
+                ],
+                "viscosity": "5W-30"
+            }
+        ]
+    },
+    "Volvo": {
+        "XC40": [
+            {
+                "years": "2018+",
+                "fuel": "汽油",
+                "certification": [
+                    "VCC RBS0-2AE"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "XC60": [
+            {
+                "years": "2017+",
+                "fuel": "汽油",
+                "certification": [
+                    "VCC RBS0-2AE"
+                ],
+                "viscosity": "0W-20"
+            }
+        ],
+        "XC90": [
+            {
+                "years": "2015+",
+                "fuel": "汽油",
+                "certification": [
+                    "VCC RBS0-2AE"
+                ],
+                "viscosity": "0W-20"
+            }
+        ]
+    }
+}

@@ -1,0 +1,160 @@
+{
+    "electric_vehicle": {
+        "pure_ev_motorcycles": {
+            "keywords": [
+                "Gogoro",
+                "Ai-1",
+                "Ur-1",
+                "eMoving",
+                "eReady",
+                "PBGN",
+                "Ionex",
+                "電動機車",
+                "電動速克達"
+            ],
+            "response": "電動機車 **不需要機油**！馬達不像內燃機需要潤滑。\n\n但您可能需要：\n- **煞車油**：定期更換確保煞車安全\n- **鏈條油**（若有傳動鏈條）\n- **外觀美容產品**：洗車精、鍍膜等\n\n如有其他保養需求，歡迎詢問！"
+        },
+        "pure_ev_cars": {
+            "keywords": [
+                "Tesla",
+                "Model Y",
+                "Model 3",
+                "Model S",
+                "Model X",
+                "Rivian",
+                "Lucid",
+                "純電",
+                "BEV"
+            ],
+            "response": "純電動汽車 **不需要機油**！\n\n但您可能需要：\n- **煞車油**：建議每 2 年更換\n- **冷卻液**（電池冷卻系統）\n- **雨刷水**\n- **外觀美容產品**\n\n如有其他保養需求，歡迎詢問！"
+        },
+        "hybrid": {
+            "keywords": [
+                "Hybrid",
+                "HEV",
+                "PHEV",
+                "油電"
+            ],
+            "note": "油電混合車仍然需要機油！因為引擎會運作。",
+            "needs_oil": true
+        }
+    },
+    "motorcycle_types": {
+        "scooter": {
+            "keywords": [
+                "JET",
+                "勁戰",
+                "MMBCU",
+                "DRG",
+                "Force",
+                "SMAX",
+                "BWS",
+                "Cygnus",
+                "RCS",
+                "Racing",
+                "KRV",
+                "Many",
+                "Vespa",
+                "JBUBU",
+                "PCX",
+                "Forza",
+                "速克達"
+            ],
+            "certification": "JASO MB",
+            "searchKeywords": [
+                "10W40",
+                "Scooter",
+                "JASO MB",
+                "Motorbike 4T"
+            ]
+        },
+        "sport_naked": {
+            "keywords": [
+                "MT-03",
+                "MT-07",
+                "MT-09",
+                "R1",
+                "R3",
+                "R6",
+                "Ninja",
+                "Z400",
+                "Z650",
+                "CBR",
+                "GSX-R",
+                "Duke",
+                "Panigale",
+                "檔車",
+                "街車",
+                "仿賽"
+            ],
+            "certification": "JASO MA/MA2",
+            "searchKeywords": [
+                "10W40",
+                "10W50",
+                "JASO MA",
+                "Street",
+                "Race"
+            ],
+            "warning": "檔車誤用 JASO MB 機油會造成離合器打滑！"
+        },
+        "harley": {
+            "keywords": [
+                "Harley",
+                "Sportster",
+                "Softail",
+                "Iron",
+                "Street Glide",
+                "Fat Boy",
+                "哈雷"
+            ],
+            "certification": "JASO MA",
+            "viscosity": "20W-50",
+            "searchKeywords": [
+                "20W-50",
+                "HD",
+                "SAE 50",
+                "Motorbike"
+            ]
+        }
+    },
+    "high_mileage": {
+        "trigger": {
+            "keywords": [
+                "老車",
+                "里程高",
+                "十萬公里",
+                "二十萬公里",
+                "吃機油"
+            ],
+            "mileage_threshold": 100000
+        },
+        "recommendations": [
+            "使用較高黏度機油（如 5W40 或 10W40）",
+            "可搭配機油添加劑減少機油消耗",
+            "定期使用引擎內部清洗劑清潔積碳"
+        ]
+    },
+    "oil_change_interval": {
+        "mineral": {
+            "name": "礦物油",
+            "interval_km": "3,000-5,000"
+        },
+        "semi_synthetic": {
+            "name": "半合成機油",
+            "interval_km": "5,000-7,000"
+        },
+        "full_synthetic": {
+            "name": "全合成機油",
+            "interval_km": "7,000-10,000"
+        },
+        "note": "實際週期請參考車主手冊，並依照駕駛環境調整"
+    },
+    "synthetic_technology_note": {
+        "warning": "「合成技術機油」≠「全合成機油」！",
+        "explanation": "LIQUI MOLY 的「合成技術機油」（Synthese-Technologie / Synthetic Technology）是使用**三類基礎油**（Group III）製成，屬於高品質的合成技術等級，但**不是全合成機油**。",
+        "判斷方式": [
+            "若產品中文名稱或描述中**明確標示「全合成」**→ 才是全合成機油",
+            "若產品標示「合成技術」或未特別標示「全合成」→ 不是全合成機油"
+        ]
+    }
+}
