@@ -168,13 +168,41 @@
         "Focus MK4": [
             {
                 "years": "2019+",
-                "fuel": "1.5T EcoBoost",
+                "fuel": "1.5T/2.0T EcoBoost",
                 "certification": [
                     "Ford WSS-M2C948-B"
                 ],
                 "viscosity": "5W-20",
                 "recommendedSKU": "LM3840",
-                "note": "EcoBoost 引擎專用"
+                "searchKeywords": [
+                    "LM3840",
+                    "5W-20",
+                    "5W20",
+                    "948B",
+                    "948-B",
+                    "Special Tec F"
+                ],
+                "aliases": [
+                    "focus mk4",
+                    "focus 2019",
+                    "focus 2020",
+                    "focus 2021",
+                    "focus 2022",
+                    "focus 2023",
+                    "focus 2024",
+                    "2019 focus",
+                    "2020 focus",
+                    "2021 focus",
+                    "2022 focus",
+                    "2023 focus",
+                    "2024 focus",
+                    "focus st-line",
+                    "focus stline",
+                    "focus st line",
+                    "ford focus st",
+                    "ecoboost"
+                ],
+                "note": "EcoBoost 引擎專用，必須使用 WSS-M2C948-B 認證機油"
             }
         ],
         "Focus MK3": [
@@ -184,7 +212,36 @@
                 "certification": [
                     "Ford WSS-M2C913-D"
                 ],
-                "viscosity": "5W-30"
+                "viscosity": "5W-30",
+                "recommendedSKU": "LM2325",
+                "searchKeywords": [
+                    "LM2325",
+                    "5W-30",
+                    "5W30",
+                    "913-D",
+                    "913D",
+                    "Special Tec F"
+                ],
+                "aliases": [
+                    "focus mk3",
+                    "mk3.5",
+                    "mk 3.5",
+                    "focus 2012",
+                    "focus 2013",
+                    "focus 2014",
+                    "focus 2015",
+                    "focus 2016",
+                    "focus 2017",
+                    "focus 2018",
+                    "2012 focus",
+                    "2013 focus",
+                    "2014 focus",
+                    "2015 focus",
+                    "2016 focus",
+                    "2017 focus",
+                    "2018 focus"
+                ],
+                "note": "一般汽油引擎，使用 WSS-M2C913-D 認證機油"
             }
         ],
         "Kuga MK3": [
@@ -196,7 +253,28 @@
                 ],
                 "viscosity": "5W-20",
                 "recommendedSKU": "LM3840",
-                "note": "EcoBoost 引擎專用"
+                "searchKeywords": [
+                    "LM3840",
+                    "5W-20",
+                    "5W20",
+                    "948B",
+                    "948-B",
+                    "Special Tec F"
+                ],
+                "aliases": [
+                    "kuga mk3",
+                    "kuga 2020",
+                    "kuga 2021",
+                    "kuga 2022",
+                    "kuga 2023",
+                    "kuga 2024",
+                    "2020 kuga",
+                    "2021 kuga",
+                    "2022 kuga",
+                    "2023 kuga",
+                    "2024 kuga"
+                ],
+                "note": "EcoBoost 引擎專用，必須使用 WSS-M2C948-B 認證機油"
             }
         ],
         "Kuga MK2": [
@@ -206,7 +284,34 @@
                 "certification": [
                     "Ford WSS-M2C913-D"
                 ],
-                "viscosity": "5W-30"
+                "viscosity": "5W-30",
+                "recommendedSKU": "LM2325",
+                "searchKeywords": [
+                    "LM2325",
+                    "5W-30",
+                    "5W30",
+                    "913-D",
+                    "913D",
+                    "Special Tec F"
+                ],
+                "aliases": [
+                    "kuga mk2",
+                    "kuga 2013",
+                    "kuga 2014",
+                    "kuga 2015",
+                    "kuga 2016",
+                    "kuga 2017",
+                    "kuga 2018",
+                    "kuga 2019",
+                    "2013 kuga",
+                    "2014 kuga",
+                    "2015 kuga",
+                    "2016 kuga",
+                    "2017 kuga",
+                    "2018 kuga",
+                    "2019 kuga"
+                ],
+                "note": "一般汽油引擎，使用 WSS-M2C913-D 認證機油"
             }
         ]
     },

@@ -7,6 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { findVehicleByMessage } = require('./rag/knowledge-retriever');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -299,58 +300,38 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
         }
     }
 
-    // === 2. Ford EcoBoost 特殊處理 ===
-    // 偵測 Ford Focus MK4 / Kuga MK3 等需要 WSS-M2C948-B 的車型
-    const fordEcoBoostPatterns = [
-        // Focus MK4 (2019+)
-        'focus mk4', 'focus 2019', 'focus 2020', 'focus 2021', 'focus 2022', 'focus 2023', 'focus 2024',
-        '2019 focus', '2020 focus', '2021 focus', '2022 focus', '2023 focus', '2024 focus',
-        'ford focus st', 'focus st-line', 'focus stline', 'focus st line',
-        // Kuga MK3 (2020+)
-        'kuga mk3', 'kuga 2020', 'kuga 2021', 'kuga 2022', 'kuga 2023', 'kuga 2024',
-        '2020 kuga', '2021 kuga', '2022 kuga', '2023 kuga', '2024 kuga',
-        // EcoBoost 引擎
-        'ecoboost', '1.5t', '2.0t', '1.0t', '2.3t',
-        // 認證關鍵字
-        '948b', '948-b', 'wss-m2c948'
-    ];
+    // === 2. 使用知識庫匹配車型規格 ===
+    // 從 vehicle-specs.json 動態讀取，不再硬編碼
+    const vehicleMatch = findVehicleByMessage(message);
+    if (vehicleMatch) {
+        console.log(`[Knowledge Base] Matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
+        const spec = vehicleMatch.spec;
 
-    const isFordEcoBoost = fordEcoBoostPatterns.some(k => lowerMessage.includes(k));
-    if (isFordEcoBoost) {
-        console.log('[Ford EcoBoost] Detected! Adding LM3840 to search');
-        if (!result.searchKeywords) result.searchKeywords = [];
-        // 將 LM3840 放在最前面，確保優先搜尋
-        result.searchKeywords.unshift('LM3840', '5W-20', '5W20', '948B', '948-B', 'WSS-M2C948', 'Special Tec F');
-        if (result.vehicles?.[0]) {
-            result.vehicles[0].certifications = ['Ford WSS-M2C948-B'];
-            result.vehicles[0].viscosity = '5W-20';
-        }
-    }
-
-    // === 2.5 Ford MK3 系列 (需要 WSS-M2C913-D) ===
-    // Focus MK3 (2012-2018), Focus MK3.5, Kuga MK2 (2013-2019)
-    const fordMK3Patterns = [
-        'focus mk3', 'mk3.5', 'mk 3.5', 'mk3 5',
-        'focus 2012', 'focus 2013', 'focus 2014', 'focus 2015', 'focus 2016', 'focus 2017', 'focus 2018',
-        '2012 focus', '2013 focus', '2014 focus', '2015 focus', '2016 focus', '2017 focus', '2018 focus',
-        'kuga mk2', 'kuga 2013', 'kuga 2014', 'kuga 2015', 'kuga 2016', 'kuga 2017', 'kuga 2018', 'kuga 2019',
-        '2013 kuga', '2014 kuga', '2015 kuga', '2016 kuga', '2017 kuga', '2018 kuga', '2019 kuga',
-        '913-d', '913d', 'wss-m2c913'
-    ];
-
-    // 如果不是 EcoBoost (948-B)，才檢查是否為 MK3 (913-D)
-    if (!isFordEcoBoost) {
-        const isFordMK3 = fordMK3Patterns.some(k => lowerMessage.includes(k));
-        if (isFordMK3) {
-            console.log('[Ford MK3] Detected! Adding LM2325 (913-D) to search');
+        // 設定搜尋關鍵字
+        if (spec.searchKeywords && Array.isArray(spec.searchKeywords)) {
             if (!result.searchKeywords) result.searchKeywords = [];
-            // 將 WSS-M2C913-D 認證產品放在最前面
-            result.searchKeywords.unshift('LM2325', '5W-30', '5W30', '913-D', '913D', 'WSS-M2C913', 'Special Tec F');
-            if (result.vehicles?.[0]) {
-                result.vehicles[0].certifications = ['Ford WSS-M2C913-D'];
-                result.vehicles[0].viscosity = '5W-30';
+            result.searchKeywords.unshift(...spec.searchKeywords);
+        }
+
+        // 設定認證和黏度
+        if (result.vehicles?.[0]) {
+            if (spec.certification) {
+                result.vehicles[0].certifications = spec.certification;
+            }
+            if (spec.viscosity) {
+                result.vehicles[0].viscosity = spec.viscosity;
             }
         }
+
+        // 記錄匹配結果
+        result.matchedVehicle = {
+            brand: vehicleMatch.brand,
+            model: vehicleMatch.model,
+            certification: spec.certification,
+            viscosity: spec.viscosity,
+            recommendedSKU: spec.recommendedSKU,
+            note: spec.note
+        };
     }
 
     // === 3. 電動車偵測 ===
@@ -449,40 +430,29 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
-    // === Ford EcoBoost 專用搜尋 ===
-    const fordEcoBoostKeywords = [
-        'focus mk4', 'focus 2019', 'focus 2020', 'focus 2021', 'focus 2022', 'focus 2023', 'focus 2024',
-        '2019 focus', '2020 focus', '2021 focus', '2022 focus', '2023 focus', '2024 focus',
-        'ford focus st', 'focus st-line', 'focus stline', 'focus st line',
-        'kuga mk3', 'kuga 2020', 'kuga 2021', 'kuga 2022', '2020 kuga', '2021 kuga', '2022 kuga',
-        'ecoboost', '1.5t', '2.0t', '1.0t', '2.3t', '948b', '948-b', 'wss-m2c948'
-    ];
-    const isFordEcoBoost = fordEcoBoostKeywords.some(k => messageLower.includes(k));
-    if (isFordEcoBoost) {
-        console.log('[Wix Queries] Ford EcoBoost detected, adding LM3840 search');
-        queries.push({ field: 'partno', value: 'LM3840', limit: 5, method: 'eq' });
-        queries.push({ field: 'title', value: '5W-20', limit: 20, method: 'contains' });
-        queries.push({ field: 'title', value: '5W20', limit: 20, method: 'contains' });
-        queries.push({ field: 'description', value: '948', limit: 20, method: 'contains' });
-        queries.push({ field: 'title', value: 'Special Tec F', limit: 20, method: 'contains' });
-    }
+    // === 使用知識庫匹配車型並生成搜尋指令 ===
+    const vehicleMatch = findVehicleByMessage(message);
+    if (vehicleMatch && vehicleMatch.spec) {
+        const spec = vehicleMatch.spec;
+        console.log(`[Wix Queries] Knowledge Base matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
 
-    // === Ford MK3 專用搜尋 (WSS-M2C913-D) ===
-    const fordMK3Keywords = [
-        'focus mk3', 'mk3.5', 'mk 3.5', 'mk3 5',
-        'focus 2012', 'focus 2013', 'focus 2014', 'focus 2015', 'focus 2016', 'focus 2017', 'focus 2018',
-        '2012 focus', '2013 focus', '2014 focus', '2015 focus', '2016 focus', '2017 focus', '2018 focus',
-        'kuga mk2', 'kuga 2013', 'kuga 2014', 'kuga 2015', 'kuga 2016', 'kuga 2017', 'kuga 2018', 'kuga 2019',
-        '2013 kuga', '2014 kuga', '2015 kuga', '2016 kuga', '2017 kuga', '2018 kuga', '2019 kuga',
-        '913-d', '913d', 'wss-m2c913'
-    ];
-    if (!isFordEcoBoost && fordMK3Keywords.some(k => messageLower.includes(k))) {
-        console.log('[Wix Queries] Ford MK3 detected, adding LM2325 (913-D) search');
-        queries.push({ field: 'partno', value: 'LM2325', limit: 5, method: 'eq' });
-        queries.push({ field: 'title', value: '5W-30', limit: 20, method: 'contains' });
-        queries.push({ field: 'title', value: '5W30', limit: 20, method: 'contains' });
-        queries.push({ field: 'description', value: '913', limit: 20, method: 'contains' });
-        queries.push({ field: 'title', value: 'Special Tec F', limit: 20, method: 'contains' });
+        // 如果有推薦 SKU，優先搜尋
+        if (spec.recommendedSKU) {
+            queries.push({ field: 'partno', value: spec.recommendedSKU, limit: 5, method: 'eq' });
+        }
+
+        // 使用 searchKeywords 生成搜尋
+        if (spec.searchKeywords && Array.isArray(spec.searchKeywords)) {
+            for (const kw of spec.searchKeywords) {
+                if (kw.startsWith('LM')) {
+                    queries.push({ field: 'partno', value: kw, limit: 5, method: 'eq' });
+                } else if (kw.includes('W-') || kw.includes('W2') || kw.includes('W3') || kw.includes('W4') || kw.includes('W5')) {
+                    queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
+                } else {
+                    queries.push({ field: 'description', value: kw, limit: 15, method: 'contains' });
+                }
+            }
+        }
     }
 
     // === Harley 專用搜尋 ===

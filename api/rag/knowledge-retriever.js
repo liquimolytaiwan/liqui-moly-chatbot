@@ -121,6 +121,44 @@ function getVehicleSpec(brand, model) {
 }
 
 /**
+ * 根據用戶訊息智慧匹配車型規格
+ * 使用 aliases 欄位進行模糊匹配
+ * @param {string} message - 用戶訊息
+ * @returns {Object|null} - 匹配到的車型規格
+ */
+function findVehicleByMessage(message) {
+    const allSpecs = loadJSON('vehicle-specs.json');
+    if (!allSpecs) return null;
+
+    const lowerMessage = message.toLowerCase();
+
+    // 遍歷所有品牌和車型
+    for (const [brand, models] of Object.entries(allSpecs)) {
+        for (const [modelName, specs] of Object.entries(models)) {
+            for (const spec of specs) {
+                // 檢查 aliases
+                if (spec.aliases && Array.isArray(spec.aliases)) {
+                    for (const alias of spec.aliases) {
+                        if (lowerMessage.includes(alias.toLowerCase())) {
+                            console.log(`[KnowledgeRetriever] Matched vehicle: ${brand} ${modelName} via alias "${alias}"`);
+                            return {
+                                brand,
+                                model: modelName,
+                                spec,
+                                matchedAlias: alias
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+
+/**
  * 取得車輛適用的認證
  */
 function getCertificationForVehicle(intent) {
@@ -178,5 +216,6 @@ function getSpecialScenarioData(scenario) {
 module.exports = {
     retrieveKnowledge,
     loadJSON,
-    loadRule
+    loadRule,
+    findVehicleByMessage
 };
