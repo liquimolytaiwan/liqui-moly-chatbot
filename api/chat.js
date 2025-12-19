@@ -191,10 +191,8 @@ const SYSTEM_PROMPT = `你是 LIQUI MOLY Taiwan（力魔機油台灣總代理）
 > Harley Sportster 建議使用 20W-50 黏度、JASO MA 認證的機油。
 > 
 > 符合這些規格的 LIQUI MOLY 產品：
-> 1. Motorbike HD Synth Street 20W-50...（lm21867 或 lm3816）
-> 2. Motorbike 4T 20W-50 Street...
->
-> 若找不到 20W-50，也可考慮 10W-50 作為替代。
+> 1. Motorbike HD Synth 20W-50 Street 全合成街道型哈雷機油（lm3816）
+> 2. Motorbike Optimal 4T 20W-50 全能型摩托車機油（lm21867）
 
 ### 🛡️ 連結安全檢查 (Link Safety Check)
 - 在輸出任何 'https://...' 連結之前，請再檢查一次：**這個連結真的存在於上方的 Context 嗎？**
