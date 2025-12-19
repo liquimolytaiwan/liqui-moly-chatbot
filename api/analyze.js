@@ -641,6 +641,47 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
+    // === 策略 -0.5: 動態規格搜尋 (AI 知識驅動！) ===
+    // 利用 Gemini 推理的車型規格（viscosity, certifications）自動生成搜尋
+    // 這樣不需要為每個車型硬編碼搜尋策略！
+    const { viscosity, certifications, vehicles } = analysis;
+
+    // 單一車型的規格
+    if (viscosity) {
+        console.log(`[Dynamic Spec Search] 加入黏度搜尋: ${viscosity}`);
+        queries.push({ field: 'title', value: viscosity, limit: 30, method: 'contains' });
+        // 也搜尋不帶連字號的版本 (如 20W-50 → 20W50)
+        const viscosityNoHyphen = viscosity.replace('-', '');
+        if (viscosityNoHyphen !== viscosity) {
+            queries.push({ field: 'title', value: viscosityNoHyphen, limit: 20, method: 'contains' });
+        }
+    }
+
+    if (certifications && Array.isArray(certifications)) {
+        for (const cert of certifications) {
+            console.log(`[Dynamic Spec Search] 加入認證搜尋: ${cert}`);
+            queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
+            // 也在說明欄位搜尋（因為有些認證在說明中）
+            queries.push({ field: 'description', value: cert, limit: 20, method: 'contains' });
+        }
+    }
+
+    // 多車型查詢
+    if (vehicles && Array.isArray(vehicles) && vehicles.length > 0) {
+        for (const vehicle of vehicles) {
+            if (vehicle.viscosity) {
+                console.log(`[Multi-Vehicle] ${vehicle.vehicleName} 黏度: ${vehicle.viscosity}`);
+                queries.push({ field: 'title', value: vehicle.viscosity, limit: 30, method: 'contains' });
+            }
+            if (vehicle.certifications && Array.isArray(vehicle.certifications)) {
+                for (const cert of vehicle.certifications) {
+                    console.log(`[Multi-Vehicle] ${vehicle.vehicleName} 認證: ${cert}`);
+                    queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
+                }
+            }
+        }
+    }
+
     // === 大包裝搜尋邏輯 (Large Package Search) ===
     // 當用戶問「有大包裝嗎」、「4L」、「5L」等，同時有產品編號時
     // 需要額外搜尋產品名稱 (title) 以找到同系列不同容量的產品
