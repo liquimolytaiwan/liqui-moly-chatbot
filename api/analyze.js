@@ -705,6 +705,17 @@ function generateWixQueries(analysis, keywords, message = '') {
         // 優先搜尋標題含 Motorbike 的機油 (最精確)
         queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
 
+        // === Harley-Davidson 專用搜尋 ===
+        // 當用戶提到 Harley/Sportster/Softail 等，加入 HD 產品搜尋
+        const harleyKeywords = ['harley', 'sportster', 'softail', 'iron', 'street glide', 'fat boy', 'electra'];
+        const isHarley = harleyKeywords.some(k => messageLower.includes(k)) ||
+            keywords.some(k => harleyKeywords.includes(k.toLowerCase()));
+        if (isHarley) {
+            console.log('[策略B-HD] 偵測到 Harley 車型，加入 HD 專用搜尋');
+            queries.push({ field: 'title', value: 'HD', limit: 20, method: 'contains' });
+            queries.push({ field: 'title', value: '20W-50', limit: 20, method: 'contains' });
+        }
+
         if (isScooter) {
             queries.push({ field: 'sort', value: '【摩托車】機油', limit: 20, method: 'contains', andContains: { field: 'title', value: 'Scooter' } });
         }
