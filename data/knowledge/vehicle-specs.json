@@ -555,5 +555,88 @@
                 "viscosity": "0W-20"
             }
         ]
+    },
+    "Harley-Davidson": {
+        "Sportster": [
+            {
+                "years": "全年式",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MA"
+                ],
+                "viscosity": "20W-50",
+                "searchKeywords": [
+                    "HD",
+                    "20W-50",
+                    "20W50",
+                    "Harley",
+                    "Motorbike"
+                ],
+                "aliases": [
+                    "harley",
+                    "sportster",
+                    "iron 883",
+                    "iron883",
+                    "forty-eight",
+                    "fortyeight",
+                    "48",
+                    "哈雷",
+                    "哈雷機車"
+                ],
+                "note": "Harley-Davidson 需使用高黏度機油"
+            }
+        ],
+        "Softail": [
+            {
+                "years": "全年式",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MA"
+                ],
+                "viscosity": "20W-50",
+                "searchKeywords": [
+                    "HD",
+                    "20W-50",
+                    "20W50",
+                    "Harley",
+                    "Motorbike"
+                ],
+                "aliases": [
+                    "softail",
+                    "fat boy",
+                    "fatboy",
+                    "breakout",
+                    "heritage"
+                ],
+                "note": "Harley-Davidson 需使用高黏度機油"
+            }
+        ],
+        "Touring": [
+            {
+                "years": "全年式",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MA"
+                ],
+                "viscosity": "20W-50",
+                "searchKeywords": [
+                    "HD",
+                    "20W-50",
+                    "20W50",
+                    "Harley",
+                    "Motorbike"
+                ],
+                "aliases": [
+                    "street glide",
+                    "streetglide",
+                    "road king",
+                    "roadking",
+                    "electra glide",
+                    "electraglide",
+                    "touring"
+                ],
+                "note": "Harley-Davidson 需使用高黏度機油"
+            }
+        ]
     }
 }

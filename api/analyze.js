@@ -455,12 +455,7 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
-    // === Harley 專用搜尋 ===
-    const harleyKeywords = ['harley', 'sportster', 'softail', 'iron', 'street glide', 'fat boy', '哈雷'];
-    if (harleyKeywords.some(k => messageLower.includes(k))) {
-        queries.push({ field: 'title', value: 'HD', limit: 30, method: 'contains' });
-        queries.push({ field: 'title', value: '20W-50', limit: 30, method: 'contains' });
-    }
+    // Harley 現在由知識庫 (vehicle-specs.json) 處理，不再硬編碼
 
     // === 類別搜尋 ===
     if (isBike && productCategory === '添加劑') {
