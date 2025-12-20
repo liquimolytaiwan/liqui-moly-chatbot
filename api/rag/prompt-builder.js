@@ -263,12 +263,15 @@ function buildTemplates(templates) {
  * 建構最終提醒
  */
 function buildFinalReminder() {
-    return `## 重要提醒
+    return `## ⚠️ 重要提醒（必須遵守）
 - 只推薦上方「可用產品資料庫」中的產品
 - 連結必須是 https://www.liqui-moly-tw.com/products/ 開頭
 - 禁止編造不存在的產品
-- 最多推薦 3-5 個產品，控制在 500 字以內`;
+- **最多推薦 3 個產品**（太多會讓用戶混亂）
+- **回覆控制在 300 字以內**（過長會導致訊息被截斷）
+- 每個產品只列出：名稱、產品編號、連結（省略詳細說明）`;
 }
+
 
 module.exports = {
     buildPrompt

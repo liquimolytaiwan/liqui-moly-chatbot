@@ -65,8 +65,9 @@
     ]
   },
   "response_limits": {
-    "max_products": 5,
-    "max_chars": 500,
-    "priority": "按相關性排序，最符合需求的產品放前面"
+    "max_products": 3,
+    "max_chars": 300,
+    "priority": "按相關性排序，最符合需求的產品放前面",
+    "format": "精簡格式：產品名稱 + 編號 + 連結，省略詳細說明"
   }
 }
