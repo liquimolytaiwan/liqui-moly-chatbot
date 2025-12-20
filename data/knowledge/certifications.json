@@ -1,92 +1,18 @@
 {
-    "certifications": {
-        "european": {
-            "BMW LL-04": {
-                "description": "BMW 柴油車（2004+）",
-                "requirements": "需低 SAPS",
-                "viscosity": "5W-30"
-            },
-            "BMW LL-01": {
-                "description": "BMW 汽油車（2001+）",
-                "viscosity": "5W-30"
-            },
-            "MB 229.51": {
-                "description": "Mercedes-Benz 柴油車（2004+）",
-                "requirements": "需低 SAPS",
-                "viscosity": "5W-30"
-            },
-            "MB 229.5": {
-                "description": "Mercedes-Benz 汽油車",
-                "viscosity": "5W-40"
-            },
-            "VW 504.00/507.00": {
-                "description": "VW/Audi/Skoda/Seat（2005+）",
-                "viscosity": "5W-30"
-            },
-            "VW 502.00": {
-                "description": "VW/Audi 汽油車",
-                "viscosity": "5W-40"
-            },
-            "Volvo VCC RBS0-2AE": {
-                "description": "Volvo（2018+）",
-                "viscosity": "0W-20"
-            },
-            "ACEA C3": {
-                "description": "歐系柴油車通用",
-                "requirements": "低 SAPS"
-            },
-            "ACEA A3/B4": {
-                "description": "歐系汽油車通用"
-            }
-        },
+    "principle": "使用你的汽車專業知識判斷認證需求",
+    "special_attention": {
         "ford": {
-            "Ford WSS-M2C948-B": {
-                "description": "Ford EcoBoost 引擎專用（Focus MK4、Kuga MK3 等）",
+            "WSS-M2C948-B": {
+                "description": "EcoBoost 引擎專用（Focus MK4、Kuga MK3）",
                 "viscosity": "5W-20",
-                "recommendedSKU": "LM3840",
-                "isHighPriority": true
+                "recommendedSKU": "LM3840"
             },
-            "Ford WSS-M2C913-D": {
-                "description": "Ford 一般汽油引擎",
-                "viscosity": "5W-30"
-            }
-        },
-        "asian": {
-            "API SP": {
-                "description": "美國石油協會最新規範",
-                "applicableTo": [
-                    "Toyota",
-                    "Lexus",
-                    "Honda",
-                    "Nissan",
-                    "Mazda",
-                    "Hyundai",
-                    "Kia"
-                ],
-                "viscosity": "0W-20 或 5W-30"
-            },
-            "ILSAC GF-6A": {
-                "description": "日系車（2020+）",
-                "viscosity": "0W-20 或 0W-16"
-            },
-            "API SN": {
-                "description": "日系車（2011-2019）",
-                "viscosity": "0W-20 或 5W-30"
-            }
-        },
-        "motorcycle": {
-            "JASO MA": {
-                "description": "機車專用（檔車/濕式離合器）",
-                "warning": "必須用於檔車，速克達不需此認證"
-            },
-            "JASO MA2": {
-                "description": "機車專用（高摩擦）",
-                "applicableTo": "大多數四行程檔車"
-            },
-            "JASO MB": {
-                "description": "速克達專用（CVT/無離合器）",
-                "warning": "禁止用於檔車，會造成離合器打滑"
+            "WSS-M2C913-D": {
+                "description": "一般汽油車（Focus MK3、Kuga MK2）",
+                "viscosity": "5W-30",
+                "recommendedSKU": "LM2325"
             }
         }
-    }
+    },
+    "note": "其他車廠認證（API SP、ACEA、JASO MA2 等）AI 已知，無需額外說明"
 }

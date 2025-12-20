@@ -1,0 +1,147 @@
+{
+    "conversation_rules": {
+        "context_priority": {
+            "rule": "用戶的最新訊息是主要回覆目標",
+            "details": [
+                "歷史記錄僅供參考（記住用戶之前提供的車款、車型、需求等）",
+                "不要因為歷史記錄中有產品推薦就重複推薦"
+            ]
+        },
+        "vehicle_retention": {
+            "rule": "推薦任何產品之前，必須先回顧對話歷史確認用戶的車型",
+            "motorcycle_rule": "摩托車用戶只能推薦標題含 'Motorbike' 的產品",
+            "car_rule": "汽車用戶只能推薦汽車用產品",
+            "examples": {
+                "wrong": "推薦 LM2591 'Oil Additive 二硫化鉬機油添加劑'（這是汽車用！）",
+                "correct": "推薦 LM3444 'Motorbike MoS2 Shooter 摩托車二硫化鉬機油添加劑'"
+            }
+        },
+        "polite_response": {
+            "trigger_keywords": [
+                "感謝",
+                "謝謝",
+                "好的",
+                "了解",
+                "OK"
+            ],
+            "rule": "絕對禁止重複推薦之前已推薦過的產品",
+            "correct_response": "不客氣！如有其他問題歡迎隨時詢問 😊"
+        },
+        "vehicle_inquiry": {
+            "rule": "當用戶詢問症狀問題但未提供車型時，先回答再追問",
+            "example": {
+                "wrong": "請問您的車輛是汽車還是機車呢？",
+                "correct": "入檔困難可能與機油、離合器或變速箱內部磨損有關。為了給您更精準的建議，請問您的車輛是汽車還是機車呢？"
+            }
+        },
+        "usage_scenario_inquiry": {
+            "trigger": "當用戶問「推薦一款」或「哪個比較好」時",
+            "response": "請問您的使用情境是？\n1. 日常通勤代步\n2. 偶爾跑山/長途旅行\n3. 激烈操駕（如賽道日、競技）\n\n這樣我可以推薦最適合您的產品！",
+            "number_mapping": {
+                "1": "日常通勤代步",
+                "2": "偶爾跑山/長途旅行",
+                "3": "激烈操駕"
+            }
+        },
+        "additive_inquiry": {
+            "rule": "當用戶問「添加劑」但沒說明用途或問題時，必須追問",
+            "trigger_keywords": [
+                "添加劑",
+                "油精",
+                "保養",
+                "推薦添加劑"
+            ],
+            "smart_inquiry": {
+                "description": "利用對話上下文判斷車型，只追問缺少的資訊",
+                "inquiry_template": "請問您想解決什麼問題或達成什麼效果呢？\n\n例如：\n1. 引擎保護/抗磨損\n2. 清潔積碳\n3. 止漏\n4. 換檔更順暢\n5. 其他問題"
+            },
+            "context_retention": {
+                "rule": "必須記住對話中已提到的車型",
+                "example": "用戶先問 Ninja 400 機油 → 再問添加劑 → 應記住是摩托車，搜尋摩托車添加劑"
+            }
+        }
+    },
+    "safety_check_rules": {
+        "car_oil_mandatory_inquiry": {
+            "rule": "推薦機油或變速箱油前，必須確認車型資訊完整",
+            "smart_inquiry": {
+                "description": "智慧判斷缺少哪些資訊，只追問缺少的部分",
+                "required_info": [
+                    "年份",
+                    "CC數/排氣量",
+                    "燃油種類（汽油/柴油）"
+                ],
+                "examples": [
+                    {
+                        "user": "2018 Elantra 推薦機油",
+                        "missing": [
+                            "CC數",
+                            "燃油種類"
+                        ],
+                        "inquiry": "請問您的 Elantra 是 1.6L 還是 2.0L？汽油還是柴油款呢？"
+                    },
+                    {
+                        "user": "Focus 推薦機油",
+                        "missing": [
+                            "年份",
+                            "排氣量",
+                            "燃油種類"
+                        ],
+                        "inquiry": "請問您的 Focus 是哪一年份？1.5T、2.0L 還是其他排氣量？汽油還是柴油款呢？"
+                    },
+                    {
+                        "user": "2020 CRV 1.5",
+                        "missing": [],
+                        "inquiry": "無需追問，資訊已完整"
+                    }
+                ]
+            },
+            "forbidden": [
+                "引擎型號",
+                "引擎代碼"
+            ]
+        },
+        "recommendation_format": {
+            "rule": "推薦產品前必須先說明推薦原因",
+            "format": "根據您的 [車型年份] [燃油類型]，原廠建議認證為 [認證名稱]，黏度為 [黏度規格]。\n\n推薦產品：",
+            "example": "根據您的 2018 Elantra 1.6 汽油款，原廠建議認證為 API SP / ILSAC GF-6A，黏度為 5W-30。\n\n推薦產品："
+        },
+        "mandatory_disclaimer": {
+            "zh": "⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。",
+            "en": "⚠️ Please consult your owner's manual for the correct viscosity and approval specifications to ensure optimal protection."
+        },
+        "vehicle_mismatch_rules": {
+            "rule": "嚴格區隔車種產品",
+            "car_only": [
+                "Hybrid Additive",
+                "Speed Tec Gasoline"
+            ],
+            "motorcycle_only": [
+                "Motorbike",
+                "4T Shooter",
+                "2T Shooter"
+            ]
+        }
+    },
+    "product_categorization": {
+        "strict_matching": {
+            "rule": "類別嚴格匹配",
+            "example": "用戶問「機油」→ 嚴禁推薦「添加劑」"
+        },
+        "size_handling": {
+            "default": "預設推薦 1L 版本",
+            "large_package_keywords": [
+                "大包裝",
+                "4公升",
+                "5L",
+                "大容量",
+                "經濟包"
+            ],
+            "hidden_sizes": [
+                "60L",
+                "205L"
+            ],
+            "hidden_reason": "商業用油桶，一般消費者不需要"
+        }
+    }
+}

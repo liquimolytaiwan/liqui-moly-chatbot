@@ -48,15 +48,10 @@ try {
     console.warn('[Additive Guide] Failed to load:', e.message);
 }
 
-// 載入類別映射規則
-let categoryMapping = {};
-try {
-    const mappingPath = path.join(process.cwd(), 'data', 'knowledge', 'rules', 'category-mapping.json');
-    categoryMapping = JSON.parse(fs.readFileSync(mappingPath, 'utf-8'));
-    console.log('[Category Mapping] Loaded successfully');
-} catch (e) {
-    console.warn('[Category Mapping] Failed to load:', e.message);
-}
+
+// category-mapping.json 已刪除，改用 AI 判斷類別 + Wix 分類欄位搜尋
+
+
 
 
 /**
@@ -411,8 +406,8 @@ function generateWixQueries(analysis, keywords, message = '') {
 
     const isBike = vehicleType === '摩托車' || firstVehicle.vehicleType === '摩托車';
 
-    // 使用知識庫的速克達關鍵字
-    const scooterKeywords = categoryMapping.scooter_keywords || ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter'];
+    // 台灣速克達關鍵字（已移到此處，不依賴外部 JSON）
+    const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '4mica', 'krv', 'jbubu', 'tigra', 'many'];
     const isScooter = isBike && (
         (vehicleSubType && vehicleSubType.includes('速克達')) ||
         keywords.some(k => scooterKeywords.includes(k.toLowerCase()))
@@ -477,42 +472,27 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
-    // Harley 現在由知識庫 (vehicle-specs.json) 處理，不再硬編碼
-
-    // === 類別搜尋（使用知識庫 category-mapping.json）===
-    const catMapping = categoryMapping.category_search_mapping || {};
-
-    // 根據車型和產品類別動態選擇搜尋規則
-    if (isBike && productCategory === '添加劑' && catMapping.motorcycle_additive) {
-        for (const search of catMapping.motorcycle_additive.searches) {
-            addQuery(search.field, search.value, search.limit);
+    // === 類別搜尋（直接使用 Wix 分類欄位）===
+    if (isBike && productCategory === '添加劑') {
+        addQuery('sort', '【摩托車】添加劑', 30);
+        addQuery('sort', '【摩托車】機車養護', 20);
+    } else if (isBike && productCategory === '機油') {
+        queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+        if (isScooter) {
+            queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
         }
-    } else if (isBike && productCategory === '機油' && catMapping.motorcycle_oil) {
-        for (const search of catMapping.motorcycle_oil.searches) {
-            addQuery(search.field, search.value, search.limit);
-        }
-        if (isScooter && catMapping.motorcycle_oil.scooter_extra) {
-            for (const search of catMapping.motorcycle_oil.scooter_extra) {
-                addQuery(search.field, search.value, search.limit);
-            }
-        }
-    } else if (!isBike && productCategory === '添加劑' && catMapping.car_additive) {
-        for (const search of catMapping.car_additive.searches) {
-            addQuery(search.field, search.value, search.limit);
-        }
-    } else if (!isBike && productCategory === '機油' && catMapping.car_oil) {
-        for (const search of catMapping.car_oil.searches) {
-            addQuery(search.field, search.value, search.limit);
-        }
-    } else if (productCategory === '鏈條' && catMapping.chain) {
-        for (const search of catMapping.chain.searches) {
-            addQuery(search.field, search.value, search.limit);
-        }
-    } else if ((productCategory === '清潔' || productCategory === '美容') && catMapping.detailing) {
-        for (const search of catMapping.detailing.searches) {
-            addQuery(search.field, search.value, search.limit);
-        }
+        addQuery('sort', '【摩托車】機油', 30);
+    } else if (!isBike && productCategory === '添加劑') {
+        addQuery('sort', '【汽車】添加劑', 30);
+    } else if (!isBike && productCategory === '機油') {
+        addQuery('sort', '【汽車】機油', 50);
+    } else if (productCategory === '鏈條') {
+        queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+        addQuery('sort', '【摩托車】機車養護', 20);
+    } else if (productCategory === '清潔' || productCategory === '美容') {
+        addQuery('sort', '車輛美容', 30);
     }
+
 
 
     // === 關鍵字搜尋 ===
