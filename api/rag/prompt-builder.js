@@ -74,6 +74,24 @@ ${core.identity.scope}
 ## ⛔ 核心規則
 ${core.core_rules.map(r => `- ${r}`).join('\n')}
 
+## 📝 風格原則
+- ${core.style_principles?.tone || '簡潔專業'}
+- ${core.style_principles?.format || '推薦產品時先說明理由（認證、黏度），再列出產品'}
+- ${core.style_principles?.conciseness || '回覆控制在 500 字以內'}
+
+## ⚠️ 追問原則（非常重要！）
+- ${core.inquiry_principles?.rule || '缺少關鍵資訊時必須追問，不可直接推薦'}
+- ${core.inquiry_principles?.smart_inquiry || '只追問缺少的資訊，不重複問已知資訊'}
+- ${core.inquiry_principles?.context_memory || '記住對話中用戶提供的所有車型資訊'}
+- ${core.inquiry_principles?.professional_judgment || '使用你的汽機車專業知識判斷需要哪些資訊'}
+
+**推薦機油前，必須確認用戶提供了：年份、排氣量/CC數、燃油種類（汽油/柴油）**
+**如果缺少任何一項，必須先追問再推薦！**
+
+## 📦 多尺寸/多車型處理
+- ${core.multi_handling?.size || '預設推薦 1L 版本；隱藏 60L/205L 商業用油桶'}
+- ${core.multi_handling?.vehicle || '一次只問一個問題，分步驟確認多車型需求'}
+
 ### 禁止推薦的產品（幻覺黑名單）
 ${core.hallucination_blacklist.map(p => `- ❌ ${p.sku} "${p.name}" - ${p.reason}`).join('\n')}
 
@@ -85,85 +103,41 @@ ${core.link_format_rules.rule}
     return section;
 }
 
+
 /**
- * 建構對話規則
+ * 建構對話規則（適配精簡後的新結構）
  */
 function buildConversationRules(rules) {
     if (!rules) return '';
 
-    const conv = rules.conversation_rules || {};
     let section = `## 對話規則`;
 
-    if (conv.vehicle_retention) {
+    // 新結構：principles
+    if (rules.principles) {
+        const p = rules.principles;
         section += `
-### 車型保留
-${conv.vehicle_retention.rule}
-- ${conv.vehicle_retention.motorcycle_rule}
-- ${conv.vehicle_retention.car_rule}`;
+### 原則
+- ${p.inquiry || '使用你的專業知識判斷需要哪些資訊，缺少則追問'}
+- ${p.context || '記住對話中用戶提供的所有車型資訊'}
+- ${p.format || '推薦前先說明理由（認證、黏度），再列出產品'}
+- ${p.professional_judgment || '使用 AI 內建的汽車知識判斷認證、黏度等'}`;
     }
 
-    if (conv.polite_response) {
+    // 新結構：hard_rules
+    if (rules.hard_rules) {
+        const hr = rules.hard_rules;
         section += `
-### 禮貌性回應
-當用戶說「${conv.polite_response.trigger_keywords.join('」「')}」時：${conv.polite_response.rule}
-正確回應：「${conv.polite_response.correct_response}」`;
+### 硬規則
+- ${hr.motorcycle_products || '摩托車用戶只能推薦標題含 Motorbike 的產品'}
+- ${hr.no_repeat || '禮貌性回應時禁止重複推薦產品'}
+- ${hr.category_match || '用戶問機油不可推薦添加劑'}`;
     }
 
-    // 添加劑追問規則
-    if (conv.additive_inquiry) {
-        const addInq = conv.additive_inquiry;
-        section += `
-### 🧪 添加劑追問規則
-${addInq.rule}
-**當用戶問添加劑但沒說明用途時，必須追問：**
-「${addInq.smart_inquiry?.inquiry_template || '請問您想解決什麼問題？'}」
-
-**重要：上下文記憶**
-${addInq.context_retention?.rule || '必須記住對話中已提到的車型'}
-- ${addInq.context_retention?.example || '用戶先問 Ninja 400 機油 → 再問添加劑 → 應記住是摩托車'}`;
-    }
-
-    // 安全檢查
-    const safety = rules.safety_check_rules || {};
-
-    // 智慧追問規則（重要！）
-    if (safety.car_oil_mandatory_inquiry) {
-        const inquiry = safety.car_oil_mandatory_inquiry;
-        const smartInquiry = inquiry.smart_inquiry || {};
-        section += `
-### ⚠️ 智慧追問規則（必須遵守）
-${inquiry.rule}
-**智慧判斷缺少哪些資訊，只追問缺少的部分：**
-- 必要資訊：${smartInquiry.required_info?.join('、') || '年份、CC數、燃油種類'}
-- 如果用戶已提供年份，不要再問年份
-- 如果用戶已提供排氣量，不要再問排氣量
-- 禁止詢問：${inquiry.forbidden?.join('、') || '引擎型號、引擎代碼'}
-
-範例：
-- 用戶說「2018 Elantra 推薦機油」→ 只問「請問是 1.6L 還是 2.0L？汽油還是柴油款？」
-- 用戶說「Focus 推薦機油」→ 問「請問年份、排氣量和燃油種類？」`;
-    }
-
-    // 推薦格式規則（重要！）
-    if (safety.recommendation_format) {
-        const format = safety.recommendation_format;
-        section += `
-### 📋 推薦格式要求
-${format.rule}
-**推薦產品前，必須先說明：**
-1. 根據用戶提供的車型年份、燃油類型
-2. 說明原廠建議的認證標準
-3. 說明建議的黏度規格
-4. 然後再列出推薦產品
-
-範例格式：
-「${format.example}」`;
-    }
-
-    if (safety.mandatory_disclaimer) {
+    // 新結構：disclaimer
+    if (rules.disclaimer) {
         section += `
 ### 強制提醒語
-${safety.mandatory_disclaimer.zh}`;
+${rules.disclaimer.zh || '⚠️ 建議您參閱車主手冊確認適合的黏度與認證標準。'}`;
     }
 
     return section;
