@@ -109,6 +109,20 @@ ${conv.vehicle_retention.rule}
 正確回應：「${conv.polite_response.correct_response}」`;
     }
 
+    // 添加劑追問規則
+    if (conv.additive_inquiry) {
+        const addInq = conv.additive_inquiry;
+        section += `
+### 🧪 添加劑追問規則
+${addInq.rule}
+**當用戶問添加劑但沒說明用途時，必須追問：**
+「${addInq.smart_inquiry?.inquiry_template || '請問您想解決什麼問題？'}」
+
+**重要：上下文記憶**
+${addInq.context_retention?.rule || '必須記住對話中已提到的車型'}
+- ${addInq.context_retention?.example || '用戶先問 Ninja 400 機油 → 再問添加劑 → 應記住是摩托車'}`;
+    }
+
     // 安全檢查
     const safety = rules.safety_check_rules || {};
 
