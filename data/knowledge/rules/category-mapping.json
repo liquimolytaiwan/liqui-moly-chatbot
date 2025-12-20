@@ -1,0 +1,124 @@
+{
+    "scooter_keywords": [
+        "jet",
+        "勁戰",
+        "drg",
+        "mmbcu",
+        "force",
+        "smax",
+        "scooter",
+        "cygnus",
+        "jbubu",
+        "4mica",
+        "vespa",
+        "many",
+        "tigra"
+    ],
+    "category_search_mapping": {
+        "motorcycle_additive": {
+            "condition": {
+                "vehicleType": "摩托車",
+                "productCategory": "添加劑"
+            },
+            "searches": [
+                {
+                    "field": "sort",
+                    "value": "【摩托車】添加劑",
+                    "limit": 30
+                },
+                {
+                    "field": "sort",
+                    "value": "【摩托車】機車養護",
+                    "limit": 20
+                }
+            ]
+        },
+        "motorcycle_oil": {
+            "condition": {
+                "vehicleType": "摩托車",
+                "productCategory": "機油"
+            },
+            "searches": [
+                {
+                    "field": "title",
+                    "value": "Motorbike",
+                    "limit": 50
+                },
+                {
+                    "field": "sort",
+                    "value": "【摩托車】機油",
+                    "limit": 30
+                }
+            ],
+            "scooter_extra": [
+                {
+                    "field": "title",
+                    "value": "Scooter",
+                    "limit": 30
+                }
+            ]
+        },
+        "car_additive": {
+            "condition": {
+                "vehicleType": "汽車",
+                "productCategory": "添加劑"
+            },
+            "searches": [
+                {
+                    "field": "sort",
+                    "value": "【汽車】添加劑",
+                    "limit": 30
+                }
+            ]
+        },
+        "car_oil": {
+            "condition": {
+                "vehicleType": "汽車",
+                "productCategory": "機油"
+            },
+            "searches": [
+                {
+                    "field": "sort",
+                    "value": "【汽車】機油",
+                    "limit": 50
+                }
+            ]
+        },
+        "chain": {
+            "condition": {
+                "productCategory": "鏈條"
+            },
+            "searches": [
+                {
+                    "field": "title",
+                    "value": "Chain",
+                    "limit": 30
+                },
+                {
+                    "field": "sort",
+                    "value": "【摩托車】機車養護",
+                    "limit": 20
+                }
+            ]
+        },
+        "detailing": {
+            "condition": {
+                "productCategory": "清潔|美容"
+            },
+            "searches": [
+                {
+                    "field": "sort",
+                    "value": "車輛美容",
+                    "limit": 30
+                }
+            ]
+        }
+    },
+    "fallback_search": {
+        "motorcycle": {
+            "field": "sort",
+            "value": "摩托車",
+            "limit": 20
+        }
+    }
+}
