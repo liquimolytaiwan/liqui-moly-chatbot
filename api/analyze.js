@@ -24,7 +24,6 @@ const corsHeaders = {
 // ============================================
 let vehicleSpecs = {};
 let certifications = {};
-let symptoms = {};
 let classificationRules = {};
 let specialScenarios = {};
 let additiveGuide = [];
@@ -33,7 +32,7 @@ try {
     const basePath = path.join(process.cwd(), 'data', 'knowledge');
     vehicleSpecs = JSON.parse(fs.readFileSync(path.join(basePath, 'vehicle-specs.json'), 'utf-8'));
     certifications = JSON.parse(fs.readFileSync(path.join(basePath, 'certifications.json'), 'utf-8'));
-    symptoms = JSON.parse(fs.readFileSync(path.join(basePath, 'symptoms.json'), 'utf-8'));
+    // symptoms.json 已合併到 additive-guide.json，不再需要單獨載入
     classificationRules = JSON.parse(fs.readFileSync(path.join(basePath, 'rules', 'classification-rules.json'), 'utf-8'));
     specialScenarios = JSON.parse(fs.readFileSync(path.join(basePath, 'rules', 'special-scenarios.json'), 'utf-8'));
     console.log('[Analyze] Knowledge base loaded successfully');
@@ -59,32 +58,10 @@ try {
     console.warn('[Category Mapping] Failed to load:', e.message);
 }
 
-/**
- * 從 symptoms.json 動態建構關鍵字對照表
- */
-function buildKeywordMapFromSymptoms(symptomsData) {
-    const keywordMap = {};
-
-    for (const [category, issues] of Object.entries(symptomsData)) {
-        for (const [issueName, issueData] of Object.entries(issues)) {
-            if (issueData.keywords && Array.isArray(issueData.keywords)) {
-                // 使用問題名稱的首個關鍵字作為 key
-                const keyName = issueName.split('_')[0];
-                if (!keywordMap[keyName]) {
-                    keywordMap[keyName] = [];
-                }
-                keywordMap[keyName].push(...issueData.keywords);
-            }
-        }
-    }
-
-    return keywordMap;
-}
 
 /**
-
  * 匹配添加劑指南
- * 使用 symptoms.json 知識庫進行關鍵字匹配
+ * 直接從 additive-guide.json 匹配（已合併 symptoms.json 功能）
  */
 function matchAdditiveGuide(message, vehicleType = null) {
     if (!additiveGuide.length) return [];
@@ -93,23 +70,41 @@ function matchAdditiveGuide(message, vehicleType = null) {
     const matched = [];
     const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
 
-    // 從 symptoms.json 動態載入關鍵字對照
-    const keywordMap = buildKeywordMapFromSymptoms(symptoms);
+    // 常見症狀關鍵字對照（從 additive-guide problem 欄位自動擴展）
+    const symptomKeywords = {
+        '漏油': ['漏油', '滲油', '油封', '止漏'],
+        '異音': ['異音', '聲音', '噪音', '達達聲', '敲擊', '哒哒', '噠噠'],
+        '吃機油': ['吃機油', '機油消耗', '排藍煙', '冒藍煙', '機油少'],
+        '積碳': ['積碳', '除碳', '清潔', '清洗', '沉積物'],
+        '怠速': ['怠速', '抖動', '不穩'],
+        '啟動': ['啟動', '發動', '難發', '難啟動'],
+        '過熱': ['過熱', '水溫高', '水溫過高'],
+        '磨損': ['磨損', '保護', '抗磨'],
+        '變速箱': ['變速箱', '換檔', '打滑', '頓挫', '入檔'],
+        '冷卻': ['冷卻', '水箱', '水溫'],
+        'DPF': ['dpf', '再生', '柴油濾芯'],
+        '黑煙': ['黑煙', '冒煙', '排煙'],
+        '油泥': ['油泥', '乳化', '乳黃色'],
+        '缸壓': ['缸壓', '活塞環', '動力流失']
+    };
 
     for (const item of additiveGuide) {
         if (item.area !== targetArea) continue;
+        if (!item.hasProduct) continue; // 只匹配有產品的項目
 
         const problem = (item.problem || '').toLowerCase();
         const explanation = (item.explanation || '').toLowerCase();
 
-        if (lowerMsg.includes(problem.substring(0, 4))) {
+        // 方法1：直接匹配 problem 名稱的前幾個字
+        if (problem.length > 3 && lowerMsg.includes(problem.substring(0, 4))) {
             matched.push(item);
             continue;
         }
 
-        for (const [key, synonyms] of Object.entries(keywordMap)) {
-            if (synonyms.some(s => lowerMsg.includes(s))) {
-                if (problem.includes(key) || explanation.includes(key) || synonyms.some(s => problem.includes(s))) {
+        // 方法2：使用症狀關鍵字對照
+        for (const [key, synonyms] of Object.entries(symptomKeywords)) {
+            if (synonyms.some(s => lowerMsg.includes(s.toLowerCase()))) {
+                if (problem.includes(key) || explanation.includes(key) || synonyms.some(s => problem.includes(s.toLowerCase()))) {
                     if (!matched.find(m => m.problem === item.problem)) {
                         matched.push(item);
                     }
@@ -121,6 +116,7 @@ function matchAdditiveGuide(message, vehicleType = null) {
 
     return matched.slice(0, 3);
 }
+
 
 /**
  * 從知識庫查詢車型規格
