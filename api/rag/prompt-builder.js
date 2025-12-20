@@ -111,6 +111,17 @@ ${conv.vehicle_retention.rule}
 
     // 安全檢查
     const safety = rules.safety_check_rules || {};
+
+    // 追問規則（重要！）
+    if (safety.car_oil_mandatory_inquiry) {
+        section += `
+### ⚠️ 追問規則（必須遵守）
+${safety.car_oil_mandatory_inquiry.rule}
+**當用戶只提供車型名稱但未提供年份、CC數或燃油種類時，必須先追問：**
+「${safety.car_oil_mandatory_inquiry.inquiry_zh}」
+禁止詢問：${safety.car_oil_mandatory_inquiry.forbidden?.join('、') || '引擎型號、引擎代碼'}`;
+    }
+
     if (safety.mandatory_disclaimer) {
         section += `
 ### 強制提醒語
@@ -119,6 +130,7 @@ ${safety.mandatory_disclaimer.zh}`;
 
     return section;
 }
+
 
 /**
  * 建構車型規格
