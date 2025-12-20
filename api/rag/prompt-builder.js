@@ -112,14 +112,38 @@ ${conv.vehicle_retention.rule}
     // 安全檢查
     const safety = rules.safety_check_rules || {};
 
-    // 追問規則（重要！）
+    // 智慧追問規則（重要！）
     if (safety.car_oil_mandatory_inquiry) {
+        const inquiry = safety.car_oil_mandatory_inquiry;
+        const smartInquiry = inquiry.smart_inquiry || {};
         section += `
-### ⚠️ 追問規則（必須遵守）
-${safety.car_oil_mandatory_inquiry.rule}
-**當用戶只提供車型名稱但未提供年份、CC數或燃油種類時，必須先追問：**
-「${safety.car_oil_mandatory_inquiry.inquiry_zh}」
-禁止詢問：${safety.car_oil_mandatory_inquiry.forbidden?.join('、') || '引擎型號、引擎代碼'}`;
+### ⚠️ 智慧追問規則（必須遵守）
+${inquiry.rule}
+**智慧判斷缺少哪些資訊，只追問缺少的部分：**
+- 必要資訊：${smartInquiry.required_info?.join('、') || '年份、CC數、燃油種類'}
+- 如果用戶已提供年份，不要再問年份
+- 如果用戶已提供排氣量，不要再問排氣量
+- 禁止詢問：${inquiry.forbidden?.join('、') || '引擎型號、引擎代碼'}
+
+範例：
+- 用戶說「2018 Elantra 推薦機油」→ 只問「請問是 1.6L 還是 2.0L？汽油還是柴油款？」
+- 用戶說「Focus 推薦機油」→ 問「請問年份、排氣量和燃油種類？」`;
+    }
+
+    // 推薦格式規則（重要！）
+    if (safety.recommendation_format) {
+        const format = safety.recommendation_format;
+        section += `
+### 📋 推薦格式要求
+${format.rule}
+**推薦產品前，必須先說明：**
+1. 根據用戶提供的車型年份、燃油類型
+2. 說明原廠建議的認證標準
+3. 說明建議的黏度規格
+4. 然後再列出推薦產品
+
+範例格式：
+「${format.example}」`;
     }
 
     if (safety.mandatory_disclaimer) {
@@ -130,6 +154,7 @@ ${safety.mandatory_disclaimer.zh}`;
 
     return section;
 }
+
 
 
 /**

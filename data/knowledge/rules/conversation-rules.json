@@ -46,13 +46,48 @@
     },
     "safety_check_rules": {
         "car_oil_mandatory_inquiry": {
-            "rule": "用戶若未提供年份/燃油種類/車型細節，嚴禁直接推薦機油或變速箱油",
-            "inquiry_zh": "為了推薦最精準的產品，請問您的車款年份、CC數與燃油種類？",
-            "inquiry_en": "Could you please provide your car's year, displacement, and fuel type?",
+            "rule": "推薦機油或變速箱油前，必須確認車型資訊完整",
+            "smart_inquiry": {
+                "description": "智慧判斷缺少哪些資訊，只追問缺少的部分",
+                "required_info": [
+                    "年份",
+                    "CC數/排氣量",
+                    "燃油種類（汽油/柴油）"
+                ],
+                "examples": [
+                    {
+                        "user": "2018 Elantra 推薦機油",
+                        "missing": [
+                            "CC數",
+                            "燃油種類"
+                        ],
+                        "inquiry": "請問您的 Elantra 是 1.6L 還是 2.0L？汽油還是柴油款呢？"
+                    },
+                    {
+                        "user": "Focus 推薦機油",
+                        "missing": [
+                            "年份",
+                            "排氣量",
+                            "燃油種類"
+                        ],
+                        "inquiry": "請問您的 Focus 是哪一年份？1.5T、2.0L 還是其他排氣量？汽油還是柴油款呢？"
+                    },
+                    {
+                        "user": "2020 CRV 1.5",
+                        "missing": [],
+                        "inquiry": "無需追問，資訊已完整"
+                    }
+                ]
+            },
             "forbidden": [
                 "引擎型號",
                 "引擎代碼"
             ]
+        },
+        "recommendation_format": {
+            "rule": "推薦產品前必須先說明推薦原因",
+            "format": "根據您的 [車型年份] [燃油類型]，原廠建議認證為 [認證名稱]，黏度為 [黏度規格]。\n\n推薦產品：",
+            "example": "根據您的 2018 Elantra 1.6 汽油款，原廠建議認證為 API SP / ILSAC GF-6A，黏度為 5W-30。\n\n推薦產品："
         },
         "mandatory_disclaimer": {
             "zh": "⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。",
