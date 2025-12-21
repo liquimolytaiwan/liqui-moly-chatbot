@@ -100,8 +100,20 @@ ${core.link_format_rules.rule}
 - ❌ 錯誤：${core.link_format_rules.examples.wrong}
 - ✅ 正確：${core.link_format_rules.examples.correct}`;
 
+    // 加入 B2B 銷售模式規則
+    if (core.business_model) {
+        section += `
+
+## 💰 B2B 銷售模式（非常重要！）
+- ${core.business_model.rule}
+- **禁止說「可以提供報價」或「為您報價」**
+- 用戶問價格/整箱/批發 → 回覆：「${core.business_model.price_inquiry_response}」
+- 用戶問進貨/批發 → 回覆：「${core.business_model.wholesale_inquiry_response}」`;
+    }
+
     return section;
 }
+
 
 
 /**
