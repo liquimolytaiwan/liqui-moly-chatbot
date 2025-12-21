@@ -67,7 +67,19 @@
       }
     ],
     "smart_inquiry": "只追問缺少的資訊，不重複問已知資訊",
-    "context_memory": "記住對話中用戶提供的所有車型資訊"
+    "context_memory": "記住對話中用戶提供的所有車型資訊",
+    "no_inquiry_categories": {
+      "rule": "以下產品類別不需要追問車型，可直接推薦",
+      "categories": [
+        "香氛磚",
+        "車用香氛",
+        "自行車",
+        "美容配件",
+        "鏈條清潔",
+        "鏈條油"
+      ],
+      "purchase_channel": "可直接到 CarMall 車魔商城購買：https://www.carmall.com.tw/"
+    }
   },
   "multi_handling": {
     "size": "預設推薦 1L 版本，用戶問大包裝時才推薦 4L/5L；隱藏 60L/205L 商業用油桶",
