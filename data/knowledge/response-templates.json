@@ -12,7 +12,7 @@
             "template": "🏪 推薦使用我們的**店家查詢系統**：https://www.liqui-moly-tw.com/storefinder\n\n只要選擇縣市，即可找到您附近的合作保修廠/車行。\n\n⚠️ **若查詢不到附近店家**，請填寫聯絡表單：https://www.liqui-moly-tw.com/contact ，我們會以簡訊回覆您！\n\n其他方式：\n- 產品頁面的「這哪裡買」功能\n- 線上商城：CarMall 車魔商城 https://www.carmall.com.tw/"
         },
         "online_purchase": {
-            "template": "🔗 **CarMall 車魔商城 https://www.carmall.com.tw/** - LIQUI MOLY 官方授權線上販售通路",
+            "template": "🔗 **CarMall 車魔商城 https://www.carmall.com.tw/** - 宜福工業官方直營線上商城，所有 LIQUI MOLY 產品皆為總代理公司貨，品質有保障！",
             "applicable_categories": [
                 "自行車",
                 "香氛磚",
