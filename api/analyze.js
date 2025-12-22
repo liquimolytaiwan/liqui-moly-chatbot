@@ -232,9 +232,11 @@ ${contextSummary}用戶問題：「${message}」
 1. 車型：JET/勁戰/DRG/CBR/Ninja = 摩托車；Altis/CRV/Focus = 汽車
 2. Ford EcoBoost (Focus MK4/Kuga MK3, 1.5T/2.0T) → WSS-M2C948-B, 5W-20
 3. Ford 一般汽油 → WSS-M2C913-D, 5W-30
-4. 日韓系 2018+ → API SP, 0W-20 或 5W-30
-5. 歐系 → 車廠認證 (BMW LL, MB 229)
-6. searchKeywords：包含黏度、認證、產品系列名
+4. VAG (VW/Audi/Skoda) 2021+ (Golf 8, Octavia MK4) → VW 508 00 / 509 00 (0W-20)
+5. VAG (VW/Audi/Skoda) 2020以前 → VW 504 00 / 507 00 (5W-30)
+6. 日韓系 2018+ → API SP, 0W-20 或 5W-30
+7. 歐系 → 車廠認證 (BMW LL, MB 229)
+8. searchKeywords：包含黏度、認證、產品系列名
 
 只返回 JSON。`;
 
@@ -480,8 +482,12 @@ function generateWixQueries(analysis, keywords, message = '') {
     // === 類別搜尋（直接使用 Wix 分類欄位）===
     // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
     // === 類別搜尋（直接使用 Wix 分類欄位）===
-    // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
-    const hasSpecificMatch = analysis.matchedVehicle && analysis.matchedVehicle.recommendedSKU;
+    // 如果已經精確匹配到車型且有推薦產品，或者 AI 已經推論出明確的車廠認證，則跳過寬鬆的類別搜尋
+    // 這樣可以避免像 Golf 8 這種不在硬編碼表但 AI 知道規格的情況被雜訊干擾
+    const explicitCertKeywords = ['VW', 'MB', 'BMW', 'Ford', 'Porsche', 'Volvo', 'JASO', 'ACEA', 'API'];
+    const hasInferredCert = firstVehicle.certifications && firstVehicle.certifications.some(c => explicitCertKeywords.some(k => c.includes(k)));
+
+    const hasSpecificMatch = (analysis.matchedVehicle && analysis.matchedVehicle.recommendedSKU) || hasInferredCert;
 
     if (!hasSpecificMatch) {
         if (isBike && productCategory === '添加劑') {
