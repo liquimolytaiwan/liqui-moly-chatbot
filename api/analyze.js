@@ -236,7 +236,8 @@ ${contextSummary}用戶問題：「${message}」
 5. VAG (VW/Audi/Skoda) 2020以前 → VW 504 00 / 507 00 (5W-30)
 6. 日韓系 2018+ → API SP, 0W-20 或 5W-30
 7. 歐系 → 車廠認證 (BMW LL, MB 229)
-8. searchKeywords：包含黏度、認證、產品系列名
+9. 特殊認證：用戶輸入純數字如 '508 509'、'504 507' 時，視為車廠認證代碼 (VW 508.00/509.00 等)，放入 searchKeywords 或 certifications
+10. searchKeywords：包含黏度、認證代碼、產品系列名
 
 只返回 JSON。`;
 
@@ -533,6 +534,12 @@ function generateWixQueries(analysis, keywords, message = '') {
             queries.push({ field: 'title', value: kw, limit: 15, method: 'contains', andContains: { field: 'title', value: 'Motorbike' } });
         } else {
             queries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
+
+            // [New] 如果關鍵字是純數字 (如 508, 509, 229.5) 或者是常見認證格式，也搜尋 description
+            // 因為很多認證碼只寫在說明裡，沒寫在標題
+            if (/^(\d{3,}|\d+\.\d+|[A-Z]{2,}-\w+)$/.test(kw)) {
+                queries.push({ field: 'description', value: kw, limit: 15, method: 'contains' });
+            }
         }
     }
 
