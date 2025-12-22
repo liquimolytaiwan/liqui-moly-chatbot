@@ -653,6 +653,7 @@ function formatProducts(products, searchInfo = null) {
 
     const productCategory = searchInfo?.productCategory || '產品';
     const isAdditive = productCategory === '添加劑';
+    const additiveMatch = searchInfo?.additiveGuideMatch;
 
     // 強烈警告，防止 AI 編造
     let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
@@ -660,14 +661,43 @@ function formatProducts(products, searchInfo = null) {
 **以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
 `;
 
-    // 加入產品類別提示
+    // 加入產品類別提示和推薦依據
     if (isAdditive) {
         context += `
 ## 🚨 本次詢問是「添加劑」推薦，不是機油！
-**用戶詢問的是症狀問題（如吃機油、怠速抖動、漏油等），請推薦添加劑產品，不要推薦機油！**
-- 吃機油 → 推薦 LM1019 (Motor Clean)、LM2501 (機油止漏劑)、LM2502 (黏度積升劑)
-- 漏油 → 推薦 LM5182 (引擎止漏)、LM2501
-- 怠速抖動 → 推薦 LM5129、LM1803 (燃油系統清潔)
+`;
+        // 如果有匹配到的症狀，顯示說明
+        if (additiveMatch && additiveMatch.items && additiveMatch.items.length > 0) {
+            context += `
+### 📋 症狀分析與推薦依據
+用戶描述的問題匹配到以下症狀，請根據說明向用戶解釋推薦原因：
+
+`;
+            for (const item of additiveMatch.items) {
+                context += `**症狀：${item.problem}**
+🔍 原因說明：${item.explanation}
+💊 推薦產品：${item.solutions.join(', ')}
+
+`;
+            }
+            context += `**回覆要求：**
+1. 先說明可能的原因（參考上述「原因說明」）
+2. 再推薦對應的產品
+3. 解釋產品如何解決這個問題
+
+`;
+        } else {
+            context += `**用戶詢問的是症狀問題，請推薦添加劑產品！**
+
+`;
+        }
+    } else if (productCategory === '機油') {
+        context += `
+### 📋 機油推薦依據
+**回覆要求：**
+1. 說明推薦的黏度依據（如 5W-30 適合日韓系車）
+2. 說明認證依據（如符合 API SP）
+3. 列出推薦產品
 
 `;
     }
