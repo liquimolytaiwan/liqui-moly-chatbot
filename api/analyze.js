@@ -411,7 +411,8 @@ function generateWixQueries(analysis, keywords, message = '') {
     const vehicles = analysis.vehicles || [];
     const firstVehicle = vehicles[0] || {};
 
-    const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '4mica', 'krv', 'jbubu', 'tigra', 'many'];
+    // 摩托車/速克達關鍵字 (包含 R3, 重機等)
+    const bikeKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '4mica', 'krv', 'jbubu', 'tigra', 'many', 'r3', 'mt-', 'ninja', 'cbr', 'gsx', 'cb', 'rebel', 'mt0', 'mt1', 'mt03', 'mt07', 'mt09'];
 
     const messageLower = message.toLowerCase();
 
@@ -462,11 +463,16 @@ function generateWixQueries(analysis, keywords, message = '') {
         // === 若無精確匹配，則為該車型加入「類別搜尋」 (Per-Vehicle Fallback) ===
         // 這樣即使 AI 沒推論出黏度/認證，也能分別為 R3 搜摩托車油、Elantra 搜汽車油
         if (!viscosity && (!certs || certs.length === 0)) {
-            const vType = vehicle.vehicleType || vehicleType;
+            // 強制檢測：如果 vehicle.model 包含機車關鍵字，強制轉為摩托車
+            let vType = vehicle.vehicleType || vehicleType;
+            const modelName = (vehicle.model || '').toLowerCase();
+            const isExplicitBike = bikeKeywords.some(k => modelName.includes(k));
+            if (isExplicitBike) vType = '摩托車';
+
             const isVehicleBike = vType === '摩托車';
             const isVehicleScooter = isVehicleBike && (
                 (vehicle.vehicleSubType && vehicle.vehicleSubType.includes('速克達')) ||
-                keywords.some(k => scooterKeywords.includes(k.toLowerCase()))
+                keywords.some(k => bikeKeywords.includes(k.toLowerCase()))
             );
 
             if (isVehicleBike && productCategory === '添加劑') {
