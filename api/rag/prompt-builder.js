@@ -73,6 +73,9 @@ ${core.identity.scope}
 
 ## ⛔ 核心規則
 ${core.core_rules.map(r => `- ${r}`).join('\n')}
+- **最高準則：優先匹配「車廠認證」（例如 Ford WSS-M2C 948-B），而非從品牌（Ford）寬鬆推薦**
+- 如果車型有指定特定認證（如 948-B），禁止推薦符合其他認證（如 913-D/946-A）但不符合指定認證的產品
+- 推薦產品必須完全符合資料庫中的「認證」欄位
 
 ## 📝 風格原則
 - ${core.style_principles?.tone || '簡潔專業'}
@@ -134,6 +137,7 @@ function buildConversationRules(rules) {
         const p = rules.principles;
         section += `
 ### 原則
+- **精確匹配認證**：Ford 1.5 EcoBoost 必須用 948-B，不可用 913-D 或 946-A
 - ${p.inquiry || '使用你的專業知識判斷需要哪些資訊，缺少則追問'}
 - ${p.context || '記住對話中用戶提供的所有車型資訊'}
 - ${p.format || '推薦前先說明理由（認證、黏度），再列出產品'}
