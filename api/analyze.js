@@ -451,8 +451,25 @@ function generateWixQueries(analysis, keywords, message = '') {
         const certs = vehicle.certifications || analysis.certifications;
         if (certs && Array.isArray(certs)) {
             for (const cert of certs) {
+                // 原樣搜尋
                 queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
                 queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
+
+                // 優化搜尋：去除空格 (e.g. "948 B" -> "948B", "508 00" -> "50800")
+                const certNoSpace = cert.replace(/\s+/g, '');
+                if (certNoSpace !== cert) {
+                    queries.push({ field: 'cert', value: certNoSpace, limit: 20, method: 'contains' });
+                }
+
+                // 優化搜尋：提取關鍵代碼 (e.g. "Ford WSS-M2C 948-B" -> "948-B")
+                // 針對常見格式: 數字+字母 或 純數字
+                const codeMatch = cert.match(/(\d{3,}[-]?\w+|\d{3,}\.\d+)/);
+                if (codeMatch) {
+                    const code = codeMatch[0];
+                    if (code !== cert && code.length >= 3) {
+                        queries.push({ field: 'cert', value: code, limit: 20, method: 'contains' });
+                    }
+                }
             }
         }
 
