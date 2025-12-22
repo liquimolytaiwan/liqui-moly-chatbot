@@ -411,14 +411,7 @@ function generateWixQueries(analysis, keywords, message = '') {
     const vehicles = analysis.vehicles || [];
     const firstVehicle = vehicles[0] || {};
 
-    const isBike = vehicleType === '摩托車' || firstVehicle.vehicleType === '摩托車';
-
-    // 台灣速克達關鍵字（已移到此處，不依賴外部 JSON）
     const scooterKeywords = ['jet', '勁戰', 'drg', 'mmbcu', 'force', 'smax', 'scooter', '4mica', 'krv', 'jbubu', 'tigra', 'many'];
-    const isScooter = isBike && (
-        (vehicleSubType && vehicleSubType.includes('速克達')) ||
-        keywords.some(k => scooterKeywords.includes(k.toLowerCase()))
-    );
 
     const messageLower = message.toLowerCase();
 
@@ -465,6 +458,37 @@ function generateWixQueries(analysis, keywords, message = '') {
         // 檢查是否為精確匹配 (AI 推論出明確車廠認證)
         const hasInferredCert = certs && certs.some(c => explicitCertKeywords.some(k => c.includes(k)));
         if (hasInferredCert) hasSpecificMatch = true;
+
+        // === 若無精確匹配，則為該車型加入「類別搜尋」 (Per-Vehicle Fallback) ===
+        // 這樣即使 AI 沒推論出黏度/認證，也能分別為 R3 搜摩托車油、Elantra 搜汽車油
+        if (!viscosity && (!certs || certs.length === 0)) {
+            const vType = vehicle.vehicleType || vehicleType;
+            const isVehicleBike = vType === '摩托車';
+            const isVehicleScooter = isVehicleBike && (
+                (vehicle.vehicleSubType && vehicle.vehicleSubType.includes('速克達')) ||
+                keywords.some(k => scooterKeywords.includes(k.toLowerCase()))
+            );
+
+            if (isVehicleBike && productCategory === '添加劑') {
+                addQuery('sort', '【摩托車】添加劑', 30);
+                addQuery('sort', '【摩托車】機車養護', 20);
+            } else if (isVehicleBike && productCategory === '機油') {
+                queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+                if (isVehicleScooter) {
+                    queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
+                }
+                addQuery('sort', '【摩托車】機油', 30);
+            } else if (!isVehicleBike && productCategory === '添加劑') {
+                addQuery('sort', '【汽車】添加劑', 30);
+            } else if (!isVehicleBike && productCategory === '機油') {
+                addQuery('sort', '【汽車】機油', 50);
+            } else if (productCategory === '鏈條') {
+                queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+                addQuery('sort', '【摩托車】機車養護', 20);
+            } else if (productCategory === '清潔' || productCategory === '美容') {
+                addQuery('sort', '車輛美容', 30);
+            }
+        }
     }
 
     // === 使用知識庫匹配車型 (Legacy Support for single matchedVehicle) ===
@@ -494,29 +518,13 @@ function generateWixQueries(analysis, keywords, message = '') {
     }
 
     // === 類別搜尋 (Generic Fallback) ===
-    // 只有在完全沒有任何精確匹配時，才執行通用類別搜尋
-    if (!hasSpecificMatch) {
-        if (isBike && productCategory === '添加劑') {
-            addQuery('sort', '【摩托車】添加劑', 30);
-            addQuery('sort', '【摩托車】機車養護', 20);
-        } else if (isBike && productCategory === '機油') {
-            queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
-            if (isScooter) {
-                queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
-            }
-            addQuery('sort', '【摩托車】機油', 30);
-        } else if (!isBike && productCategory === '添加劑') {
-            addQuery('sort', '【汽車】添加劑', 30);
-        } else if (!isBike && productCategory === '機油') {
-            addQuery('sort', '【汽車】機油', 50);
-        } else if (productCategory === '鏈條') {
-            queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
-            addQuery('sort', '【摩托車】機車養護', 20);
-        } else if (productCategory === '清潔' || productCategory === '美容') {
-            addQuery('sort', '車輛美容', 30);
+    // 只有在完全沒有任何精確匹配、且上面迴圈也沒產生任何 queries 時才執行 (雖然理論上 per-vehicle fallback 會涵蓋)
+    // 這裡保留作為最後防線
+    if (queries.length === 0 && !hasSpecificMatch) {
+        // Default to Car Oil if really nothing else matches
+        if (productCategory === '機油') {
+            addQuery('sort', '【汽車】機油', 30);
         }
-    } else {
-        console.log('[Wix Queries] Skipping generic category search due to specific vehicle match');
     }
 
 
