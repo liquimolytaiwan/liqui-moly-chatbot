@@ -86,19 +86,10 @@ export async function post_chat(request) {
                 const session = await wixData.get('chatSessions', body.sessionId);
                 if (session && session.messages) {
                     conversationHistory = JSON.parse(session.messages);
-                    console.log('[Session] Loaded history from session:', conversationHistory.length, 'messages');
                 }
             } catch (e) {
                 console.error('Failed to get session:', e);
             }
-        }
-
-        // 🔍 調試：記錄對話歷史
-        console.log('[Chat] Message:', body.message);
-        console.log('[Chat] ConversationHistory length:', conversationHistory.length);
-        if (conversationHistory.length > 0) {
-            const lastMessages = conversationHistory.slice(-4);
-            console.log('[Chat] Recent messages:', JSON.stringify(lastMessages.map(m => ({ role: m.role, content: m.content?.substring(0, 100) }))));
         }
 
         // Step 1: 呼叫 Vercel API 進行 AI 分析
@@ -121,7 +112,6 @@ export async function post_chat(request) {
         let productContext = "目前沒有產品資料";
         try {
             productContext = await searchProducts(body.message, searchInfo);
-            console.log('Local search completed');
         } catch (e) {
             console.error('Product search failed:', e);
         }
@@ -388,10 +378,6 @@ export async function get_products(request) {
 // ============================================
 
 async function searchProducts(query, searchInfo) {
-    // === 除錯日誌 ===
-    console.log('[searchProducts] vehicleType:', searchInfo?.vehicleType);
-    console.log('[searchProducts] productCategory:', searchInfo?.productCategory);
-
     try {
         let allResults = [];
 
@@ -421,11 +407,6 @@ async function searchProducts(query, searchInfo) {
                     const res = await q.limit(task.limit || 20).find();
                     let items = res.items;
 
-                    // 日誌：追蹤每個查詢的執行結果
-                    if (items.length > 0) {
-                        console.log(`[Search] ${task.method}(${task.field}, "${task.value}") => Found ${items.length} items: ${items.map(p => p.partno).join(', ')}`);
-                    }
-
                     // 2d. 記憶體後處理 (Post-processing)
                     if (task.filterTitle && Array.isArray(task.filterTitle)) {
                         items = items.filter(item =>
@@ -440,7 +421,6 @@ async function searchProducts(query, searchInfo) {
                         items = items.filter(item =>
                             item.size && item.size.toLowerCase().includes(sizeKeyword)
                         );
-                        console.log(`[Size Filter] Filtered by "${sizeKeyword}", remaining: ${items.length} items`);
                     }
 
                     allResults = allResults.concat(items);
@@ -487,7 +467,7 @@ async function searchProducts(query, searchInfo) {
         // === 同 Title 擴展搜尋 (Title-Based Expansion) ===
         // 若搜到產品，自動搜尋同 title 不同容量的產品
         // 這樣問「9047 有大包裝嗎」就能找到 LM9089 (4L)
-        console.log(`[Search] Found ${uniqueProducts.length} unique products before Title Expansion`);
+
 
         if (uniqueProducts.length > 0) {
             // 優先找 SKU 匹配的產品（通常是用戶最想查詢的）
@@ -504,54 +484,39 @@ async function searchProducts(query, searchInfo) {
                 for (const skuMatch of allSkuMatches) {
                     const skuNum = skuMatch[1];
                     const fullSku = `LM${skuNum}`;
-                    console.log(`[Title Expansion] Looking for SKU: ${fullSku}`);
 
                     // 在搜尋結果中找到 SKU 完全匹配的產品
                     const skuProduct = uniqueProducts.find(p => p.partno === fullSku);
                     if (skuProduct && skuProduct.title && !titlesToExpand.includes(skuProduct.title)) {
                         titlesToExpand.push(skuProduct.title);
-                        console.log(`[Title Expansion] Found SKU product, will expand title: "${skuProduct.title}"`);
                     }
                 }
             }
 
-            // 如果沒找到 SKU 產品，不進行標題擴展 (防止擴展到其他黏度造成雜訊)
-            if (titlesToExpand.length === 0) {
-                console.log('[Title Expansion] No specific SKU match found, skipping expansion to avoid noise.');
-            }
 
-            console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
 
             for (const exactTitle of titlesToExpand) {
                 try {
                     // Step 1: 用 contains() 搜尋產品名稱的前 20 個字元
                     const searchKey = exactTitle.substring(0, 20);
-                    console.log(`[Title Expansion] Step 1: contains search for "${searchKey}"`);
 
                     // 提高 limit 到 100，確保找到所有容量版本
                     const res = await wixData.query('products')
                         .contains('title', searchKey)
                         .limit(100)
                         .find();
-                    console.log(`[Title Expansion] Step 1 found ${res.items.length} items, titles: ${res.items.map(p => p.partno + ':' + p.size).join(', ')}`);
 
-                    // Step 2: 記憶體精確過濾 - 只保留 title 完全相同的產品
-                    // 這樣就不會誤匹配到 DPF 等類似產品
+                    // Step 2: 記憶體精確過濾
                     for (const p of res.items) {
                         if (p._id && !seenIds.has(p._id) && p.title === exactTitle) {
                             seenIds.add(p._id);
                             uniqueProducts.push(p);
-                            console.log(`[Title Expansion] Added: ${p.partno} - ${p.size}`);
                         }
                     }
                 } catch (e) {
-                    console.log('Title expansion error:', e);
+                    console.error('Title expansion error:', e);
                 }
             }
-        }
-
-        if (allResults.length > 0) {
-            //console.log(`搜尋完成: 找到 ${uniqueProducts.length} 筆`);
         }
 
         if (uniqueProducts.length > 0) {
@@ -583,7 +548,6 @@ async function searchProducts(query, searchInfo) {
                     const skuProductsUnique = [...new Map(allSkuProducts.map(p => [p._id, p])).values()];
                     const others = uniqueProducts.filter(p => !allMatchedTitles.has(p.title)).slice(0, 5);
                     const prioritized = [...skuProductsUnique, ...others];
-                    console.log(`[Return] Multi-SKU mode: returning ${skuProductsUnique.length} SKU-related products + ${others.length} others`);
                     return formatProducts(prioritized.slice(0, 20));
                 }
             }
@@ -614,7 +578,7 @@ async function searchProducts(query, searchInfo) {
                         return !title.includes('motorbike') && !sort.includes('摩托車') && sort.includes('機油');
                     });
 
-                    console.log(`[Multi-Vehicle Filter] Motorcycle: ${motorcycleProducts.length}, Car: ${carProducts.length}`);
+                    console.log(`[Multi-Vehicle] Motorcycle: ${motorcycleProducts.length}, Car: ${carProducts.length}`);
 
                     // 合併結果，各取前 15 個，標記來源
                     const combinedProducts = [
@@ -637,7 +601,6 @@ async function searchProducts(query, searchInfo) {
                     const sort = (p.sort || '').toLowerCase();
                     return title.includes('motorbike') || sort.includes('摩托車');
                 });
-                console.log('[Motorcycle Filter] Filtered ' + uniqueProducts.length + ' -> ' + filteredProducts.length + ' products');
                 if (filteredProducts.length > 0) {
                     return formatProducts(filteredProducts.slice(0, 30), searchInfo);
                 }
