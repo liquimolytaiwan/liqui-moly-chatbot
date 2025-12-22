@@ -147,6 +147,16 @@ function buildConversationRules(rules) {
 - ${p.professional_judgment || '使用 AI 內建的汽車知識判斷認證、黏度等'}`;
     }
 
+    // 推薦優先順序規則（新增）
+    if (rules.recommendation_priority) {
+        const rp = rules.recommendation_priority;
+        section += `
+### ⭐ 產品推薦優先順序（重要！）
+- **特定認證優先**：${rp.specific_certification_first || '若車輛有車廠認證需求，必須優先推薦符合該認證的產品'}
+- **日韓系用黏度**：${rp.generic_api_use_viscosity || '日韓系車輛僅需 API 認證時，以符合建議黏度的產品為主'}
+- **有產品就推薦**：${rp.always_recommend || '只要資料庫有符合條件的產品就應該推薦，不要說「未顯示完全符合」'}`;
+    }
+
     // 新結構：hard_rules
     if (rules.hard_rules) {
         const hr = rules.hard_rules;
