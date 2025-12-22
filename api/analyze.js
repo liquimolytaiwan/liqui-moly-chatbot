@@ -229,7 +229,7 @@ ${contextSummary}用戶問題：「${message}」
 }
 
 判斷規則：
-1. 車型：JET/勁戰/DRG/CBR/Ninja = 摩托車；Altis/CRV/Focus = 汽車
+1. 車型：JET/勁戰/DRG/CBR/Ninja/R3/MT/GSX/CB = 摩托車；Altis/CRV/Focus/Elantra = 汽車
 2. Ford EcoBoost (Focus MK4/Kuga MK3, 1.5T/2.0T) → WSS-M2C948-B, 5W-20
 3. Ford 一般汽油 → WSS-M2C913-D, 5W-30
 4. VAG (VW/Audi/Skoda) 2021+ (Golf 8, Octavia MK4) → VW 508 00 / 509 00 (0W-20)
