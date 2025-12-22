@@ -180,7 +180,14 @@ async function callGemini(apiKey, contents) {
         }
 
         if (candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) {
-            return candidate.content.parts[0].text;
+            let text = candidate.content.parts[0].text;
+
+            // [Hotfix] 強制移除俄文/Cyrillic 字符 (如 уточнить)
+            if (/[\u0400-\u04FF]/.test(text)) {
+                console.warn('[Gemini] Detected Cyrillic characters, stripping them...');
+                text = text.replace(/[\u0400-\u04FF]/g, '').replace(/уточнить/gi, '');
+            }
+            return text;
         }
     }
 

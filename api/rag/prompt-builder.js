@@ -85,6 +85,7 @@ ${core.core_rules.map(r => `- ${r}`).join('\n')}
 
 ## ⚠️ 追問原則（非常重要！禁止跳過！）
 **${core.inquiry_principles?.rule || '缺少關鍵資訊時必須追問，不可直接推薦'}**
+**注意：追問時請務必使用繁體中文，禁止使用其他語言（尤其是俄文「уточнить」）作為結尾。**
 
 **推薦機油前必須確認：** ${core.inquiry_principles?.required_info_oil?.join('、') || '車種、年份、排氣量、燃油種類'}
 **推薦添加劑前必須確認：** ${core.inquiry_principles?.required_info_additive?.join('、') || '車種、症狀、變速箱類型'}
