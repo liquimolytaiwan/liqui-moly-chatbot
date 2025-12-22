@@ -1,21 +1,51 @@
 {
-    "principle": "使用你的汽機車專業知識判斷車輛類型和產品類別",
-    "taiwan_specific": {
-        "scooters": [
-            "勁戰",
-            "JET",
-            "DRG",
-            "MMBCU",
-            "4MICA",
-            "KRV",
-            "JBUBU",
-            "Tigra",
-            "Many",
-            "Racing",
-            "RCS"
-        ],
-        "note": "以上為台灣特有速克達型號，對應搜尋 Motorbike Scooter 產品"
-    },
+    "principle": "使用 AI 判斷車輛類型和產品類別，以下資料僅供參考",
+    "motorcycle_brands": [
+        "Honda",
+        "Yamaha",
+        "Kawasaki",
+        "Suzuki",
+        "Ducati",
+        "Harley-Davidson",
+        "KTM",
+        "Triumph",
+        "BMW Motorrad",
+        "Aprilia"
+    ],
+    "motorcycle_series": [
+        "CBR",
+        "CB",
+        "Rebel",
+        "R1",
+        "R3",
+        "R6",
+        "R7",
+        "MT",
+        "YZF",
+        "Ninja",
+        "Z",
+        "GSX",
+        "SV",
+        "Panigale",
+        "Monster",
+        "Sportster"
+    ],
+    "taiwan_scooters": [
+        "勁戰",
+        "JET",
+        "DRG",
+        "SMAX",
+        "Force",
+        "KRV",
+        "Many",
+        "Tigra",
+        "4MICA",
+        "MMBCU",
+        "Racing",
+        "JBUBU",
+        "RCS"
+    ],
     "motorcycle_product_rule": "摩托車產品標題包含 'Motorbike'",
+    "scooter_product_rule": "速克達產品標題包含 'Scooter'",
     "car_product_rule": "汽車產品不包含 'Motorbike'"
 }

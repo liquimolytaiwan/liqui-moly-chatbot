@@ -1,6 +1,6 @@
 # LIQUI MOLY Taiwan AI 聊天機器人
 
-這是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的 AI 產品諮詢助理，整合 **Gemini 2.5 Flash** 提供智慧問答服務。
+這是 LIQUI MOLY Taiwan（力魔機油台灣總代理）的 AI 產品諮詢助理，整合 **Gemini 2.0 Flash** 提供智慧問答服務。
 
 ## 功能特色
 
