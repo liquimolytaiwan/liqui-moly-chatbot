@@ -95,20 +95,50 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
             `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`  // 增加到 200 字
         ).join('\n') + '\n\n';
 
-        // 從對話歷史中提取症狀關鍵字
+        // 從對話歷史構建完整上下文（不再硬編碼症狀）
         const allHistoryText = recentHistory.map(m => m.content).join(' ');
-        const symptomKeywords = ['吃機油', '吃雞油', '機油消耗', '怠速抖', '啟動困難', '漏油', '異音', '積碳', '換檔不順', '頓挫'];
-        const foundSymptoms = symptomKeywords.filter(s => allHistoryText.includes(s));
-        if (foundSymptoms.length > 0) {
-            symptomContext = `\n⚠️ 重要：對話中提到的症狀：「${foundSymptoms.join('、')}」，這表示用戶是在詢問添加劑解決方案，productCategory 應該是「添加劑」！\n`;
+        // 如果對話中有提到症狀相關問題，提醒 AI 這是添加劑諮詢
+        if (allHistoryText.match(/怎麼辦|問題|症狀|異常|異音|過熱|抖動|漏油|吃油/)) {
+            symptomContext = `\n⚠️ 重要：對話中可能涉及車輛症狀問題，請仔細判斷是否需要推薦添加劑而非機油。\n`;
         }
+    }
+
+    // === 從 additive-guide.json 動態生成症狀列表 ===
+    let symptomGuide = '';
+    if (additiveGuide.length > 0) {
+        // 提取汽車引擎問題的症狀和解決方案
+        const engineProblems = additiveGuide
+            .filter(item => item.area === '汽車' && item.hasProduct && item.sort === '引擎疑難雜症')
+            .map(item => `- ${item.problem}: ${item.solutions.join(', ')}`)
+            .slice(0, 20);  // 取前 20 個
+
+        const transmissionProblems = additiveGuide
+            .filter(item => item.area === '汽車' && item.hasProduct && item.sort?.includes('變速箱'))
+            .map(item => `- ${item.problem}: ${item.solutions.join(', ')}`)
+            .slice(0, 10);
+
+        symptomGuide = `
+【症狀與添加劑產品對照表 - 從知識庫載入】
+⚠️ 如果用戶描述的問題與以下症狀相似，productCategory 應設為「添加劑」，並將對應 SKU 加入 searchKeywords！
+
+**引擎相關症狀（不需要問變速箱類型）：**
+${engineProblems.join('\n')}
+
+**變速箱相關症狀（需要問變速箱類型）：**
+${transmissionProblems.join('\n')}
+
+**判斷規則：**
+- 如果用戶問的是「引擎相關症狀」（如：吃機油、過熱、啟動困難、異音、積碳），productCategory = 添加劑，不需要問變速箱
+- 如果用戶問的是「變速箱相關症狀」（如：換檔頓挫、換檔不順），才需要問變速箱類型
+- 如果對話中已經提供了車型資訊，不要重複詢問！直接從上下文獲取
+`;
     }
 
     // === AI 主導分析提示詞 ===
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
-
+${symptomGuide}
 返回格式：
 {
     "isMultiVehicleQuery": false,
@@ -122,50 +152,29 @@ ${contextSummary}${symptomContext}用戶問題：「${message}」
         "searchKeywords": ["搜尋關鍵字"]
     }],
     "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
+    "symptomMatched": "匹配到的症狀名稱（如有）",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
 }
 
 車型識別規則（使用你的汽機車專業知識）：
 
+【重要：對話記憶】
+- ⚠️ 如果對話上下文中已經提供車型資訊（如 BRZ、Elantra 等），直接使用，不要再問！
+- 用戶補充資訊時，要結合之前的問題（如「吃機油」+「BRZ」= 為 BRZ 推薦解決吃機油的添加劑）
+
 【摩托車識別】
-- 品牌：Honda (CBR/CB/Rebel)、Yamaha (R1/R3/R6/MT/YZF)、Kawasaki (Ninja/Z)、Suzuki (GSX/SV)、Ducati、Harley、KTM、Triumph、BMW Motorrad (R1250/S1000)
-- 台灣速克達：勁戰/JET/DRG/MMBCU/Force/SMAX/Tigra/KRV/Many/4MICA/Racing
-- 特徵：排氣量用 CC 表示（如 650cc、1000cc）通常是摩托車
+- 品牌：Honda (CBR/CB/Rebel)、Yamaha (R1/R3/R6/MT/YZF)、Kawasaki (Ninja/Z)、Suzuki (GSX/SV)、Ducati、Harley、KTM、Triumph、BMW Motorrad
+- 台灣速克達：勁戰/JET/DRG/MMBCU/Force/SMAX/Tigra/KRV/Many
 - 摩托車機油：searchKeywords 必須包含 "Motorbike"
-- 速克達機油：searchKeywords 加入 "Scooter"
-- 重機/檔車：JASO MA2 認證，10W-40 或 10W-50
 
 【汽車識別 - 使用你的專業知識！】
-- **重要**：使用你的汽車專業知識判斷車型！常見汽車品牌和車型你都應該知道
-- Hyundai 現代：Elantra、Sonata、Tucson、Santa Fe、i30、Ioniq 都是汽車
-- Kia 起亞：Sportage、Sorento、K5、Carnival 都是汽車
-- Toyota：Camry、Corolla、RAV4、Yaris 都是汽車
-- Honda：Civic、Accord、CR-V、HR-V 都是汽車（注意：CBR/CB 是摩托車）
-- Ford：Focus、Kuga、Mondeo、Fiesta 都是汽車
-- Nissan：Altima、Sentra、X-Trail、Kicks 都是汽車
-- Mazda：Mazda3、Mazda6、CX-5、CX-30 都是汽車
-- 歐系：BMW 3/5 Series、M3、Benz C/E/A Class、VW Golf、Audi A4 都是汽車
-- **如果是上述任何一個品牌/車型，vehicleType 必須是「汽車」**
-- 排量用 L 或 T 表示（如 1.6L、2.0T）通常是汽車
-- Ford EcoBoost (Focus MK4/Kuga MK3)：WSS-M2C948-B，5W-20
-- Ford 一般汽油：WSS-M2C913-D，5W-30
-- VAG 2021+ (Golf 8)：VW 508.00/509.00，0W-20
-- VAG 2020以前：VW 504.00/507.00，5W-30
-- 日韓系 2018+：API SP，0W-20 或 5W-30
-- 歐系：車廠認證（BMW LL、MB 229）
-
-【症狀識別規則 - 重要！】
-- 「吃機油」「吃雞油」「機油消耗」= **引擎問題**，不需要問變速箱類型
-- 「換檔不順」「換檔頓挫」= **變速箱問題**，需要問變速箱類型（手排/自排/CVT）
-- 「怠速抖動」「啟動困難」「積碳」= **引擎問題**
-- 「漏油」= 需要確認是哪個部位（引擎/變速箱/方向機）
+- **重要**：使用你的汽車專業知識判斷！Subaru BRZ、Hyundai Elantra 等都是汽車
+- 如果對話中已有車型，不要再問「是汽車還是機車」！
 
 【searchKeywords 規則】
-- 必須包含：黏度（如 5W-30）、認證代碼、產品系列名
-- 摩托車機油必須加入 "Motorbike"
-- 速克達加入 "Scooter"
-- 可包含 SKU（如 LM3840）
+- 如果是添加劑：必須包含匹配到的症狀對應 SKU（如 LM1019、LM2506）
+- 如果是機油：包含黏度、認證代碼
 
 只返回 JSON，不要其他文字。`;
 
