@@ -588,7 +588,7 @@ async function searchProducts(query, searchInfo) {
             if (vehicleType === '摩托車' && productCategory === '機油') {
                 const filteredProducts = uniqueProducts.filter(p => {
                     const title = (p.title || '').toLowerCase();
-                    const sort = (p.sort || '').toLowerCase();
+                    const sort = (p.sortlist || '').toLowerCase();
                     return title.includes('motorbike') || sort.includes('摩托車');
                 });
                 console.log('[Motorcycle Filter] Filtered ' + uniqueProducts.length + ' -> ' + filteredProducts.length + ' products');
@@ -656,7 +656,7 @@ function formatProducts(products) {
         context += `- 系列/次分類: ${p.word1 || 'N/A'}\n`;
         context += `- 黏度: ${p.word2 || 'N/A'}\n`;
         context += `- 認證/規格: ${p.cert || 'N/A'}\n`;
-        context += `- 分類: ${p.sort || 'N/A'}\n`;
+        context += `- 分類: ${p.sortlist || 'N/A'}\n`;
         context += `- 建議售價: ${p.price || '請洽店家詢價'}\n`;
         context += `- 產品連結: ${url}\n`;
 

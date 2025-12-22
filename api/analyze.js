@@ -450,7 +450,7 @@ function generateWixQueries(analysis, keywords, message = '') {
     if (certs && Array.isArray(certs)) {
         for (const cert of certs) {
             queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
-            queries.push({ field: 'description', value: cert, limit: 20, method: 'contains' });
+            queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
         }
     }
 
@@ -473,8 +473,11 @@ function generateWixQueries(analysis, keywords, message = '') {
                     queries.push({ field: 'partno', value: kw, limit: 5, method: 'eq' });
                 } else if (kw.includes('W-') || kw.includes('W2') || kw.includes('W3') || kw.includes('W4') || kw.includes('W5')) {
                     queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
+                } else if (/^(\d{3,}|\d+\.\d+|[A-Z]{2,}-\w+)$/.test(kw)) {
+                    // 知識庫中的認證關鍵字，優先搜 cert 欄位
+                    queries.push({ field: 'cert', value: kw, limit: 15, method: 'contains' });
                 } else {
-                    queries.push({ field: 'description', value: kw, limit: 15, method: 'contains' });
+                    queries.push({ field: 'content', value: kw, limit: 15, method: 'contains' });
                 }
             }
         }
@@ -492,23 +495,23 @@ function generateWixQueries(analysis, keywords, message = '') {
 
     if (!hasSpecificMatch) {
         if (isBike && productCategory === '添加劑') {
-            addQuery('sort', '【摩托車】添加劑', 30);
-            addQuery('sort', '【摩托車】機車養護', 20);
+            addQuery('sortlist', '【摩托車】添加劑', 30);
+            addQuery('sortlist', '【摩托車】機車養護', 20);
         } else if (isBike && productCategory === '機油') {
             queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
             if (isScooter) {
                 queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
             }
-            addQuery('sort', '【摩托車】機油', 30);
+            addQuery('sortlist', '【摩托車】機油', 30);
         } else if (!isBike && productCategory === '添加劑') {
-            addQuery('sort', '【汽車】添加劑', 30);
+            addQuery('sortlist', '【汽車】添加劑', 30);
         } else if (!isBike && productCategory === '機油') {
-            addQuery('sort', '【汽車】機油', 50);
+            addQuery('sortlist', '【汽車】機油', 50);
         } else if (productCategory === '鏈條') {
             queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
-            addQuery('sort', '【摩托車】機車養護', 20);
+            addQuery('sortlist', '【摩托車】機車養護', 20);
         } else if (productCategory === '清潔' || productCategory === '美容') {
-            addQuery('sort', '車輛美容', 30);
+            addQuery('sortlist', '車輛美容', 30);
         }
     } else {
         console.log('[Wix Queries] Skipping generic category search due to specific vehicle match');
@@ -535,17 +538,18 @@ function generateWixQueries(analysis, keywords, message = '') {
         } else {
             queries.push({ field: 'title', value: kw, limit: 15, method: 'contains' });
 
-            // [New] 如果關鍵字是純數字 (如 508, 509, 229.5) 或者是常見認證格式，也搜尋 description
-            // 因為很多認證碼只寫在說明裡，沒寫在標題
+            // [New] 如果關鍵字是純數字 (如 508, 509, 229.5) 或者是常見認證格式
+            // 優先搜 "cert" 欄位，其次搜 "content" (詳細說明)
             if (/^(\d{3,}|\d+\.\d+|[A-Z]{2,}-\w+)$/.test(kw)) {
-                queries.push({ field: 'description', value: kw, limit: 15, method: 'contains' });
+                queries.push({ field: 'cert', value: kw, limit: 15, method: 'contains' });
+                queries.push({ field: 'content', value: kw, limit: 15, method: 'contains' });
             }
         }
     }
 
     // 保底
     if (queries.length === 0 && isBike) {
-        addQuery('sort', '摩托車', 20);
+        addQuery('sortlist', '摩托車', 20);
     }
 
     return queries;
