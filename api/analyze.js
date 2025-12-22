@@ -358,7 +358,9 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
     }
 
     // === 4. SKU 自動偵測 ===
-    const skuPattern = /(?:LM|lm)?[- ]?(\d{4,5})/g;
+    // === 4. SKU 自動偵測 ===
+    // 修正 Regex: 4位數字必須有 LM 開頭（避免匹配年份 2018），5位數字可單獨存在
+    const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
     const skuMatches = [...message.matchAll(skuPattern)];
     for (const match of skuMatches) {
         const skuNum = match[1];

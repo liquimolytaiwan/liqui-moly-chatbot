@@ -382,7 +382,7 @@ async function searchProducts(query, searchInfo) {
     // === 除錯日誌 ===
     console.log('[searchProducts] vehicleType:', searchInfo?.vehicleType);
     console.log('[searchProducts] productCategory:', searchInfo?.productCategory);
-    
+
     try {
         let allResults = [];
 
@@ -484,7 +484,9 @@ async function searchProducts(query, searchInfo) {
             // 優先找 SKU 匹配的產品（通常是用戶最想查詢的）
             // 從用戶 query 中提取 SKU（4-5 位數字）
             // 支援多個 SKU 同時查詢 (Multi-SKU Support)
-            const skuPattern = /(?:lm|LM)?[- ]?(\d{4,5})/g;
+            // 支援多個 SKU 同時查詢 (Multi-SKU Support)
+            // 修正 Regex: 4位數字必須有 LM 開頭（避免匹配年份 2018），5位數字可單獨存在
+            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
             let titlesToExpand = [];
 
@@ -504,9 +506,9 @@ async function searchProducts(query, searchInfo) {
                 }
             }
 
-            // 如果沒找到 SKU 產品，fallback 到前 3 個標題
+            // 如果沒找到 SKU 產品，不進行標題擴展 (防止擴展到其他黏度造成雜訊)
             if (titlesToExpand.length === 0) {
-                titlesToExpand = [...new Set(uniqueProducts.map(p => p.title).filter(Boolean))].slice(0, 3);
+                console.log('[Title Expansion] No specific SKU match found, skipping expansion to avoid noise.');
             }
 
             console.log(`[Title Expansion] Titles to expand: ${JSON.stringify(titlesToExpand)}`);
@@ -546,7 +548,8 @@ async function searchProducts(query, searchInfo) {
         if (uniqueProducts.length > 0) {
             // 如果有 SKU 搜尋，優先返回 SKU 相關產品
             // 支援多個 SKU 同時查詢 (Multi-SKU Support)
-            const skuPattern = /(?:lm|LM)?[- ]?(\d{4,5})/g;
+            // 支援多個 SKU 同時查詢 (Multi-SKU Support)
+            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
             if (allSkuMatches.length > 0) {
                 let allSkuProducts = [];
@@ -581,7 +584,7 @@ async function searchProducts(query, searchInfo) {
             // 若 vehicleType = 摩托車 且 productCategory = 機油，過濾掉非 Motorbike 產品
             const vehicleType = searchInfo?.vehicleType;
             const productCategory = searchInfo?.productCategory;
-            
+
             if (vehicleType === '摩托車' && productCategory === '機油') {
                 const filteredProducts = uniqueProducts.filter(p => {
                     const title = (p.title || '').toLowerCase();
@@ -593,7 +596,7 @@ async function searchProducts(query, searchInfo) {
                     return formatProducts(filteredProducts.slice(0, 30));
                 }
             }
-            
+
             return formatProducts(uniqueProducts.slice(0, 30));
         }
 
