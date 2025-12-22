@@ -473,24 +473,31 @@ function generateWixQueries(analysis, keywords, message = '') {
     }
 
     // === 類別搜尋（直接使用 Wix 分類欄位）===
-    if (isBike && productCategory === '添加劑') {
-        addQuery('sort', '【摩托車】添加劑', 30);
-        addQuery('sort', '【摩托車】機車養護', 20);
-    } else if (isBike && productCategory === '機油') {
-        queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
-        if (isScooter) {
-            queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
+    // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
+    const hasSpecificMatch = vehicleMatch && vehicleMatch.spec && vehicleMatch.spec.recommendedSKU;
+
+    if (!hasSpecificMatch) {
+        if (isBike && productCategory === '添加劑') {
+            addQuery('sort', '【摩托車】添加劑', 30);
+            addQuery('sort', '【摩托車】機車養護', 20);
+        } else if (isBike && productCategory === '機油') {
+            queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+            if (isScooter) {
+                queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
+            }
+            addQuery('sort', '【摩托車】機油', 30);
+        } else if (!isBike && productCategory === '添加劑') {
+            addQuery('sort', '【汽車】添加劑', 30);
+        } else if (!isBike && productCategory === '機油') {
+            addQuery('sort', '【汽車】機油', 50);
+        } else if (productCategory === '鏈條') {
+            queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
+            addQuery('sort', '【摩托車】機車養護', 20);
+        } else if (productCategory === '清潔' || productCategory === '美容') {
+            addQuery('sort', '車輛美容', 30);
         }
-        addQuery('sort', '【摩托車】機油', 30);
-    } else if (!isBike && productCategory === '添加劑') {
-        addQuery('sort', '【汽車】添加劑', 30);
-    } else if (!isBike && productCategory === '機油') {
-        addQuery('sort', '【汽車】機油', 50);
-    } else if (productCategory === '鏈條') {
-        queries.push({ field: 'title', value: 'Chain', limit: 30, method: 'contains' });
-        addQuery('sort', '【摩托車】機車養護', 20);
-    } else if (productCategory === '清潔' || productCategory === '美容') {
-        addQuery('sort', '車輛美容', 30);
+    } else {
+        console.log('[Wix Queries] Skipping generic category search due to specific vehicle match');
     }
 
 

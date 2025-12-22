@@ -137,6 +137,7 @@ function buildConversationRules(rules) {
         const p = rules.principles;
         section += `
 ### 原則
+- **車型特例**：Ford Focus/Kuga EcoBoost 引擎只能用 5W-20 (948-B)，**絕對禁止**推薦 5W-30 (913-D)
 - **精確匹配認證**：Ford 1.5 EcoBoost 必須用 948-B，不可用 913-D 或 946-A
 - ${p.inquiry || '使用你的專業知識判斷需要哪些資訊，缺少則追問'}
 - ${p.context || '記住對話中用戶提供的所有車型資訊'}
