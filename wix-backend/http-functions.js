@@ -630,11 +630,11 @@ async function searchProducts(query, searchInfo) {
                 });
                 console.log('[Motorcycle Filter] Filtered ' + uniqueProducts.length + ' -> ' + filteredProducts.length + ' products');
                 if (filteredProducts.length > 0) {
-                    return formatProducts(filteredProducts.slice(0, 30));
+                    return formatProducts(filteredProducts.slice(0, 30), searchInfo);
                 }
             }
 
-            return formatProducts(uniqueProducts.slice(0, 30));
+            return formatProducts(uniqueProducts.slice(0, 30), searchInfo);
         }
 
         return '目前沒有匹配的產品資料';
@@ -646,25 +646,35 @@ async function searchProducts(query, searchInfo) {
 }
 
 // 格式化產品資料
-function formatProducts(products) {
+function formatProducts(products, searchInfo = null) {
     if (!products || products.length === 0) {
         return '目前沒有匹配的產品資料';
     }
+
+    const productCategory = searchInfo?.productCategory || '產品';
+    const isAdditive = productCategory === '添加劑';
 
     // 強烈警告，防止 AI 編造
     let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
 
 **以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
+`;
 
-違規範例（絕對禁止！）：
-- LM1580 ❌ 不存在
-- LM20852 ❌ 不存在
+    // 加入產品類別提示
+    if (isAdditive) {
+        context += `
+## 🚨 本次詢問是「添加劑」推薦，不是機油！
+**用戶詢問的是症狀問題（如吃機油、怠速抖動、漏油等），請推薦添加劑產品，不要推薦機油！**
+- 吃機油 → 推薦 LM1019 (Motor Clean)、LM2501 (機油止漏劑)、LM2502 (黏度積升劑)
+- 漏油 → 推薦 LM5182 (引擎止漏)、LM2501
+- 怠速抖動 → 推薦 LM5129、LM1803 (燃油系統清潔)
 
-**只能使用下方列表中的「產品編號」和「產品連結」！**
+`;
+    }
 
----
+    context += `---
 
-## 可用產品資料庫
+## 可用${productCategory}資料庫
 
 `;
 
