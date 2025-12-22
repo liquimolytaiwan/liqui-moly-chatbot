@@ -86,10 +86,19 @@ export async function post_chat(request) {
                 const session = await wixData.get('chatSessions', body.sessionId);
                 if (session && session.messages) {
                     conversationHistory = JSON.parse(session.messages);
+                    console.log('[Session] Loaded history from session:', conversationHistory.length, 'messages');
                 }
             } catch (e) {
                 console.error('Failed to get session:', e);
             }
+        }
+
+        // 🔍 調試：記錄對話歷史
+        console.log('[Chat] Message:', body.message);
+        console.log('[Chat] ConversationHistory length:', conversationHistory.length);
+        if (conversationHistory.length > 0) {
+            const lastMessages = conversationHistory.slice(-4);
+            console.log('[Chat] Recent messages:', JSON.stringify(lastMessages.map(m => ({ role: m.role, content: m.content?.substring(0, 100) }))));
         }
 
         // Step 1: 呼叫 Vercel API 進行 AI 分析
