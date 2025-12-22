@@ -126,14 +126,30 @@ ${contextSummary}用戶問題：「${message}」
 - 速克達機油：searchKeywords 加入 "Scooter"
 - 重機/檔車：JASO MA2 認證，10W-40 或 10W-50
 
-【汽車識別】
-- 特徵：年份+品牌+車型（如 2018 Elantra）、排量用 L 或 T（如 1.6L、2.0T）
+【汽車識別 - 使用你的專業知識！】
+- **重要**：使用你的汽車專業知識判斷車型！常見汽車品牌和車型你都應該知道
+- Hyundai 現代：Elantra、Sonata、Tucson、Santa Fe、i30、Ioniq 都是汽車
+- Kia 起亞：Sportage、Sorento、K5、Carnival 都是汽車
+- Toyota：Camry、Corolla、RAV4、Yaris 都是汽車
+- Honda：Civic、Accord、CR-V、HR-V 都是汽車（注意：CBR/CB 是摩托車）
+- Ford：Focus、Kuga、Mondeo、Fiesta 都是汽車
+- Nissan：Altima、Sentra、X-Trail、Kicks 都是汽車
+- Mazda：Mazda3、Mazda6、CX-5、CX-30 都是汽車
+- 歐系：BMW 3/5 Series、M3、Benz C/E/A Class、VW Golf、Audi A4 都是汽車
+- **如果是上述任何一個品牌/車型，vehicleType 必須是「汽車」**
+- 排量用 L 或 T 表示（如 1.6L、2.0T）通常是汽車
 - Ford EcoBoost (Focus MK4/Kuga MK3)：WSS-M2C948-B，5W-20
 - Ford 一般汽油：WSS-M2C913-D，5W-30
 - VAG 2021+ (Golf 8)：VW 508.00/509.00，0W-20
 - VAG 2020以前：VW 504.00/507.00，5W-30
 - 日韓系 2018+：API SP，0W-20 或 5W-30
 - 歐系：車廠認證（BMW LL、MB 229）
+
+【症狀識別規則 - 重要！】
+- 「吃機油」「吃雞油」「機油消耗」= **引擎問題**，不需要問變速箱類型
+- 「換檔不順」「換檔頓挫」= **變速箱問題**，需要問變速箱類型（手排/自排/CVT）
+- 「怠速抖動」「啟動困難」「積碳」= **引擎問題**
+- 「漏油」= 需要確認是哪個部位（引擎/變速箱/方向機）
 
 【searchKeywords 規則】
 - 必須包含：黏度（如 5W-30）、認證代碼、產品系列名
@@ -289,8 +305,21 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 function matchAdditiveGuide(message, vehicleType = null) {
     if (!additiveGuide.length) return [];
 
+    // 預設為汽車，除非明確是摩托車
     const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
     const matched = [];
+    const lowerMessage = message.toLowerCase();
+
+    // 常見症狀關鍵字和變體（包含打字錯誤）
+    const symptomAliases = {
+        '吃機油': ['吃機油', '吃雞油', '機油消耗', '耗機油', '燒機油'],
+        '怠速抖動': ['怠速抖', '抖動', '發抖', '震動'],
+        '啟動困難': ['啟動困難', '難發動', '發不動', '不好發'],
+        '漏油': ['漏油', '滲油', '油封'],
+        '異音': ['異音', '噪音', '達達聲', '敲擊聲'],
+        '積碳': ['積碳', '積炭'],
+        '缸壓不足': ['缸壓', '壓縮']
+    };
 
     for (const item of additiveGuide) {
         if (item.area !== targetArea) continue;
@@ -299,9 +328,25 @@ function matchAdditiveGuide(message, vehicleType = null) {
         const problem = (item.problem || '').toLowerCase();
         const explanation = (item.explanation || '').toLowerCase();
 
-        // 簡單關鍵字匹配
-        if (message.includes(problem.substring(0, 4)) ||
-            problem.split('').some(char => message.includes(char) && char.length > 2)) {
+        // 檢查症狀別名是否匹配
+        let isMatched = false;
+        for (const [symptom, aliases] of Object.entries(symptomAliases)) {
+            if (problem.includes(symptom.toLowerCase())) {
+                // 檢查用戶訊息是否包含任何別名
+                if (aliases.some(alias => lowerMessage.includes(alias.toLowerCase()))) {
+                    isMatched = true;
+                    break;
+                }
+            }
+        }
+
+        // 直接關鍵字匹配（取問題的前6個字）
+        if (!isMatched && problem.length >= 4) {
+            const keywords = problem.split(/[導致,，()（）]/).filter(k => k.length >= 2);
+            isMatched = keywords.some(kw => lowerMessage.includes(kw.trim()));
+        }
+
+        if (isMatched) {
             matched.push({
                 problem: item.problem,
                 explanation: item.explanation,
