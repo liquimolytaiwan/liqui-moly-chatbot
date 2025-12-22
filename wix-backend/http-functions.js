@@ -580,10 +580,47 @@ async function searchProducts(query, searchInfo) {
             }
 
             // 一般模式：返回前 30 個
-            // === 摩托車過濾 (Motorcycle Filter) - 最終防線 ===
-            // 若 vehicleType = 摩托車 且 productCategory = 機油，過濾掉非 Motorbike 產品
-            const vehicleType = searchInfo?.vehicleType;
+            // === 多車型過濾 (Multi-Vehicle Filter) ===
+            // 支援同時詢問汽車和摩托車的情況
+            const vehicles = searchInfo?.vehicles || [];
+            const isMultiVehicle = searchInfo?.isMultiVehicleQuery || vehicles.length > 1;
             const productCategory = searchInfo?.productCategory;
+
+            if (isMultiVehicle && productCategory === '機油') {
+                // 檢查是否同時包含汽車和摩托車
+                const hasMotorcycle = vehicles.some(v => v.vehicleType === '摩托車');
+                const hasCar = vehicles.some(v => v.vehicleType === '汽車');
+
+                if (hasMotorcycle && hasCar) {
+                    // 分別過濾汽車和摩托車產品
+                    const motorcycleProducts = uniqueProducts.filter(p => {
+                        const title = (p.title || '').toLowerCase();
+                        const sort = (p.sort || '').toLowerCase();
+                        return title.includes('motorbike') || sort.includes('摩托車');
+                    });
+
+                    const carProducts = uniqueProducts.filter(p => {
+                        const title = (p.title || '').toLowerCase();
+                        const sort = (p.sort || '').toLowerCase();
+                        return !title.includes('motorbike') && !sort.includes('摩托車') && sort.includes('機油');
+                    });
+
+                    console.log(`[Multi-Vehicle Filter] Motorcycle: ${motorcycleProducts.length}, Car: ${carProducts.length}`);
+
+                    // 合併結果，各取前 15 個，標記來源
+                    const combinedProducts = [
+                        ...motorcycleProducts.slice(0, 15),
+                        ...carProducts.slice(0, 15)
+                    ];
+
+                    if (combinedProducts.length > 0) {
+                        return formatMultiVehicleProducts(motorcycleProducts.slice(0, 15), carProducts.slice(0, 15));
+                    }
+                }
+            }
+
+            // 單一車型模式
+            const vehicleType = searchInfo?.vehicleType;
 
             if (vehicleType === '摩托車' && productCategory === '機油') {
                 const filteredProducts = uniqueProducts.filter(p => {
@@ -663,6 +700,71 @@ function formatProducts(products) {
         const details = p.content || 'N/A';
         context += `- 產品說明: ${details}\n\n`;
     });
+
+    return context;
+}
+
+// 格式化多車型產品資料（分別列出摩托車和汽車）
+function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
+    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
+
+**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
+
+---
+
+## 🏍️ 摩托車機油（標題含 Motorbike）
+
+**以下產品專用於摩托車/重機/速克達，請推薦給摩托車用戶：**
+
+`;
+
+    if (motorcycleProducts.length > 0) {
+        motorcycleProducts.forEach((p, i) => {
+            const pid = p.partno || p.partNo || p.Partno || p.PartNo || p.sku || p.SKU;
+            let url = pid ? `${PRODUCT_BASE_URL}${pid.toLowerCase()}` : 'https://www.liqui-moly-tw.com/products/';
+
+            context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
+            context += `- 產品編號: ${pid || 'N/A'}\n`;
+            context += `- 容量: ${p.size || 'N/A'}\n`;
+            context += `- 黏度: ${p.word2 || 'N/A'}\n`;
+            context += `- 認證: ${p.cert || 'N/A'}\n`;
+            context += `- 產品連結: ${url}\n\n`;
+        });
+    } else {
+        context += `（無符合的摩托車機油產品）\n\n`;
+    }
+
+    context += `---
+
+## 🚗 汽車機油（不含 Motorbike）
+
+**以下產品專用於汽車，請推薦給汽車用戶：**
+
+`;
+
+    if (carProducts.length > 0) {
+        carProducts.forEach((p, i) => {
+            const pid = p.partno || p.partNo || p.Partno || p.PartNo || p.sku || p.SKU;
+            let url = pid ? `${PRODUCT_BASE_URL}${pid.toLowerCase()}` : 'https://www.liqui-moly-tw.com/products/';
+
+            context += `### ${i + 1}. ${p.title || '未命名產品'}\n`;
+            context += `- 產品編號: ${pid || 'N/A'}\n`;
+            context += `- 容量: ${p.size || 'N/A'}\n`;
+            context += `- 黏度: ${p.word2 || 'N/A'}\n`;
+            context += `- 認證: ${p.cert || 'N/A'}\n`;
+            context += `- 產品連結: ${url}\n\n`;
+        });
+    } else {
+        context += `（無符合的汽車機油產品）\n\n`;
+    }
+
+    context += `---
+
+## ⚠️ 多車型推薦規則
+- **摩托車/重機/速克達**：只能推薦上方「🏍️ 摩托車機油」區塊的產品
+- **汽車**：只能推薦上方「🚗 汽車機油」區塊的產品
+- 禁止混用！汽車不可推薦 Motorbike 產品，摩托車不可推薦汽車機油
+`;
 
     return context;
 }

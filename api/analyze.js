@@ -169,6 +169,22 @@ ${contextSummary}用戶問題：「${message}」
             try {
                 const result = JSON.parse(jsonMatch[0]);
 
+                // === 向後兼容：從 vehicles 陣列提取頂層欄位 ===
+                if (result.vehicles && result.vehicles.length > 0) {
+                    // 取第一個車型的類型（兼容舊邏輯）
+                    result.vehicleType = result.vehicles[0].vehicleType;
+                    // 合併所有車型的搜尋關鍵字
+                    const allKeywords = [];
+                    for (const v of result.vehicles) {
+                        if (v.searchKeywords) {
+                            allKeywords.push(...v.searchKeywords);
+                        }
+                    }
+                    if (allKeywords.length > 0) {
+                        result.searchKeywords = [...new Set(allKeywords)];
+                    }
+                }
+
                 // === 使用知識庫增強 AI 結果 ===
                 enhanceWithKnowledgeBase(result, message, conversationHistory);
 
