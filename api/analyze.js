@@ -435,38 +435,49 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
-    // === 動態規格搜尋 ===
-    const viscosity = firstVehicle.viscosity || analysis.viscosity;
-    const certs = firstVehicle.certifications || analysis.certifications;
+    // === 修正：遍歷所有識別到的車型 (支援多車型同時搜尋) ===
+    let hasSpecificMatch = false;
+    const explicitCertKeywords = ['VW', 'MB', 'BMW', 'Ford', 'Porsche', 'Volvo', 'JASO', 'ACEA', 'API'];
 
-    if (viscosity) {
-        queries.push({ field: 'title', value: viscosity, limit: 30, method: 'contains' });
-        const viscosityNoHyphen = viscosity.replace('-', '');
-        if (viscosityNoHyphen !== viscosity) {
-            queries.push({ field: 'title', value: viscosityNoHyphen, limit: 20, method: 'contains' });
+    // 如果分析結果包含多個車型，逐一生成搜尋指令
+    const targetVehicles = (vehicles.length > 0) ? vehicles : [{}]; // 確保至少執行一次
+
+    for (const vehicle of targetVehicles) {
+        // 1. 動態規格搜尋 (黏度)
+        const viscosity = vehicle.viscosity || analysis.viscosity;
+        if (viscosity) {
+            queries.push({ field: 'title', value: viscosity, limit: 30, method: 'contains' });
+            const viscosityNoHyphen = viscosity.replace('-', '');
+            if (viscosityNoHyphen !== viscosity) {
+                queries.push({ field: 'title', value: viscosityNoHyphen, limit: 20, method: 'contains' });
+            }
         }
+
+        // 2. 動態規格搜尋 (認證)
+        const certs = vehicle.certifications || analysis.certifications;
+        if (certs && Array.isArray(certs)) {
+            for (const cert of certs) {
+                queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
+                queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
+            }
+        }
+
+        // 檢查是否為精確匹配 (AI 推論出明確車廠認證)
+        const hasInferredCert = certs && certs.some(c => explicitCertKeywords.some(k => c.includes(k)));
+        if (hasInferredCert) hasSpecificMatch = true;
     }
 
-    if (certs && Array.isArray(certs)) {
-        for (const cert of certs) {
-            queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
-            queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
-        }
-    }
-
-    // === 使用知識庫匹配車型並生成搜尋指令 ===
-    // === 使用知識庫匹配車型並生成搜尋指令 ===
-    // 使用分析階段識別到的車型 (支援上下文記憶)
+    // === 使用知識庫匹配車型 (Legacy Support for single matchedVehicle) ===
+    // 若未來 enhanceWithKnowledgeBase 支援多車型，這裡也需修改
     if (analysis.matchedVehicle) {
         const spec = analysis.matchedVehicle;
         console.log(`[Wix Queries] Knowledge Base matched: ${spec.brand} ${spec.model}`);
 
-        // 如果有推薦 SKU，優先搜尋
         if (spec.recommendedSKU) {
             queries.push({ field: 'partno', value: spec.recommendedSKU, limit: 5, method: 'eq' });
+            hasSpecificMatch = true; // 知識庫精確匹配
         }
 
-        // 使用 searchKeywords 生成搜尋
         if (spec.searchKeywords && Array.isArray(spec.searchKeywords)) {
             for (const kw of spec.searchKeywords) {
                 if (kw.startsWith('LM')) {
@@ -474,7 +485,6 @@ function generateWixQueries(analysis, keywords, message = '') {
                 } else if (kw.includes('W-') || kw.includes('W2') || kw.includes('W3') || kw.includes('W4') || kw.includes('W5')) {
                     queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
                 } else if (/^(\d{3,}|\d+\.\d+|[A-Z]{2,}-\w+)$/.test(kw)) {
-                    // 知識庫中的認證關鍵字，優先搜 cert 欄位
                     queries.push({ field: 'cert', value: kw, limit: 15, method: 'contains' });
                 } else {
                     queries.push({ field: 'content', value: kw, limit: 15, method: 'contains' });
@@ -483,16 +493,8 @@ function generateWixQueries(analysis, keywords, message = '') {
         }
     }
 
-    // === 類別搜尋（直接使用 Wix 分類欄位）===
-    // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
-    // === 類別搜尋（直接使用 Wix 分類欄位）===
-    // 如果已經精確匹配到車型且有推薦產品，或者 AI 已經推論出明確的車廠認證，則跳過寬鬆的類別搜尋
-    // 這樣可以避免像 Golf 8 這種不在硬編碼表但 AI 知道規格的情況被雜訊干擾
-    const explicitCertKeywords = ['VW', 'MB', 'BMW', 'Ford', 'Porsche', 'Volvo', 'JASO', 'ACEA', 'API'];
-    const hasInferredCert = firstVehicle.certifications && firstVehicle.certifications.some(c => explicitCertKeywords.some(k => c.includes(k)));
-
-    const hasSpecificMatch = (analysis.matchedVehicle && analysis.matchedVehicle.recommendedSKU) || hasInferredCert;
-
+    // === 類別搜尋 (Generic Fallback) ===
+    // 只有在完全沒有任何精確匹配時，才執行通用類別搜尋
     if (!hasSpecificMatch) {
         if (isBike && productCategory === '添加劑') {
             addQuery('sort', '【摩托車】添加劑', 30);
