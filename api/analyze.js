@@ -315,7 +315,12 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 
     // === 2. 使用知識庫匹配車型規格 ===
     // 從 vehicle-specs.json 動態讀取，不再硬編碼
-    const vehicleMatch = findVehicleByMessage(message);
+    // 優先檢查當前訊息，若無則檢查包含歷史的上下文（解決追問時上下文丟失問題）
+    let vehicleMatch = findVehicleByMessage(message);
+    if (!vehicleMatch) {
+        console.log('[Knowledge Base] No direct match in current message, checking context...');
+        vehicleMatch = findVehicleByMessage(combinedText);
+    }
     if (vehicleMatch) {
         console.log(`[Knowledge Base] Matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
         const spec = vehicleMatch.spec;
@@ -340,10 +345,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
         result.matchedVehicle = {
             brand: vehicleMatch.brand,
             model: vehicleMatch.model,
-            certification: spec.certification,
-            viscosity: spec.viscosity,
-            recommendedSKU: spec.recommendedSKU,
-            note: spec.note
+            ...spec // 保存完整規格以供後續搜尋使用
         };
     }
 
@@ -450,10 +452,11 @@ function generateWixQueries(analysis, keywords, message = '') {
     }
 
     // === 使用知識庫匹配車型並生成搜尋指令 ===
-    const vehicleMatch = findVehicleByMessage(message);
-    if (vehicleMatch && vehicleMatch.spec) {
-        const spec = vehicleMatch.spec;
-        console.log(`[Wix Queries] Knowledge Base matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
+    // === 使用知識庫匹配車型並生成搜尋指令 ===
+    // 使用分析階段識別到的車型 (支援上下文記憶)
+    if (analysis.matchedVehicle) {
+        const spec = analysis.matchedVehicle;
+        console.log(`[Wix Queries] Knowledge Base matched: ${spec.brand} ${spec.model}`);
 
         // 如果有推薦 SKU，優先搜尋
         if (spec.recommendedSKU) {
@@ -476,7 +479,9 @@ function generateWixQueries(analysis, keywords, message = '') {
 
     // === 類別搜尋（直接使用 Wix 分類欄位）===
     // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
-    const hasSpecificMatch = vehicleMatch && vehicleMatch.spec && vehicleMatch.spec.recommendedSKU;
+    // === 類別搜尋（直接使用 Wix 分類欄位）===
+    // 如果已經精確匹配到車型且有推薦產品，則跳過寬鬆的類別搜尋，避免雜訊
+    const hasSpecificMatch = analysis.matchedVehicle && analysis.matchedVehicle.recommendedSKU;
 
     if (!hasSpecificMatch) {
         if (isBike && productCategory === '添加劑') {
