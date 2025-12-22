@@ -87,17 +87,27 @@ export default async function handler(req, res) {
 async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
     // 準備對話上下文
     let contextSummary = '';
+    let symptomContext = '';  // 症狀上下文
+
     if (conversationHistory && conversationHistory.length > 0) {
-        const recentHistory = conversationHistory.slice(-4);
+        const recentHistory = conversationHistory.slice(-6);  // 增加到 6 條
         contextSummary = '對話上下文：\n' + recentHistory.map(m =>
-            `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 100)}...`
+            `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`  // 增加到 200 字
         ).join('\n') + '\n\n';
+
+        // 從對話歷史中提取症狀關鍵字
+        const allHistoryText = recentHistory.map(m => m.content).join(' ');
+        const symptomKeywords = ['吃機油', '吃雞油', '機油消耗', '怠速抖', '啟動困難', '漏油', '異音', '積碳', '換檔不順', '頓挫'];
+        const foundSymptoms = symptomKeywords.filter(s => allHistoryText.includes(s));
+        if (foundSymptoms.length > 0) {
+            symptomContext = `\n⚠️ 重要：對話中提到的症狀：「${foundSymptoms.join('、')}」，這表示用戶是在詢問添加劑解決方案，productCategory 應該是「添加劑」！\n`;
+        }
     }
 
     // === AI 主導分析提示詞 ===
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
-${contextSummary}用戶問題：「${message}」
+${contextSummary}${symptomContext}用戶問題：「${message}」
 
 返回格式：
 {
