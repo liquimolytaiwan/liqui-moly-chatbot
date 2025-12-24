@@ -45,6 +45,10 @@ export default async function handler(req, res) {
 
         // 取得產品列表 (使用快取)
         const products = await getProducts();
+
+        // Debug: 輸出 searchInfo 內容
+        console.log('[Search] Received searchInfo:', JSON.stringify(searchInfo || {}, null, 2));
+
         if (!products || products.length === 0) {
             Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
             return res.status(200).json({
