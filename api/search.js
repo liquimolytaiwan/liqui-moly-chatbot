@@ -171,22 +171,14 @@ function searchProducts(products, query, searchInfo) {
             for (const kw of keywords.slice(0, 4)) {
                 if (!kw) continue;
 
-                // 搜尋 title
-                const titleMatches = products.filter(p =>
-                    p.title && p.title.toLowerCase().includes(kw.toLowerCase())
-                );
-                for (const p of titleMatches.slice(0, 10)) {
-                    if (p.id && !seenIds.has(p.id)) {
-                        seenIds.add(p.id);
-                        allResults.push(p);
-                    }
-                }
+                // 搜尋 title 和 sort
+                const matches = products.filter(p => {
+                    const titleMatch = p.title && p.title.toLowerCase().includes(kw.toLowerCase());
+                    const sortMatch = p.sort && p.sort.toLowerCase().includes(kw.toLowerCase());
+                    return titleMatch || sortMatch;
+                });
 
-                // 搜尋 partno
-                const partnoMatches = products.filter(p =>
-                    p.partno && p.partno.toLowerCase().includes(kw.toLowerCase())
-                );
-                for (const p of partnoMatches.slice(0, 10)) {
+                for (const p of matches.slice(0, 10)) {
                     if (p.id && !seenIds.has(p.id)) {
                         seenIds.add(p.id);
                         allResults.push(p);
