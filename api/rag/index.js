@@ -78,6 +78,7 @@ ${symptomGuide}
         "vehicleType": "汽車/摩托車/船舶/自行車",
         "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
         "fuelType": "汽油/柴油/油電/純電/2T混合油",
+        "modelYear": "年份（如 2020）",
         "strokeType": "4T/2T/電動",
         "isElectricVehicle": false,
         "certifications": ["認證代碼"],
@@ -89,10 +90,19 @@ ${symptomGuide}
     "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": "匹配到的症狀名稱（如有）",
     "symptomSeverity": "mild/moderate/severe/none",
-    "needsProductRecommendation": true
+    "needsProductRecommendation": true,
+    "needsMoreInfo": false,
+    "missingInfo": []
 }
 
-【⚠️ 最重要：對話記憶】
+【⚠️ 最重要：資訊完整性檢查】
+- **汽車機油推薦必須有**：年份、車型、燃油類型（汽油/柴油/油電）
+  - 缺少任一項 → needsMoreInfo = true, missingInfo = ["年份", "車型", "燃油類型"]
+- **機車機油推薦必須有**：車型類別（檔車/速克達）
+  - 缺少 → needsMoreInfo = true, missingInfo = ["車型類別（檔車/速克達）"]
+  - 這非常重要：檔車用 JASO MA2，速克達用 JASO MB，推錯會傷害引擎！
+
+【⚠️ 對話記憶】
 - 對話上下文已有車型 → 直接使用，不要再問！
 - 用戶補充問題時，繼承之前的車型
 

@@ -1,0 +1,153 @@
+{
+    "_description": "精簡參照表 - 供 AI prompt 使用，避免膨脹",
+    "viscosity_by_vehicle": {
+        "日系車(Toyota/Lexus/Honda/Mazda/Nissan)": "0W-20",
+        "韓系車(Hyundai/Kia)": "0W-20 或 5W-30",
+        "Ford EcoBoost": "5W-20",
+        "Ford 一般引擎": "5W-30",
+        "BMW/Mercedes-Benz(汽油)": "5W-30 或 5W-40",
+        "Volvo": "0W-20",
+        "速克達": "10W-40",
+        "檔車/重機": "10W-40 或 10W-50",
+        "Harley-Davidson": "20W-50"
+    },
+    "cert_by_vehicle": {
+        "日系車 2019+": [
+            "API SP",
+            "ILSAC GF-6A"
+        ],
+        "日系車 2014-2018": [
+            "API SN"
+        ],
+        "Ford EcoBoost": [
+            "WSS-M2C948-B"
+        ],
+        "Ford 一般": [
+            "WSS-M2C913-D"
+        ],
+        "BMW 汽油": [
+            "LL-01"
+        ],
+        "BMW 柴油": [
+            "LL-04"
+        ],
+        "Mercedes 汽油": [
+            "MB 229.5"
+        ],
+        "Mercedes 柴油": [
+            "MB 229.51"
+        ],
+        "Volvo": [
+            "VCC RBS0-2AE"
+        ],
+        "速克達(無濕式離合器)": [
+            "JASO MB"
+        ],
+        "檔車/重機(有濕式離合器)": [
+            "JASO MA2",
+            "JASO MA"
+        ]
+    },
+    "symptom_to_sku": {
+        "吃機油/燒機油": [
+            "LM1019",
+            "LM2501",
+            "LM2502"
+        ],
+        "積碳/動力下降": [
+            "LM1019",
+            "LM2952",
+            "LM5129"
+        ],
+        "引擎漏油/油封老化": [
+            "LM5182",
+            "LM2501"
+        ],
+        "引擎過熱": [
+            "LM2506"
+        ],
+        "冷卻水漏水": [
+            "LM2533"
+        ],
+        "怠速抖動/不穩": [
+            "LM5129",
+            "LM2504"
+        ],
+        "啟動困難": [
+            "LM5129",
+            "LM1803"
+        ],
+        "DPF再生頻繁": [
+            "LM5148"
+        ],
+        "換檔頓挫(自排)": [
+            "LM5101"
+        ],
+        "換檔異音(手排)": [
+            "LM1040"
+        ],
+        "變速箱漏油": [
+            "LM1042",
+            "LM5135"
+        ]
+    },
+    "field_mapping": {
+        "_description": "關鍵字 → 對應的 WIX CMS 欄位",
+        "SKU(LMxxxx)": "partno (精確匹配 eq)",
+        "黏度(0W-20等)": "word2 或 title (包含 contains)",
+        "認證(API SP等)": "cert (包含 contains)",
+        "產品系列(Top Tec等)": "title (包含 contains)",
+        "產品類別(機油/添加劑)": "sort (包含 contains)",
+        "車型關鍵字": "title 或 content (包含 contains)"
+    },
+    "product_series": {
+        "機油": [
+            "Top Tec",
+            "Special Tec",
+            "Synthoil",
+            "Molygen",
+            "MoS2",
+            "Leichtlauf"
+        ],
+        "摩托車機油": [
+            "Motorbike",
+            "Scooter",
+            "Street",
+            "Race"
+        ],
+        "添加劑": [
+            "Engine Flush",
+            "Motor Clean",
+            "Oil Additive",
+            "Pro-Line",
+            "Cera Tec"
+        ]
+    },
+    "wix_field_priority": {
+        "_description": "搜尋時的欄位優先順序",
+        "SKU搜尋": [
+            "partno"
+        ],
+        "黏度搜尋": [
+            "word2",
+            "title"
+        ],
+        "認證搜尋": [
+            "cert",
+            "title"
+        ],
+        "產品名稱搜尋": [
+            "title"
+        ],
+        "類別搜尋": [
+            "sort"
+        ],
+        "全文搜尋": [
+            "title",
+            "content",
+            "word1",
+            "word2",
+            "sort"
+        ]
+    }
+}

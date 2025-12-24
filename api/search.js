@@ -210,17 +210,37 @@ function searchProducts(products, query, searchInfo) {
             }
         }
 
-        // 2. Fallback 搜尋（如果沒有結果）
+        // 2. Fallback 搜尋（如果沒有結果）- 擴大搜尋欄位範圍
         if (allResults.length === 0) {
+            console.log('[Search] No results from wixQueries, using fallback search');
             const keywords = searchInfo?.searchKeywords || [query];
+            console.log('[Search] Fallback keywords:', keywords);
+
             for (const kw of keywords.slice(0, 4)) {
                 if (!kw) continue;
+                const kwLower = kw.toLowerCase();
 
-                // 搜尋 title 和 sort
+                // 判斷關鍵字類型並對應到正確欄位
+                const isSkuKeyword = /^LM\d{4,5}$/i.test(kw);
+                const isViscosity = /^\d+W-?\d+$/i.test(kw);
+
                 const matches = products.filter(p => {
-                    const titleMatch = p.title && p.title.toLowerCase().includes(kw.toLowerCase());
-                    const sortMatch = p.sort && p.sort.toLowerCase().includes(kw.toLowerCase());
-                    return titleMatch || sortMatch;
+                    // SKU 精確匹配 partno
+                    if (isSkuKeyword && p.partno) {
+                        return p.partno.toUpperCase() === kw.toUpperCase();
+                    }
+                    // 黏度優先匹配 word2
+                    if (isViscosity && p.word2) {
+                        if (p.word2.toLowerCase().includes(kwLower)) return true;
+                    }
+                    // 全欄位搜尋：title, sort, partno, content, word1, word2
+                    const titleMatch = p.title && p.title.toLowerCase().includes(kwLower);
+                    const sortMatch = p.sort && p.sort.toLowerCase().includes(kwLower);
+                    const partnoMatch = p.partno && p.partno.toLowerCase().includes(kwLower);
+                    const contentMatch = p.content && p.content.toLowerCase().includes(kwLower);
+                    const word1Match = p.word1 && p.word1.toLowerCase().includes(kwLower);
+                    const word2Match = p.word2 && p.word2.toLowerCase().includes(kwLower);
+                    return titleMatch || sortMatch || partnoMatch || contentMatch || word1Match || word2Match;
                 });
 
                 for (const p of matches.slice(0, 10)) {
@@ -230,6 +250,7 @@ function searchProducts(products, query, searchInfo) {
                     }
                 }
             }
+            console.log(`[Search] Fallback found ${allResults.length} products`);
         }
 
         // 3. Title Expansion（完整版，含多 SKU 匹配）
@@ -361,7 +382,45 @@ function searchProducts(products, query, searchInfo) {
             });
         }
 
-        // 8. 一般格式化輸出
+        // 8. 最終 Fallback：如果完全沒有結果，返回對應類別的產品樣本
+        if (allResults.length === 0 && products.length > 0) {
+            console.log('[Search] All strategies failed, returning sample products');
+
+            let sampleProducts = [];
+            const vehicleType = searchInfo?.vehicleType;
+
+            // 根據 productCategory 和 vehicleType 返回對應類型的產品
+            if (productCategory === '機油') {
+                if (vehicleType === '摩托車') {
+                    sampleProducts = products.filter(p =>
+                        p.sort && (p.sort.includes('摩托車') || (p.title && p.title.toLowerCase().includes('motorbike')))
+                    ).slice(0, 20);
+                } else {
+                    sampleProducts = products.filter(p =>
+                        p.sort && p.sort.includes('機油') && !p.sort.includes('摩托車')
+                    ).slice(0, 20);
+                }
+            } else if (productCategory === '添加劑') {
+                sampleProducts = products.filter(p =>
+                    p.sort && p.sort.includes('添加劑')
+                ).slice(0, 20);
+            }
+
+            // 如果還是沒有，返回前 20 個產品
+            if (sampleProducts.length === 0) {
+                sampleProducts = products.slice(0, 20);
+            }
+
+            for (const p of sampleProducts) {
+                if (p.id && !seenIds.has(p.id)) {
+                    seenIds.add(p.id);
+                    allResults.push(p);
+                }
+            }
+            console.log(`[Search] Final fallback: ${allResults.length} products`);
+        }
+
+        // 9. 一般格式化輸出
         if (allResults.length > 0) {
             return formatProducts(allResults.slice(0, 30), searchInfo);
         }

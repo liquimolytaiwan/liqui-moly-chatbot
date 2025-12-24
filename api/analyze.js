@@ -27,6 +27,7 @@ const corsHeaders = {
 // ============================================
 let vehicleSpecs = {};
 let additiveGuide = [];
+let searchReference = {};
 
 try {
     const basePath = path.join(process.cwd(), 'data', 'knowledge');
@@ -42,6 +43,14 @@ try {
     console.log(`[Additive Guide] Loaded ${additiveGuide.length} items`);
 } catch (e) {
     console.warn('[Additive Guide] Failed to load:', e.message);
+}
+
+try {
+    const refPath = path.join(process.cwd(), 'data', 'knowledge', 'search-reference.json');
+    searchReference = JSON.parse(fs.readFileSync(refPath, 'utf-8'));
+    console.log('[Analyze] Search reference loaded');
+} catch (e) {
+    console.warn('[Analyze] Failed to load search reference:', e.message);
 }
 
 
@@ -134,10 +143,20 @@ ${transmissionProblems.join('\n')}
 `;
     }
 
+    // === 生成精簡參照表 prompt ===
+    const quickRefPrompt = searchReference.viscosity_by_vehicle ? `
+【⭐ LLM 內建知識優先 - 請用你的專業知識判斷！】
+你必須根據汽車專業知識推論認證和黏度，以下僅供參考：
+- 黏度參考: ${JSON.stringify(searchReference.viscosity_by_vehicle)}
+- 認證參考: ${JSON.stringify(searchReference.cert_by_vehicle)}
+- 症狀對應 SKU: ${JSON.stringify(searchReference.symptom_to_sku)}
+` : '';
+
     // === AI 主導分析提示詞（增強版） ===
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
+${quickRefPrompt}
 ${symptomGuide}
 返回格式：
 {
@@ -445,13 +464,16 @@ function generateWixQueries(analysis) {
         const isMotorcycle = vehicle.vehicleType === '摩托車';
         const isScooter = vehicle.vehicleSubType === '速克達';
 
-        // 1. 黏度搜尋
+        // 1. 黏度搜尋 - 優先使用 word2 欄位（這是 WIX CMS 的黏度欄位）
         if (vehicle.viscosity) {
-            queries.push({ field: 'title', value: vehicle.viscosity, limit: 30, method: 'contains' });
-            // 無連字號版本
+            // word2 是黏度專用欄位，優先搜尋
+            queries.push({ field: 'word2', value: vehicle.viscosity, limit: 30, method: 'contains' });
+            // 同時也搜尋 title 以增加命中率
+            queries.push({ field: 'title', value: vehicle.viscosity, limit: 20, method: 'contains' });
+            // 無連字號版本（如 5W30）
             const viscosityNoHyphen = vehicle.viscosity.replace('-', '');
             if (viscosityNoHyphen !== vehicle.viscosity) {
-                queries.push({ field: 'title', value: viscosityNoHyphen, limit: 20, method: 'contains' });
+                queries.push({ field: 'word2', value: viscosityNoHyphen, limit: 20, method: 'contains' });
             }
         }
 

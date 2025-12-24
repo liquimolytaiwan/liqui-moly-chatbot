@@ -31,12 +31,16 @@
   },
   "inquiry_principles": {
     "rule": "⚠️ 推薦任何產品前，必須先確認車型資訊！缺少資訊必須追問，禁止直接推薦！",
-    "required_info_oil": [
-      "車種（汽車/機車）",
+    "required_info_oil_car": [
       "年份",
-      "排氣量/CC數",
-      "燃油種類（汽油/柴油）"
+      "車型名稱",
+      "燃油類型（汽油/柴油/油電）"
     ],
+    "required_info_oil_motorcycle": [
+      "車型類別（檔車/速克達）",
+      "排氣量（選填，用於推薦黏度）"
+    ],
+    "motorcycle_subtype_rule": "⚠️ 機車必問：檔車使用 JASO MA2 機油，速克達使用 JASO MB 機油。推薦機油前必須先確認！",
     "required_info_additive": [
       "車種（汽車/機車）",
       "症狀或想解決的問題",
