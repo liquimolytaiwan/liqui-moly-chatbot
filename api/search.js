@@ -254,7 +254,7 @@ function searchProducts(products, query, searchInfo) {
             const filteredResults = allResults.filter(p => {
                 const title = (p.title || '').toLowerCase();
                 const sort = (p.sort || '').toLowerCase();
-                return title.includes('motorbike') || sort.includes('摩托車');
+                return title.includes('motorbike') || sort.includes('摩托車') || sort.includes('motorbike') || sort.includes('scooter');
             });
             console.log(`[Search] Motorcycle filter: ${allResults.length} -> ${filteredResults.length}`);
             if (filteredResults.length > 0) {
