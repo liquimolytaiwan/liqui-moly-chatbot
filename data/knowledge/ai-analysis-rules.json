@@ -6,7 +6,21 @@
             "如果對話上下文已經提到車型，不要再問",
             "用戶補充問題時，必須從上文找車型",
             "上文有車型 → 直接使用，不重複詢問"
-        ]
+        ],
+        "additive_inheritance": {
+            "description": "添加劑查詢繼承規則",
+            "vehicle_inheritance": "用戶問「那有汽油精嗎」「有添加劑推薦嗎」時，必須從上下文繼承車型（摩托車/汽車/速克達）",
+            "no_repeat_question": "禁止重新詢問「是汽車還是機車」，直接使用已知車型推薦對應的添加劑",
+            "motorcycle_additive": "摩托車用戶推薦 Motorbike 系列添加劑"
+        },
+        "scenario_inheritance": {
+            "description": "使用場景繼承規則",
+            "rule": "如果用戶之前說「跑山」「長途」「賽道」，推薦添加劑時也要考量這個場景",
+            "mapping": {
+                "跑山/激烈操駕": "優先推薦性能提升類（如 LM7820 Speed Shooter）",
+                "長途/高里程": "優先推薦清潔保養類（如 LM7822 Shooter）"
+            }
+        }
     },
     "scooter_identification": {
         "description": "台灣速克達識別",

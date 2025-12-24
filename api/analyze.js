@@ -511,15 +511,35 @@ function buildAnalysisPromptRules() {
 
     let promptRules = '';
 
-    // 對話記憶規則
+    // 對話記憶規則 - 從知識庫讀取
     if (rules.conversation_memory_rules) {
+        const memRules = rules.conversation_memory_rules;
         promptRules += `
 【⚠️ 最重要：對話記憶 - 嚴格遵守！】
-${rules.conversation_memory_rules.rules.map(r => `- ${r}`).join('\n')}
-- ⚠️ 用戶問「那有汽油精嗎」「有添加劑推薦嗎」時，必須從上下文繼承車型（摩托車/汽車/速克達）
-- ⚠️ 禁止重新詢問「是汽車還是機車」，直接使用已知車型推薦對應的添加劑
-- ⚠️ 添加劑推薦也要繼承車型！摩托車用戶推薦 Motorbike 系列添加劑
-`;
+${memRules.rules.map(r => `- ${r}`).join('\n')}`;
+
+        // 添加劑繼承規則
+        if (memRules.additive_inheritance) {
+            const ai = memRules.additive_inheritance;
+            promptRules += `
+- ⚠️ ${ai.vehicle_inheritance}
+- ⚠️ ${ai.no_repeat_question}
+- ⚠️ ${ai.motorcycle_additive}`;
+        }
+
+        // 使用場景繼承規則
+        if (memRules.scenario_inheritance) {
+            const si = memRules.scenario_inheritance;
+            promptRules += `
+- ⚠️ ⭐ ${si.rule}`;
+            if (si.mapping) {
+                for (const [scenario, recommendation] of Object.entries(si.mapping)) {
+                    promptRules += `
+  - ${scenario} → ${recommendation}`;
+                }
+            }
+        }
+        promptRules += '\n';
     }
 
     // 速克達識別
