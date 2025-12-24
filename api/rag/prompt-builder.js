@@ -16,6 +16,12 @@ function buildPrompt(knowledge, intent, productContext = '') {
     // === 1. 核心身份（永遠載入，約 300 tokens）===
     sections.push(buildCoreIdentity(knowledge.core));
 
+    // === 1.5 已確認車型資訊（避免重複追問）===
+    const vehicleSection = buildConfirmedVehicleInfo(intent);
+    if (vehicleSection) {
+        sections.push(vehicleSection);
+    }
+
     // === 2. 對話規則（精簡版，約 200 tokens）===
     if (knowledge.rules?.conversation) {
         sections.push(buildConversationRules(knowledge.rules.conversation));
@@ -53,6 +59,64 @@ function buildPrompt(knowledge, intent, productContext = '') {
     console.log(`[PromptBuilder] Built prompt with ${sections.filter(s => s).length} sections, ~${Math.round(finalPrompt.length / 4)} tokens`);
 
     return finalPrompt;
+}
+
+/**
+ * 建構已確認車型資訊（避免重複追問）
+ */
+function buildConfirmedVehicleInfo(intent) {
+    const aiAnalysis = intent?._aiAnalysis;
+    if (!aiAnalysis || !aiAnalysis.vehicles || aiAnalysis.vehicles.length === 0) {
+        return null;
+    }
+
+    const vehicle = aiAnalysis.vehicles[0];
+    const vehicleType = vehicle.vehicleType;
+    const vehicleSubType = vehicle.vehicleSubType;
+    const vehicleName = vehicle.vehicleName;
+    const fuelType = vehicle.fuelType;
+    const certifications = vehicle.certifications;
+
+    // 如果沒有識別出車型，不生成此區塊
+    if (!vehicleType) {
+        return null;
+    }
+
+    let section = `## ✅ 已確認的車型資訊（禁止重複詢問！）
+**⚠️ 以下資訊已從用戶訊息中識別，請直接推薦產品，不要再追問這些已知資訊！**
+
+- **車型名稱**：${vehicleName || '未指定'}
+- **車輛類型**：${vehicleType}`;
+
+    if (vehicleType === '摩托車' && vehicleSubType) {
+        section += `
+- **機車類別**：${vehicleSubType}（⚠️ 已確認！不要再問是檔車還是速克達！）`;
+        if (vehicleSubType === '速克達') {
+            section += `
+- **適用認證**：JASO MB（速克達專用）`;
+        } else if (vehicleSubType === '檔車' || vehicleSubType === '重機') {
+            section += `
+- **適用認證**：JASO MA2（檔車/重機專用）`;
+        }
+    }
+
+    if (vehicleType === '汽車') {
+        if (fuelType) {
+            section += `
+- **燃油類型**：${fuelType}（⚠️ 已確認！不要再問汽油還是柴油！）`;
+        }
+    }
+
+    if (certifications && certifications.length > 0) {
+        section += `
+- **認證需求**：${certifications.join(', ')}`;
+    }
+
+    section += `
+
+**📢 請直接根據上述已確認資訊推薦產品！**`;
+
+    return section;
 }
 
 /**
