@@ -16,165 +16,19 @@ const { convertAIResultToIntent, isValidAIResult } = require('./intent-converter
 let analyzeUserQueryFn = null;
 
 /**
- * 載入 AI 分析函式
+ * 載入 AI 分析函式 (非同步載入 ESM)
  */
-function getAnalyzeFunction() {
+async function loadAnalyzeFunction() {
     if (!analyzeUserQueryFn) {
         try {
-            // 直接引入 analyze.js 內的核心分析邏輯
-            const analyzePath = require('path').join(__dirname, '..', 'analyze.js');
-            delete require.cache[require.resolve(analyzePath)];
-
-            // analyze.js 預設匯出是 handler，我們需要內部的 analyzeUserQuery
-            // 由於 analyze.js 沒有匯出該函式，我們需要重構或複製邏輯
-            // 暫時使用 HTTP 呼叫方式（效能考量可優化）
-            analyzeUserQueryFn = async (apiKey, message, conversationHistory) => {
-                const fs = require('fs');
-                const path = require('path');
-
-                const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-                // 載入添加劑指南
-                let additiveGuide = [];
-                try {
-                    const guidePath = path.join(process.cwd(), 'data', 'knowledge', 'additive-guide.json');
-                    additiveGuide = JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
-                } catch (e) {
-                    console.warn('[RAG-AI] Failed to load additive guide');
-                }
-
-                // 準備對話上下文
-                let contextSummary = '';
-                if (conversationHistory && conversationHistory.length > 0) {
-                    const recentHistory = conversationHistory.slice(-6);
-                    contextSummary = '對話上下文：\n' + recentHistory.map(m =>
-                        `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`
-                    ).join('\n') + '\n\n';
-                }
-
-                // 動態生成症狀指南
-                let symptomGuide = '';
-                if (additiveGuide.length > 0) {
-                    const engineProblems = additiveGuide
-                        .filter(item => item.area === '汽車' && item.hasProduct && item.sort === '引擎疑難雜症')
-                        .map(item => `- ${item.problem}: ${item.solutions.join(', ')}`)
-                        .slice(0, 15);
-
-                    if (engineProblems.length > 0) {
-                        symptomGuide = `\n【症狀與添加劑對照】\n${engineProblems.join('\n')}\n`;
-                    }
-                }
-
-                // AI 分析提示詞（增強版）
-                const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
-
-${contextSummary}用戶問題：「${message}」
-${symptomGuide}
-返回格式：
-{
-    "isMultiVehicleQuery": false,
-    "vehicles": [{
-        "vehicleName": "完整車型名稱",
-        "vehicleType": "汽車/摩托車/船舶/自行車",
-        "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
-        "fuelType": "汽油/柴油/油電/純電/2T混合油",
-        "modelYear": "年份（如 2020）",
-        "strokeType": "4T/2T/電動",
-        "isElectricVehicle": false,
-        "certifications": ["認證代碼"],
-        "viscosity": "建議黏度",
-        "searchKeywords": ["搜尋關鍵字"]
-    }],
-    "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
-    "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
-    "recommendSynthetic": "full/semi/mineral/any",
-    "symptomMatched": "匹配到的症狀名稱（如有）",
-    "symptomSeverity": "mild/moderate/severe/none",
-    "needsProductRecommendation": true,
-    "needsMoreInfo": false,
-    "missingInfo": []
-}
-
-【⚠️ 最重要：資訊完整性檢查】
-- **汽車機油推薦必須有**：年份、車型、燃油類型（汽油/柴油/油電）
-  - 缺少任一項 → needsMoreInfo = true, missingInfo = ["年份", "車型", "燃油類型"]
-- **機車機油推薦必須有**：車型類別（檔車/速克達）
-  - 缺少 → needsMoreInfo = true, missingInfo = ["車型類別（檔車/速克達）"]
-  - 這非常重要：檔車用 JASO MA2，速克達用 JASO MB，推錯會傷害引擎！
-
-【⚠️ 對話記憶】
-- 對話上下文已有車型 → 直接使用，不要再問！
-- 用戶補充問題時，繼承之前的車型
-
-【⚠️ 台灣速克達識別】
-- **曼巴 = SYM MMBCU = 速克達（不是重機！）**
-- 勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX = 速克達
-- 速克達 → vehicleSubType = "速克達"
-
-【⚠️ JASO 認證規則】
-- **速克達（無濕式離合器）→ JASO MB**
-- **檔車/重機（有濕式離合器）→ JASO MA2**
-
-【車型識別】
-- 重機/檔車：Honda CBR/CB、Yamaha R系列/MT、Kawasaki Ninja、Ducati
-- 速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX
-
-【燃料類型】
-- 汽車：汽油/柴油/油電/純電
-- 機車：汽油(4T)/2T混合油/純電
-
-【使用場景】
-- 跑山、油門到底、激烈操駕 → usageScenario = "跑山"
-- 賽道、track day → usageScenario = "下賽道"
-- 長途、環島 → usageScenario = "長途旅行"
-- 其他 → usageScenario = "一般通勤"
-
-【機油推薦】
-- 跑山/賽道 → recommendSynthetic = "full"（全合成優先）
-- 一般通勤 → recommendSynthetic = "any"
-
-【添加劑推薦】
-- 柴油車 → Diesel 系列
-- 嚴重症狀 → Pro-Line 系列
-
-【searchKeywords 規則 - 必須遵守！】
-⚠️ 摩托車/速克達：searchKeywords 第一個必須是 "Motorbike"
-- 曼巴機油 → ["Motorbike", "10W-40", "Synth"]
-- 速克達機油 → ["Motorbike", "Scooter", "4T"]
-
-只返回 JSON，不要其他文字。`;
-
-                const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: analysisPrompt }] }],
-                        generationConfig: {
-                            temperature: 0.1,
-                            maxOutputTokens: 800
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    console.error('[RAG-AI] Gemini API error:', response.status);
-                    return null;
-                }
-
-                const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    try {
-                        return JSON.parse(jsonMatch[0]);
-                    } catch (e) {
-                        console.error('[RAG-AI] JSON parse error');
-                        return null;
-                    }
-                }
-                return null;
-            };
+            // 動態載入 ESM 模組
+            const analyzeModule = await import('../analyze.js');
+            if (analyzeModule && analyzeModule.analyzeUserQuery) {
+                analyzeUserQueryFn = analyzeModule.analyzeUserQuery;
+                console.log('[RAG] Successfully loaded analyze.js module');
+            } else {
+                console.warn('[RAG] analyze.js loaded but analyzeUserQuery not found');
+            }
         } catch (e) {
             console.error('[RAG] Failed to load analyze module:', e.message);
         }
@@ -200,7 +54,7 @@ async function processWithRAG(message, conversationHistory = [], productContext 
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
         try {
-            const analyzeFunc = getAnalyzeFunction();
+            const analyzeFunc = await loadAnalyzeFunction();
             if (analyzeFunc) {
                 console.log('[RAG] Attempting AI intent analysis...');
                 aiAnalysis = await analyzeFunc(apiKey, message, conversationHistory);

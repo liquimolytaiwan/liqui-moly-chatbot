@@ -665,3 +665,5 @@ ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
 
     return promptRules;
 }
+
+export { analyzeUserQuery };
