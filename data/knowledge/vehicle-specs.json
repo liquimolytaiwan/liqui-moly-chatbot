@@ -1,4 +1,61 @@
 {
+    "_metadata": {
+        "description": "車型規格與分類規則統一知識庫",
+        "principle": "使用 AI 專業知識判斷車輛類型、認證需求",
+        "motorcycle_brands": [
+            "Honda",
+            "Yamaha",
+            "Kawasaki",
+            "Suzuki",
+            "Ducati",
+            "Harley-Davidson",
+            "KTM",
+            "Triumph",
+            "BMW Motorrad",
+            "Aprilia"
+        ],
+        "motorcycle_series": [
+            "CBR",
+            "CB",
+            "Rebel",
+            "R1",
+            "R3",
+            "R6",
+            "R7",
+            "MT",
+            "YZF",
+            "Ninja",
+            "Z",
+            "GSX",
+            "SV",
+            "Panigale",
+            "Monster",
+            "Sportster"
+        ],
+        "product_rules": {
+            "motorcycle": "摩托車產品標題包含 'Motorbike'",
+            "scooter": "速克達產品標題包含 'Scooter' 或支援 JASO MB 認證",
+            "car": "汽車產品不包含 'Motorbike'"
+        },
+        "jaso_rules": {
+            "scooter": "速克達（無濕式離合器）→ JASO MB",
+            "motorcycle": "檔車/重機（有濕式離合器）→ JASO MA/MA2"
+        },
+        "special_certifications": {
+            "ford": {
+                "WSS-M2C948-B": {
+                    "description": "EcoBoost 引擎專用（Focus MK4、Kuga MK3）",
+                    "viscosity": "5W-20",
+                    "recommendedSKU": "LM3840"
+                },
+                "WSS-M2C913-D": {
+                    "description": "一般汽油車（Focus MK3、Kuga MK2）",
+                    "viscosity": "5W-30",
+                    "recommendedSKU": "LM2325"
+                }
+            }
+        }
+    },
     "Toyota": {
         "Altis": [
             {

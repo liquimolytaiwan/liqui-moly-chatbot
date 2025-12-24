@@ -165,29 +165,20 @@ function findVehicleByMessage(message) {
  * 取得車輛適用的認證
  */
 function getCertificationForVehicle(intent) {
-    const certData = loadJSON('certifications.json');
-    if (!certData || !certData.certifications) return null;
+    const vehicleSpecs = loadJSON('vehicle-specs.json');
+    if (!vehicleSpecs || !vehicleSpecs._metadata) return null;
 
+    const metadata = vehicleSpecs._metadata;
     const result = {};
 
     // Ford 特殊處理
-    if (intent.vehicleBrand === 'Ford') {
-        result.ford = certData.certifications.ford;
+    if (intent.vehicleBrand === 'Ford' && metadata.special_certifications?.ford) {
+        result.ford = metadata.special_certifications.ford;
     }
 
-    // 歐系車
-    if (['BMW', 'Mercedes-Benz', 'Volvo', 'VW', 'Audi'].includes(intent.vehicleBrand)) {
-        result.european = certData.certifications.european;
-    }
-
-    // 日韓系車
-    if (['Toyota', 'Lexus', 'Honda', 'Nissan', 'Mazda', 'Hyundai', 'Kia'].includes(intent.vehicleBrand)) {
-        result.asian = certData.certifications.asian;
-    }
-
-    // 機車
-    if (intent.isMotorcycle) {
-        result.motorcycle = certData.certifications.motorcycle;
+    // JASO 規則
+    if (intent.isMotorcycle && metadata.jaso_rules) {
+        result.jaso = metadata.jaso_rules;
     }
 
     return Object.keys(result).length > 0 ? result : null;
