@@ -54,6 +54,12 @@
                     "recommendedSKU": "LM2325"
                 }
             }
+        },
+        "special_scenarios": {
+            "pure_ev": {
+                "response": "純電動車不需要傳統機油，但可能需要齒輪油或煞車油。如需相關產品請告訴我！"
+            },
+            "principle": "其他特殊情境（高里程車、油電混合、特殊車款）使用 AI 專業知識判斷"
         }
     },
     "Toyota": {

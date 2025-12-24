@@ -11,13 +11,15 @@ let classificationRules = {};
 let specialScenarios = {};
 
 try {
-    const rulesPath = path.join(process.cwd(), 'data', 'knowledge', 'rules', 'classification-rules.json');
-    classificationRules = JSON.parse(fs.readFileSync(rulesPath, 'utf-8'));
+    const specsPath = path.join(process.cwd(), 'data', 'knowledge', 'vehicle-specs.json');
+    const vehicleSpecs = JSON.parse(fs.readFileSync(specsPath, 'utf-8'));
 
-    const scenariosPath = path.join(process.cwd(), 'data', 'knowledge', 'rules', 'special-scenarios.json');
-    specialScenarios = JSON.parse(fs.readFileSync(scenariosPath, 'utf-8'));
+    if (vehicleSpecs._metadata) {
+        classificationRules = vehicleSpecs._metadata;
+        specialScenarios = vehicleSpecs._metadata.special_scenarios || {};
+    }
 
-    console.log('[IntentClassifier] Rules loaded successfully');
+    console.log('[IntentClassifier] Rules loaded from vehicle-specs.json');
 } catch (e) {
     console.warn('[IntentClassifier] Failed to load rules:', e.message);
 }

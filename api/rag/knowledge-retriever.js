@@ -188,23 +188,15 @@ function getCertificationForVehicle(intent) {
  * 取得特殊情境資料
  */
 function getSpecialScenarioData(scenario) {
-    const scenarios = loadRule('special-scenarios.json');
+    const vehicleSpecs = loadJSON('vehicle-specs.json');
+    const scenarios = vehicleSpecs?._metadata?.special_scenarios;
     if (!scenarios) return null;
 
-    switch (scenario) {
-        case 'pure_ev_motorcycle':
-            return scenarios.electric_vehicle?.pure_ev_motorcycles;
-        case 'pure_ev_car':
-            return scenarios.electric_vehicle?.pure_ev_cars;
-        case 'hybrid':
-            return scenarios.electric_vehicle?.hybrid;
-        case 'high_mileage':
-            return scenarios.high_mileage;
-        case 'harley':
-            return scenarios.motorcycle_types?.harley;
-        default:
-            return null;
+    if (scenario === 'pure_ev_motorcycle' || scenario === 'pure_ev_car') {
+        return scenarios.pure_ev;
     }
+
+    return null;
 }
 
 module.exports = {
