@@ -30,19 +30,6 @@ function loadJSON(filename) {
 }
 
 /**
- * 載入規則 JSON
- */
-function loadRule(filename) {
-    try {
-        const filePath = path.join(process.cwd(), 'data', 'knowledge', 'rules', filename);
-        return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    } catch (e) {
-        console.warn(`[KnowledgeRetriever] Failed to load rule ${filename}:`, e.message);
-        return null;
-    }
-}
-
-/**
  * 根據意圖檢索知識
  * @param {Object} intent - 意圖分析結果
  * @returns {Object} - 檢索到的知識
@@ -62,7 +49,7 @@ async function retrieveKnowledge(intent) {
     knowledge.core = loadJSON('core-identity.json');
 
     // 2. 載入對話規則
-    knowledge.rules.conversation = loadRule('conversation-rules.json');
+    knowledge.rules.conversation = loadJSON('conversation-rules.json');
 
     // 3. 根據需求載入車型規格
     if (intent.needsSpecs && intent.vehicleBrand) {

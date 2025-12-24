@@ -237,11 +237,13 @@ function buildConversationRules(rules) {
     - ${hr.category_match || '用戶問機油不可推薦添加劑'} `;
     }
 
-    // 新結構：disclaimer
+    // 新結構：disclaimer（只在機油推薦時顯示）
+    // 注意：這裡的 intent 需要在 buildConversationRules 被調用時傳入
     if (rules.disclaimer) {
         section += `
-### 強制提醒語
-${rules.disclaimer.zh || '⚠️ 建議您參閱車主手冊確認適合的黏度與認證標準。'} `;
+### 強制提醒語（僅適用於機油推薦）
+- 如果推薦的是機油產品，回覆結尾加上：${rules.disclaimer.zh || '⚠️ 建議您參閱車主手冊確認適合的黏度與認證標準。'}
+- 如果推薦的是添加劑或其他產品，不需要加上這段提醒語 `;
     }
 
     return section;

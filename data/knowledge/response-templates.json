@@ -1,7 +1,7 @@
 {
     "product_recommendation": {
         "single_vehicle": {
-            "template": "針對您的 {vehicle}，推薦：\n\n1. {product_name}\n   - 產品連結：{product_link}\n   - 特點：符合 {certification} 認證，適合 {engine_type} 引擎\n\n👉 點擊產品連結「這哪裡買」可查詢鄰近店家\n💡 若查詢不到附近店家，歡迎填寫聯絡表單：https://www.liqui-moly-tw.com/contact ，我們會以簡訊回覆您購買資訊！\n\n⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。"
+            "template": "針對您的 {vehicle}，推薦：\n\n1. {product_name}\n   - 產品連結：{product_link}\n   - 特點：符合 {certification} 認證，適合 {engine_type} 引擎\n\n👉 點擊產品連結「這哪裡買」可查詢鄰近店家\n💡 若查詢不到附近店家，歡迎填寫聯絡表單：https://www.liqui-moly-tw.com/contact ，我們會以簡訊回覆您購買資訊！"
         },
         "multi_vehicle": {
             "template": "## 🚙 {vehicle_1}\n原廠建議：{certification_1} 認證，{viscosity_1} 黏度\n推薦產品：\n1. {product_1}\n   - 產品連結：{link_1}\n   - 說明：符合 {certification_1} 認證\n\n---\n\n## 🚙 {vehicle_2}\n原廠建議：{certification_2} 認證，{viscosity_2} 黏度\n推薦產品：\n1. {product_2}\n   - 產品連結：{link_2}\n   - 說明：符合 {certification_2} 認證\n\n👉 店家查詢系統：https://www.liqui-moly-tw.com/storefinder"
