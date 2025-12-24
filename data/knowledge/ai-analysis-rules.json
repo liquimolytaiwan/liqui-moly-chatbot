@@ -1,0 +1,303 @@
+{
+    "_description": "AI 分析用規則 - 從 analyze.js 提取的硬編碼內容",
+    "conversation_memory_rules": {
+        "description": "對話記憶規則",
+        "rules": [
+            "如果對話上下文已經提到車型，不要再問",
+            "用戶補充問題時，必須從上文找車型",
+            "上文有車型 → 直接使用，不重複詢問"
+        ]
+    },
+    "scooter_identification": {
+        "description": "台灣速克達識別",
+        "models": [
+            "勁戰",
+            "JET",
+            "DRG",
+            "曼巴",
+            "MMBCU",
+            "Force",
+            "SMAX",
+            "Tigra",
+            "KRV",
+            "Many",
+            "FORCE",
+            "JET S",
+            "JET SL",
+            "勁豪",
+            "Force2.0",
+            "六代勁戰",
+            "五代勁戰",
+            "Cygnus",
+            "CUXI",
+            "GPR",
+            "Racing",
+            "彪虎",
+            "Tigra 200",
+            "Tigra 250"
+        ],
+        "brands": [
+            "SYM",
+            "YAMAHA",
+            "KYMCO",
+            "PGO",
+            "Aeon"
+        ],
+        "characteristics": {
+            "vehicleSubType": "速克達",
+            "strokeType": "4T",
+            "transmission": "CVT 變速箱",
+            "clutch": "無濕式離合器"
+        }
+    },
+    "motorcycle_identification": {
+        "description": "檔車/重機識別",
+        "brands": [
+            "Honda",
+            "Yamaha",
+            "Kawasaki",
+            "Suzuki",
+            "Ducati",
+            "Harley-Davidson",
+            "KTM",
+            "Triumph",
+            "BMW",
+            "Aprilia"
+        ],
+        "series": [
+            "CBR",
+            "CB",
+            "Rebel",
+            "R1",
+            "R3",
+            "R6",
+            "R7",
+            "MT",
+            "YZF",
+            "Ninja",
+            "Z",
+            "ZX",
+            "GSX",
+            "SV",
+            "Panigale",
+            "Monster",
+            "Sportster"
+        ],
+        "characteristics": {
+            "clutch": "有濕式離合器"
+        }
+    },
+    "jaso_rules": {
+        "description": "JASO 認證規則",
+        "scooter": {
+            "certification": "JASO MB",
+            "reason": "速克達無濕式離合器",
+            "searchKeywords": [
+                "Scooter",
+                "JASO MB"
+            ]
+        },
+        "motorcycle": {
+            "certification": "JASO MA2",
+            "alternates": [
+                "JASO MA"
+            ],
+            "reason": "檔車/重機有濕式離合器",
+            "searchKeywords": [
+                "JASO MA2"
+            ]
+        }
+    },
+    "fuel_keywords": {
+        "diesel": [
+            "TDI",
+            "CDI",
+            "dCi",
+            "diesel",
+            "柴油",
+            "Diesel"
+        ],
+        "hybrid": [
+            "Hybrid",
+            "PHEV",
+            "油電",
+            "hybrid"
+        ],
+        "electric": [
+            "EV",
+            "純電",
+            "電動",
+            "BEV"
+        ]
+    },
+    "usage_scenario_mapping": {
+        "跑山": {
+            "keywords": [
+                "跑山",
+                "油門到底",
+                "重踩油門",
+                "激烈操駕",
+                "山路",
+                "跑彎"
+            ],
+            "recommendSynthetic": "full"
+        },
+        "下賽道": {
+            "keywords": [
+                "賽道",
+                "下賽道",
+                "track day",
+                "練車",
+                "track",
+                "circuit"
+            ],
+            "recommendSynthetic": "full"
+        },
+        "長途旅行": {
+            "keywords": [
+                "長途",
+                "旅行",
+                "長時間高速",
+                "環島",
+                "旅遊",
+                "長程"
+            ],
+            "recommendSynthetic": "full"
+        },
+        "一般通勤": {
+            "keywords": [],
+            "default": true,
+            "recommendSynthetic": "any"
+        }
+    },
+    "symptom_severity": {
+        "mild": {
+            "symptoms": [
+                "聲音變大",
+                "動力下降",
+                "油耗增加"
+            ],
+            "description": "輕微症狀"
+        },
+        "moderate": {
+            "symptoms": [
+                "換檔頓挫",
+                "怠速不穩",
+                "引擎抖動",
+                "冷車難發"
+            ],
+            "description": "中度症狀"
+        },
+        "severe": {
+            "symptoms": [
+                "吃機油",
+                "冒藍煙",
+                "嚴重漏油",
+                "引擎過熱",
+                "嚴重積碳"
+            ],
+            "description": "嚴重症狀",
+            "recommendKeyword": "Pro-Line"
+        }
+    },
+    "additive_recommendation_rules": {
+        "by_fuel": {
+            "diesel": {
+                "keywords": [
+                    "Diesel"
+                ],
+                "products": [
+                    "Diesel Purge",
+                    "Diesel Additive"
+                ]
+            }
+        },
+        "by_scenario": {
+            "激烈操駕": {
+                "products": [
+                    "Engine Flush",
+                    "MoS2"
+                ]
+            },
+            "長途旅行": {
+                "products": [
+                    "Oil Additive"
+                ]
+            },
+            "高里程": {
+                "products": [
+                    "Oil Leak Stop",
+                    "Valve Clean"
+                ]
+            }
+        }
+    },
+    "search_keyword_rules": {
+        "motorcycle": {
+            "required": [
+                "Motorbike"
+            ],
+            "scooter_additional": [
+                "Scooter",
+                "4T"
+            ],
+            "manual_additional": [
+                "JASO MA2"
+            ]
+        },
+        "examples": [
+            {
+                "scenario": "曼巴跑山推薦機油",
+                "keywords": [
+                    "Motorbike",
+                    "10W-40",
+                    "Synth",
+                    "Race"
+                ]
+            },
+            {
+                "scenario": "勁戰日常通勤",
+                "keywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "10W-40"
+                ]
+            },
+            {
+                "scenario": "速克達機油",
+                "keywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "4T"
+                ]
+            }
+        ]
+    },
+    "json_response_format": {
+        "isMultiVehicleQuery": false,
+        "vehicles": [
+            {
+                "vehicleName": "完整車型名稱",
+                "vehicleType": "汽車/摩托車/船舶/自行車",
+                "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
+                "fuelType": "汽油/柴油/油電/純電/2T混合油",
+                "strokeType": "4T/2T/電動",
+                "isElectricVehicle": false,
+                "certifications": [
+                    "認證代碼"
+                ],
+                "viscosity": "建議黏度",
+                "searchKeywords": [
+                    "搜尋關鍵字"
+                ]
+            }
+        ],
+        "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
+        "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
+        "recommendSynthetic": "full/semi/mineral/any",
+        "symptomMatched": null,
+        "symptomSeverity": "mild/moderate/severe/none",
+        "isGeneralProduct": false,
+        "needsProductRecommendation": true
+    }
+}

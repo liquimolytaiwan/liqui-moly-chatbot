@@ -28,6 +28,7 @@ const corsHeaders = {
 let vehicleSpecs = {};
 let additiveGuide = [];
 let searchReference = {};
+let aiAnalysisRules = {};
 
 try {
     const basePath = path.join(process.cwd(), 'data', 'knowledge');
@@ -51,6 +52,14 @@ try {
     console.log('[Analyze] Search reference loaded');
 } catch (e) {
     console.warn('[Analyze] Failed to load search reference:', e.message);
+}
+
+try {
+    const rulesPath = path.join(process.cwd(), 'data', 'knowledge', 'ai-analysis-rules.json');
+    aiAnalysisRules = JSON.parse(fs.readFileSync(rulesPath, 'utf-8'));
+    console.log('[Analyze] AI analysis rules loaded');
+} catch (e) {
+    console.warn('[Analyze] Failed to load AI analysis rules:', e.message);
 }
 
 
@@ -152,14 +161,11 @@ ${transmissionProblems.join('\n')}
 - 症狀對應 SKU: ${JSON.stringify(searchReference.symptom_to_sku)}
 ` : '';
 
-    // === AI 主導分析提示詞（增強版） ===
-    const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
-
-${contextSummary}${symptomContext}用戶問題：「${message}」
-${quickRefPrompt}
-${symptomGuide}
-返回格式：
-{
+    // === AI 主導分析提示詞（從知識庫動態生成） ===
+    const dynamicRules = buildAnalysisPromptRules();
+    const responseFormat = aiAnalysisRules?.json_response_format
+        ? JSON.stringify(aiAnalysisRules.json_response_format, null, 4)
+        : `{
     "isMultiVehicleQuery": false,
     "vehicles": [{
         "vehicleName": "完整車型名稱",
@@ -175,81 +181,20 @@ ${symptomGuide}
     "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
     "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
     "recommendSynthetic": "full/semi/mineral/any",
-    "symptomMatched": "匹配到的症狀名稱（如有）",
+    "symptomMatched": null,
     "symptomSeverity": "mild/moderate/severe/none",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
-}
+}`;
 
-【⚠️ 最重要：對話記憶 - 嚴格遵守！】
-- 如果對話上下文已經提到車型（如「曼巴」「勁戰」「Camry」），你就已經知道車型了，不要再問！
-- 用戶說「那推薦什麼添加劑」時，必須從上文找車型，禁止再問「是汽車還是機車」！
-- 繼承規則：上文有車型 → 直接使用，用戶只補充問題不是要換車
+    const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
-【⚠️ 台灣速克達識別 - 超級重要！】
-- **曼巴 = SYM MMBCU = 速克達（不是重機！不是檔車！）**
-- 勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many = 速克達
-- 速克達特徵：無濕式離合器、CVT 變速箱
-- 速克達 → vehicleSubType = "速克達"，strokeType = "4T"
-
-【⚠️ JASO 認證規則 - 非常重要！】
-- **速克達（無濕式離合器）→ JASO MB 認證**
-- **檔車/重機（有濕式離合器）→ JASO MA/MA2 認證**
-- 搜尋關鍵字：速克達要加 "JASO MB"，檔車要加 "JASO MA2"
-
-【摩托車識別】
-- 重機/檔車品牌：Honda CBR/CB、Yamaha R1/R3/R6/MT、Kawasaki Ninja/Z、Ducati、Harley、KTM、BMW
-- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many
-- 摩托車機油：searchKeywords 必須包含 "Motorbike"
-
-【汽車識別】
-- 使用你的汽車專業知識判斷車型、品牌、燃料類型
-- 柴油車關鍵字：TDI、CDI、dCi、diesel、柴油
-- 油電車關鍵字：Hybrid、PHEV、油電
-- 如果對話中已有車型，不要再問「是汽車還是機車」！
-
-
-【燃料類型判斷】
-- 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）
-- 機車：汽油(4T)/2T混合油/純電
-
-【使用場景判斷】
-- 跑山、油門到底、重踩油門、激烈操駕、山路 → usageScenario = "跑山"
-- 賽道、下賽道、track day、練車 → usageScenario = "下賽道"
-- 長途、旅行、長時間高速、環島 → usageScenario = "長途旅行"
-- 其他/未提及 → usageScenario = "一般通勤"
-
-【機油基礎油推薦規則】
-- 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
-- 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
-- 一般通勤 → recommendSynthetic = "any"
-
-【添加劑推薦規則】⭐新增
-- 柴油車 → 優先推薦 Diesel 系列添加劑（如 Diesel Purge、Diesel Additive）
-- 激烈操駕/跑山/賽道 → 推薦 Engine Flush 清積碳、MoS2 抗磨損
-- 長途旅行 → 推薦 Oil Additive 機油添加劑保護引擎
-- 高里程/老車 → 推薦 Oil Leak Stop 止漏、Valve Clean 汽門清潔
-- 嚴重症狀（吃機油、嚴重積碳、冒藍煙） → 優先推薦 Pro-Line 系列（強效）
-
-【症狀嚴重度判斷】⭐新增
-- 輕微：聲音變大、動力下降、油耗增加 → symptomSeverity = "mild"
-- 中度：換檔頓挫、怠速不穩、引擎抖動 → symptomSeverity = "moderate"
-- 嚴重：吃機油、冒藍煙、嚴重漏油、引擎過熱 → symptomSeverity = "severe"
-
-【searchKeywords 規則 - 非常重要！】
-⚠️ 摩托車/速克達機油：searchKeywords 第一個必須是 "Motorbike"
-⚠️ 速克達：加入 "Scooter" 或 "JASO MB"
-⚠️ 檔車/重機：加入 "JASO MA2"
-
-範例：
-- 曼巴跑山推薦機油 → searchKeywords: ["Motorbike", "10W-40", "Synth", "Race"]
-- 勁戰日常通勤 → searchKeywords: ["Motorbike", "Scooter", "10W-40"]
-- 速克達機油 → searchKeywords: ["Motorbike", "Scooter", "4T"]
-
-如果是添加劑：必須包含匹配到的症狀對應 SKU
-如果是柴油車添加劑：加入 "Diesel" 關鍵字
-如果症狀嚴重：加入 "Pro-Line" 關鍵字
-
+${contextSummary}${symptomContext}用戶問題：「${message}」
+${quickRefPrompt}
+${symptomGuide}
+返回格式：
+${responseFormat}
+${dynamicRules}
 只返回 JSON，不要其他文字。`;
 
     try {
@@ -544,4 +489,154 @@ function generateWixQueries(analysis) {
     }
 
     return uniqueQueries;
+}
+
+/**
+ * 從知識庫動態生成 AI 分析規則提示詞
+ * @returns {string} 分析規則提示詞
+ */
+function buildAnalysisPromptRules() {
+    const rules = aiAnalysisRules;
+    if (!rules || Object.keys(rules).length === 0) {
+        // 如果知識庫未載入，返回基本規則
+        return `
+【速克達/檔車識別】
+- 速克達：勁戰/JET/DRG/曼巴/Force/SMAX/Tigra/KRV/Many
+- 速克達 → JASO MB 認證
+- 檔車/重機 → JASO MA2 認證
+`;
+    }
+
+    let promptRules = '';
+
+    // 對話記憶規則
+    if (rules.conversation_memory_rules) {
+        promptRules += `
+【⚠️ 最重要：對話記憶 - 嚴格遵守！】
+${rules.conversation_memory_rules.rules.map(r => `- ${r}`).join('\n')}
+`;
+    }
+
+    // 速克達識別
+    if (rules.scooter_identification) {
+        const scooter = rules.scooter_identification;
+        promptRules += `
+【⚠️ 台灣速克達識別 - 超級重要！】
+- 速克達車款：${scooter.models.slice(0, 15).join('/')}
+- 速克達特徵：${scooter.characteristics.transmission}、${scooter.characteristics.clutch}
+- 速克達 → vehicleSubType = "${scooter.characteristics.vehicleSubType}"，strokeType = "${scooter.characteristics.strokeType}"
+`;
+    }
+
+    // JASO 規則
+    if (rules.jaso_rules) {
+        const jaso = rules.jaso_rules;
+        promptRules += `
+【⚠️ JASO 認證規則 - 非常重要！】
+- **速克達(${jaso.scooter.reason}) → ${jaso.scooter.certification} 認證**
+- **檔車/重機(${jaso.motorcycle.reason}) → ${jaso.motorcycle.certification} 認證**
+- 搜尋關鍵字：速克達要加 "${jaso.scooter.searchKeywords.join('" 或 "')}"，檔車要加 "${jaso.motorcycle.searchKeywords.join('" 或 "')}"
+`;
+    }
+
+    // 摩托車識別
+    if (rules.motorcycle_identification) {
+        const moto = rules.motorcycle_identification;
+        promptRules += `
+【摩托車識別】
+- 重機/檔車品牌：${moto.brands.slice(0, 8).join('、')}
+- 重機/檔車系列：${moto.series.slice(0, 10).join('/')}
+- 摩托車機油：searchKeywords 必須包含 "Motorbike"
+`;
+    }
+
+    // 燃料類型判斷
+    if (rules.fuel_keywords) {
+        const fuel = rules.fuel_keywords;
+        promptRules += `
+【汽車識別】
+- 使用你的汽車專業知識判斷車型、品牌、燃料類型
+- 柴油車關鍵字：${fuel.diesel.join('、')}
+- 油電車關鍵字：${fuel.hybrid.join('、')}
+- 如果對話中已有車型，不要再問「是汽車還是機車」！
+
+【燃料類型判斷】
+- 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）
+- 機車：汽油(4T)/2T混合油/純電
+`;
+    }
+
+    // 使用場景判斷
+    if (rules.usage_scenario_mapping) {
+        const scenarios = rules.usage_scenario_mapping;
+        promptRules += `
+【使用場景判斷】`;
+        for (const [scenario, config] of Object.entries(scenarios)) {
+            if (config.keywords && config.keywords.length > 0) {
+                promptRules += `
+- ${config.keywords.join('、')} → usageScenario = "${scenario}"`;
+            } else if (config.default) {
+                promptRules += `
+- 其他/未提及 → usageScenario = "${scenario}"`;
+            }
+        }
+        promptRules += `
+
+【機油基礎油推薦規則】
+- 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
+- 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
+- 一般通勤 → recommendSynthetic = "any"
+`;
+    }
+
+    // 症狀嚴重度判斷
+    if (rules.symptom_severity) {
+        const severity = rules.symptom_severity;
+        promptRules += `
+【症狀嚴重度判斷】`;
+        for (const [level, config] of Object.entries(severity)) {
+            promptRules += `
+- ${config.description}：${config.symptoms.join('、')} → symptomSeverity = "${level}"`;
+        }
+        promptRules += '\n';
+    }
+
+    // 添加劑推薦規則
+    if (rules.additive_recommendation_rules) {
+        promptRules += `
+【添加劑推薦規則】
+- 柴油車 → 優先推薦 Diesel 系列添加劑
+- 激烈操駕/跑山/賽道 → 推薦 Engine Flush 清積碳、MoS2 抗磨損
+- 長途旅行 → 推薦 Oil Additive 機油添加劑保護引擎
+- 高里程/老車 → 推薦 Oil Leak Stop 止漏、Valve Clean 汽門清潔
+- 嚴重症狀 → 優先推薦 Pro-Line 系列（強效）
+`;
+    }
+
+    // searchKeywords 規則
+    if (rules.search_keyword_rules) {
+        const skRules = rules.search_keyword_rules;
+        promptRules += `
+【searchKeywords 規則 - 非常重要！】
+⚠️ 摩托車/速克達機油：searchKeywords 第一個必須是 "${skRules.motorcycle.required[0]}"
+⚠️ 速克達：加入 "${skRules.motorcycle.scooter_additional.join('" 或 "')}"
+⚠️ 檔車/重機：加入 "${skRules.motorcycle.manual_additional.join('" 或 "')}"
+`;
+        if (skRules.examples && skRules.examples.length > 0) {
+            promptRules += `
+範例：`;
+            for (const ex of skRules.examples.slice(0, 3)) {
+                promptRules += `
+- ${ex.scenario} → searchKeywords: ${JSON.stringify(ex.keywords)}`;
+            }
+        }
+        promptRules += `
+
+如果是添加劑：必須包含匹配到的症狀對應 SKU
+如果是柴油車添加劑：加入 "Diesel" 關鍵字
+如果症狀嚴重：加入 "Pro-Line" 關鍵字
+`;
+    }
+
+    return promptRules;
 }
