@@ -360,6 +360,16 @@ function searchProducts(products, query, searchInfo) {
             });
             console.log(`[Search] Motorcycle filter (isScooter=${isScooter}): ${allResults.length} -> ${filteredResults.length}`);
             if (filteredResults.length > 0) {
+                // 在 return 前執行全合成優先排序
+                const recommendSynthetic = searchInfo?.recommendSynthetic;
+                if (recommendSynthetic === 'full' && filteredResults.length > 1) {
+                    console.log('[Search] Applying synthetic priority sorting for motorcycle (full synthetic first)');
+                    filteredResults.sort((a, b) => {
+                        const aScore = getSyntheticScore(a.title);
+                        const bScore = getSyntheticScore(b.title);
+                        return bScore - aScore; // 降冪排序，全合成優先
+                    });
+                }
                 return formatProducts(filteredResults.slice(0, 30), searchInfo);
             }
         }
