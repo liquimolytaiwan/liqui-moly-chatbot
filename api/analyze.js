@@ -409,8 +409,8 @@ function generateWixQueries(analysis) {
         const isMotorcycle = vehicle.vehicleType === '摩托車';
         const isScooter = vehicle.vehicleSubType === '速克達';
 
-        // 1. 黏度搜尋 - 優先使用 word2 欄位（這是 WIX CMS 的黏度欄位）
-        if (vehicle.viscosity) {
+        // 1. 黏度搜尋 - 只在機油推薦時執行
+        if (vehicle.viscosity && productCategory === '機油') {
             // word2 是黏度專用欄位，優先搜尋
             queries.push({ field: 'word2', value: vehicle.viscosity, limit: 30, method: 'contains' });
             // 同時也搜尋 title 以增加命中率
@@ -422,15 +422,17 @@ function generateWixQueries(analysis) {
             }
         }
 
-        // 2. 認證搜尋
-        const certs = vehicle.certifications || [];
-        for (const cert of certs) {
-            queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
-            queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
-            // 去空格版本
-            const certNoSpace = cert.replace(/\s+/g, '');
-            if (certNoSpace !== cert) {
-                queries.push({ field: 'cert', value: certNoSpace, limit: 20, method: 'contains' });
+        // 2. 認證搜尋 - 只在機油推薦時執行
+        if (productCategory === '機油') {
+            const certs = vehicle.certifications || [];
+            for (const cert of certs) {
+                queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
+                queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
+                // 去空格版本
+                const certNoSpace = cert.replace(/\s+/g, '');
+                if (certNoSpace !== cert) {
+                    queries.push({ field: 'cert', value: certNoSpace, limit: 20, method: 'contains' });
+                }
             }
         }
 
