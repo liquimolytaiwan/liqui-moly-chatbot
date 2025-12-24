@@ -423,15 +423,16 @@ function searchProducts(products, query, searchInfo) {
             });
         }
 
-        // 7.5 添加劑優先排序（根據症狀嚴重度和燃料類型）
+        // 7.5 添加劑優先排序（根據症狀嚴重度、燃料類型和使用場景）
         const symptomSeverity = searchInfo?.symptomSeverity;
         const fuelTypeForAdditive = searchInfo?.fuelType || searchInfo?.vehicles?.[0]?.fuelType;
+        const usageScenario = searchInfo?.usageScenario;
 
         if (productCategory === '添加劑' && allResults.length > 1) {
-            console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive})`);
+            console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
             allResults.sort((a, b) => {
-                const aScore = getAdditivePriorityScore(a.title, symptomSeverity, fuelTypeForAdditive);
-                const bScore = getAdditivePriorityScore(b.title, symptomSeverity, fuelTypeForAdditive);
+                const aScore = getAdditivePriorityScore(a.title, symptomSeverity, fuelTypeForAdditive, usageScenario);
+                const bScore = getAdditivePriorityScore(b.title, symptomSeverity, fuelTypeForAdditive, usageScenario);
                 return bScore - aScore; // 降冪排序
             });
         }
@@ -521,9 +522,9 @@ function getSyntheticScore(title) {
 }
 
 // ============================================
-// 判斷添加劑優先級（用於症狀嚴重度排序）
+// 判斷添加劑優先級（用於症狀嚴重度和使用場景排序）
 // ============================================
-function getAdditivePriorityScore(title, symptomSeverity, fuelType) {
+function getAdditivePriorityScore(title, symptomSeverity, fuelType, usageScenario) {
     if (!title) return 0;
     const titleLower = title.toLowerCase();
     let score = 1;
@@ -546,6 +547,28 @@ function getAdditivePriorityScore(title, symptomSeverity, fuelType) {
     if (symptomSeverity === 'moderate') {
         if (titleLower.includes('pro-line') || titleLower.includes('proline')) {
             score += 2;
+        }
+    }
+
+    // 使用場景排序（跑山/激烈操駕 → 性能提升類優先）
+    if (usageScenario === '跑山' || usageScenario === '下賽道') {
+        // LM7820 Speed Shooter 性能提升
+        if (titleLower.includes('speed') || titleLower.includes('7820')) {
+            score += 3;  // 跑山場景最優先
+        }
+        // 性能相關產品
+        if (titleLower.includes('race') || titleLower.includes('boost') || titleLower.includes('octane')) {
+            score += 2;
+        }
+    }
+
+    // 長途旅行 → 清潔保養類優先
+    if (usageScenario === '長途旅行') {
+        if (titleLower.includes('shooter') || titleLower.includes('clean') || titleLower.includes('7822')) {
+            score += 2;  // 清潔類優先
+        }
+        if (titleLower.includes('stabilizer') || titleLower.includes('21600')) {
+            score += 1.5;  // 穩定劑也適合長途
         }
     }
 
