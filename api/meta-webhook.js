@@ -634,15 +634,19 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 { content_type: 'text', title: '👤 真人客服', payload: 'HUMAN_AGENT' }
             ], source);
 
-            // 記錄對話到 Wix CMS
-            await saveConversationToWix({
+            // ========================================
+            // 🚀 優化：非同步儲存對話（Fire-and-Forget）
+            // 用戶已收到回覆，儲存對話在背景執行
+            // ========================================
+            saveConversationToWix({
                 senderId,
                 senderName: userProfile?.name || '',
                 source,
                 userMessage: text,
                 aiResponse: chatData.response,
                 hasAttachment: false
-            });
+            }).catch(e => console.error('[Meta Webhook] Background save failed:', e.message));
+
         } else {
             throw new Error('Chat API failed');
         }

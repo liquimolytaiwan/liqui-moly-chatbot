@@ -1,0 +1,165 @@
+/**
+ * LIQUI MOLY Chatbot - RAG Intent Converter
+ * 將 analyze.js 的 AI 分析結果轉換為 intent 格式
+ * 
+ * 用於「AI 優先、規則備援」混合架構
+ */
+
+/**
+ * 將 AI 分析結果轉換為 intent 格式
+ * @param {Object} aiResult - analyze.js 的 AI 分析結果
+ * @returns {Object} - 標準 intent 格式
+ */
+function convertAIResultToIntent(aiResult) {
+    if (!aiResult) {
+        return null;
+    }
+
+    const vehicle = aiResult.vehicles?.[0] || {};
+    const productCategory = aiResult.productCategory || '機油';
+    const isMotorcycle = vehicle.vehicleType === '摩托車';
+
+    // 判斷意圖類型
+    let intentType = 'product_recommendation';
+    if (!aiResult.needsProductRecommendation) {
+        intentType = 'general_inquiry';
+    }
+
+    // 判斷特殊情境
+    let specialScenario = null;
+    if (vehicle.isElectricVehicle) {
+        specialScenario = isMotorcycle ? 'pure_ev_motorcycle' : 'pure_ev_car';
+    }
+    // 檢查 Harley
+    const vehicleName = (vehicle.vehicleName || '').toLowerCase();
+    if (vehicleName.includes('harley') || vehicleName.includes('哈雷')) {
+        specialScenario = 'harley';
+    }
+
+    // 建構 intent 物件
+    const intent = {
+        type: intentType,
+        vehicleType: vehicle.vehicleType || '汽車',
+        vehicleModel: vehicle.vehicleName || null,
+        vehicleBrand: extractBrandFromVehicleName(vehicle.vehicleName),
+        productCategory: productCategory,
+        isElectricVehicle: vehicle.isElectricVehicle || false,
+        isMotorcycle: isMotorcycle,
+        isMultiVehicle: aiResult.isMultiVehicleQuery || false,
+        needsSpecs: productCategory === '機油' && !isMotorcycle,
+        needsSymptoms: productCategory === '添加劑',
+        needsTemplates: ['product_recommendation'],
+        specialScenario: specialScenario,
+        detectedKeywords: aiResult.searchKeywords || [],
+
+        // 保留 AI 分析的完整資訊供後續使用
+        _aiAnalysis: aiResult
+    };
+
+    // 處理認證資訊
+    if (vehicle.certifications && vehicle.certifications.length > 0) {
+        intent.certifications = vehicle.certifications;
+    }
+
+    // 處理黏度資訊
+    if (vehicle.viscosity) {
+        intent.viscosity = vehicle.viscosity;
+    }
+
+    // 處理症狀匹配
+    if (aiResult.symptomMatched) {
+        intent.symptomMatched = aiResult.symptomMatched;
+    }
+
+    // 處理添加劑指南匹配
+    if (aiResult.additiveGuideMatch) {
+        intent.additiveGuideMatch = aiResult.additiveGuideMatch;
+    }
+
+    // 處理 Wix 查詢（如果已生成）
+    if (aiResult.wixQueries) {
+        intent.wixQueries = aiResult.wixQueries;
+    }
+
+    console.log('[IntentConverter] Converted AI result to intent:', JSON.stringify(intent, null, 2));
+    return intent;
+}
+
+/**
+ * 從車輛名稱中提取品牌
+ * @param {string} vehicleName - 車輛全名
+ * @returns {string|null} - 品牌名稱
+ */
+function extractBrandFromVehicleName(vehicleName) {
+    if (!vehicleName) return null;
+
+    const lowerName = vehicleName.toLowerCase();
+
+    // 常見品牌對照
+    const brands = {
+        'ford': 'Ford',
+        'toyota': 'Toyota',
+        'honda': 'Honda',
+        'mazda': 'Mazda',
+        'nissan': 'Nissan',
+        'subaru': 'Subaru',
+        'hyundai': 'Hyundai',
+        'kia': 'Kia',
+        'bmw': 'BMW',
+        'mercedes': 'Mercedes-Benz',
+        'benz': 'Mercedes-Benz',
+        'audi': 'Audi',
+        'volkswagen': 'VW',
+        'vw': 'VW',
+        'volvo': 'Volvo',
+        'lexus': 'Lexus',
+        'mitsubishi': 'Mitsubishi',
+        'suzuki': 'Suzuki',
+        'yamaha': 'Yamaha',
+        'kawasaki': 'Kawasaki',
+        'ducati': 'Ducati',
+        'harley': 'Harley-Davidson',
+        'ktm': 'KTM',
+        'triumph': 'Triumph',
+        'sym': 'SYM',
+        'kymco': 'KYMCO',
+        '光陽': 'KYMCO',
+        '三陽': 'SYM',
+        'gogoro': 'Gogoro'
+    };
+
+    for (const [key, brand] of Object.entries(brands)) {
+        if (lowerName.includes(key)) {
+            return brand;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * 驗證 AI 分析結果是否有效
+ * @param {Object} aiResult - AI 分析結果
+ * @returns {boolean} - 是否有效
+ */
+function isValidAIResult(aiResult) {
+    if (!aiResult) return false;
+
+    // 必須有 vehicles 陣列
+    if (!aiResult.vehicles || !Array.isArray(aiResult.vehicles)) {
+        return false;
+    }
+
+    // 至少要有一個車輛或產品類別
+    if (aiResult.vehicles.length === 0 && !aiResult.productCategory) {
+        return false;
+    }
+
+    return true;
+}
+
+module.exports = {
+    convertAIResultToIntent,
+    extractBrandFromVehicleName,
+    isValidAIResult
+};
