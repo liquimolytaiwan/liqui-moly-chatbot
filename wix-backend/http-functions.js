@@ -108,12 +108,20 @@ export async function post_chat(request) {
             console.error('Vercel analyze API failed:', e);
         }
 
-        // Step 2: 從 Wix CMS 搜尋產品 (本地搜尋 + Title Expansion)
+        // Step 2: 呼叫 Vercel API 搜尋產品（統一搜尋邏輯）
         let productContext = "目前沒有產品資料";
         try {
-            productContext = await searchProducts(body.message, searchInfo);
+            const searchResponse = await fetch(`${VERCEL_API_URL}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: body.message, searchInfo })
+            });
+            const searchData = await searchResponse.json();
+            if (searchData.success && searchData.productContext) {
+                productContext = searchData.productContext;
+            }
         } catch (e) {
-            console.error('Product search failed:', e);
+            console.error('Vercel search API failed:', e);
         }
 
         // Step 3: 呼叫 Vercel API 進行聊天
@@ -374,7 +382,9 @@ export async function get_products(request) {
 }
 
 // ============================================
-// 產品搜尋邏輯
+// [DEPRECATED] 產品搜尋邏輯
+// 已改用 Vercel /api/search，以下函式保留供參考
+// 可在確認穩定後移除
 // ============================================
 
 async function searchProducts(query, searchInfo) {
@@ -617,7 +627,7 @@ async function searchProducts(query, searchInfo) {
     }
 }
 
-// 格式化產品資料
+// [DEPRECATED] 格式化產品資料 - 已移至 Vercel search.js
 function formatProducts(products, searchInfo = null) {
     if (!products || products.length === 0) {
         return '目前沒有匹配的產品資料';
@@ -716,7 +726,7 @@ function formatProducts(products, searchInfo = null) {
     return context;
 }
 
-// 格式化多車型產品資料（分別列出摩托車和汽車）
+// [DEPRECATED] 格式化多車型產品資料 - 已移至 Vercel search.js
 function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
     let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
 

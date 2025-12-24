@@ -1,8 +1,12 @@
 /**
  * LIQUI MOLY Chatbot - Vercel Serverless Function
- * 搜尋產品並執行 Title Expansion
+ * 統一產品搜尋邏輯（完整版）
  * 
- * 這個 API 取代了 Wix 端的搜尋邏輯，讓所有搜尋邏輯都在 Vercel 執行
+ * 功能：
+ * - 完整 Title Expansion（含多 SKU 匹配）
+ * - 多車型分類輸出
+ * - 症狀格式化說明
+ * - 產品快取機制
  */
 
 const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
@@ -49,20 +53,13 @@ export default async function handler(req, res) {
             });
         }
 
-        // 執行搜尋
-        const searchResults = searchProducts(products, message, searchInfo);
-
-        // 執行 Title Expansion
-        const expandedResults = titleExpansion(products, searchResults);
-
-        // 格式化輸出
-        const productContext = formatProducts(expandedResults);
+        // 執行完整版搜尋
+        const productContext = searchProducts(products, message, searchInfo);
 
         Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
         return res.status(200).json({
             success: true,
-            productContext,
-            productCount: expandedResults.length
+            productContext
         });
 
     } catch (error) {
@@ -72,163 +69,416 @@ export default async function handler(req, res) {
     }
 }
 
+// ============================================
 // 從 Wix 取得產品列表 (使用快取)
+// ============================================
 async function getProducts() {
     const now = Date.now();
 
     // 檢查快取是否有效
     if (productsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        console.log('Using cached products:', productsCache.length);
+        console.log('[Search] Using cached products:', productsCache.length);
         return productsCache;
     }
 
     try {
-        console.log('Fetching products from Wix...');
+        console.log('[Search] Fetching products from Wix...');
         const response = await fetch(`${WIX_API_URL}/products`);
         const data = await response.json();
 
         if (data.success && data.products) {
             productsCache = data.products;
             cacheTimestamp = now;
-            console.log('Fetched and cached products:', productsCache.length);
+            console.log('[Search] Fetched and cached products:', productsCache.length);
             return productsCache;
         }
     } catch (e) {
-        console.error('Failed to fetch products:', e);
+        console.error('[Search] Failed to fetch products:', e);
     }
 
     return productsCache || [];
 }
 
-// 搜尋產品
-function searchProducts(products, message, searchInfo) {
-    const results = [];
-    const seenIds = new Set();
+// ============================================
+// 完整版搜尋邏輯（移植自 Wix searchProducts）
+// ============================================
+function searchProducts(products, query, searchInfo) {
+    try {
+        let allResults = [];
+        const seenIds = new Set();
 
-    // 從 searchInfo 取得搜尋指令
-    const queries = searchInfo?.wixQueries || [];
-    const keywords = searchInfo?.searchKeywords || [];
+        // 1. 執行 Vercel 傳來的搜尋指令
+        const queries = searchInfo?.wixQueries || [];
 
-    // 偵測是否為大包裝查詢
-    const largePackageKeywords = ['大包裝', '大公升', '4l', '5l', '20l', '經濟包', '大瓶', '大容量'];
-    const messageLower = message.toLowerCase();
-    const isLargePackageQuery =
-        largePackageKeywords.some(lpk => messageLower.includes(lpk)) ||
-        keywords.some(kw => largePackageKeywords.some(lpk => kw.toLowerCase().includes(lpk)));
+        if (queries.length > 0) {
+            for (const task of queries) {
+                try {
+                    let matchedProducts = products.filter(p => {
+                        const fieldValue = p[task.field];
+                        if (!fieldValue) return false;
 
-    // 1. 執行搜尋指令
-    for (const query of queries) {
-        const matchedProducts = products.filter(p => {
-            const fieldValue = p[query.field];
-            if (!fieldValue) return false;
+                        const value = String(fieldValue).toLowerCase();
+                        const searchValue = String(task.value).toLowerCase();
 
-            const value = String(fieldValue).toLowerCase();
-            const searchValue = String(query.value).toLowerCase();
+                        if (task.method === 'contains') {
+                            return value.includes(searchValue);
+                        } else if (task.method === 'eq') {
+                            return value === searchValue;
+                        }
+                        return false;
+                    });
 
-            if (query.method === 'eq') {
-                return value === searchValue;
-            } else {
-                return value.includes(searchValue);
-            }
-        });
+                    // 附加條件 (andContains)
+                    if (task.andContains) {
+                        matchedProducts = matchedProducts.filter(p => {
+                            const fieldValue = p[task.andContains.field];
+                            if (!fieldValue) return false;
+                            return String(fieldValue).toLowerCase().includes(task.andContains.value.toLowerCase());
+                        });
+                    }
 
-        for (const p of matchedProducts.slice(0, query.limit || 20)) {
-            if (!seenIds.has(p.id)) {
-                seenIds.add(p.id);
-                results.push(p);
-            }
-        }
-    }
+                    // 標題過濾 (filterTitle)
+                    if (task.filterTitle && Array.isArray(task.filterTitle)) {
+                        matchedProducts = matchedProducts.filter(p =>
+                            p.title && task.filterTitle.some(keyword => p.title.includes(keyword))
+                        );
+                    }
 
-    // 2. 如果是大包裝查詢，額外搜尋大容量產品
-    if (isLargePackageQuery) {
-        console.log('Large package query detected');
-        const largeSizes = ['4L', '5L', '20L', '60L', '205L'];
+                    // 容量篩選 (filterSize)
+                    if (task.filterSize) {
+                        const sizeKeyword = task.filterSize.toLowerCase();
+                        matchedProducts = matchedProducts.filter(p =>
+                            p.size && p.size.toLowerCase().includes(sizeKeyword)
+                        );
+                    }
 
-        for (const p of products) {
-            if (p.size && largeSizes.some(size => p.size.includes(size))) {
-                if (!seenIds.has(p.id)) {
-                    seenIds.add(p.id);
-                    results.push(p);
+                    // 加入結果
+                    for (const p of matchedProducts.slice(0, task.limit || 20)) {
+                        if (p.id && !seenIds.has(p.id)) {
+                            seenIds.add(p.id);
+                            allResults.push(p);
+                        }
+                    }
+                } catch (taskError) {
+                    console.error(`[Search] Task error [${task.value}]:`, taskError);
                 }
             }
         }
-    }
 
-    console.log('Search results before expansion:', results.length);
-    
-    // === 摩托車過濾 (Motorcycle Filter) - 最終防線 ===
-    // 若 vehicleType = 摩托車 且 productCategory = 機油，過濾掉非 Motorbike 產品
-    const vehicleType = searchInfo?.vehicleType;
-    const productCategory = searchInfo?.productCategory;
-    
-    if (vehicleType === '摩托車' && productCategory === '機油') {
-        const filteredResults = results.filter(p => {
-            const title = (p.title || '').toLowerCase();
-            const sort = (p.sort || '').toLowerCase();
-            return title.includes('motorbike') || sort.includes('摩托車');
-        });
-        console.log('[Motorcycle Filter] Filtered', results.length, '->', filteredResults.length, 'products');
-        if (filteredResults.length > 0) {
-            return filteredResults;
-        }
-    }
-    
-    return results;
-}
+        // 2. Fallback 搜尋（如果沒有結果）
+        if (allResults.length === 0) {
+            const keywords = searchInfo?.searchKeywords || [query];
+            for (const kw of keywords.slice(0, 4)) {
+                if (!kw) continue;
 
-// Title Expansion - 核心邏輯
-function titleExpansion(products, searchResults) {
-    if (searchResults.length === 0 || searchResults.length > 20) {
-        return searchResults;
-    }
+                // 搜尋 title
+                const titleMatches = products.filter(p =>
+                    p.title && p.title.toLowerCase().includes(kw.toLowerCase())
+                );
+                for (const p of titleMatches.slice(0, 10)) {
+                    if (p.id && !seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allResults.push(p);
+                    }
+                }
 
-    const seenIds = new Set(searchResults.map(p => p.id));
-    const expandedResults = [...searchResults];
-
-    // 取得要擴展的標題
-    const titlesToExpand = [...new Set(searchResults.map(p => p.title).filter(Boolean))];
-
-    console.log('Titles to expand:', titlesToExpand);
-
-    // 搜尋同標題的所有產品
-    for (const title of titlesToExpand.slice(0, 3)) {
-        const matchedProducts = products.filter(p => p.title === title);
-        console.log(`Title "${title}" matched ${matchedProducts.length} products`);
-
-        for (const p of matchedProducts) {
-            if (!seenIds.has(p.id)) {
-                seenIds.add(p.id);
-                expandedResults.push(p);
+                // 搜尋 partno
+                const partnoMatches = products.filter(p =>
+                    p.partno && p.partno.toLowerCase().includes(kw.toLowerCase())
+                );
+                for (const p of partnoMatches.slice(0, 10)) {
+                    if (p.id && !seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allResults.push(p);
+                    }
+                }
             }
         }
-    }
 
-    console.log('Results after title expansion:', expandedResults.length);
-    return expandedResults;
+        // 3. Title Expansion（完整版，含多 SKU 匹配）
+        if (allResults.length > 0 && allResults.length <= 20) {
+            // 從 query 中提取 SKU
+            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
+            const allSkuMatches = [...query.matchAll(skuPattern)];
+            let titlesToExpand = [];
+
+            if (allSkuMatches.length > 0) {
+                for (const skuMatch of allSkuMatches) {
+                    const skuNum = skuMatch[1] || skuMatch[2];
+                    const fullSku = `LM${skuNum}`;
+                    const skuProduct = allResults.find(p => p.partno === fullSku);
+                    if (skuProduct && skuProduct.title && !titlesToExpand.includes(skuProduct.title)) {
+                        titlesToExpand.push(skuProduct.title);
+                    }
+                }
+            }
+
+            // 擴展同標題產品
+            for (const exactTitle of titlesToExpand) {
+                const sameTitle = products.filter(p => p.title === exactTitle);
+                for (const p of sameTitle) {
+                    if (p.id && !seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allResults.push(p);
+                    }
+                }
+            }
+        }
+
+        // 4. 多車型處理
+        const vehicles = searchInfo?.vehicles || [];
+        const isMultiVehicle = searchInfo?.isMultiVehicleQuery || vehicles.length > 1;
+        const productCategory = searchInfo?.productCategory;
+        const vehicleType = searchInfo?.vehicleType;
+
+        if (isMultiVehicle && productCategory === '機油') {
+            const hasMotorcycle = vehicles.some(v => v.vehicleType === '摩托車');
+            const hasCar = vehicles.some(v => v.vehicleType === '汽車');
+
+            if (hasMotorcycle && hasCar) {
+                // 分別過濾
+                const motorcycleProducts = allResults.filter(p => {
+                    const title = (p.title || '').toLowerCase();
+                    const sort = (p.sort || '').toLowerCase();
+                    return title.includes('motorbike') || sort.includes('摩托車');
+                });
+
+                const carProducts = allResults.filter(p => {
+                    const title = (p.title || '').toLowerCase();
+                    const sort = (p.sort || '').toLowerCase();
+                    return !title.includes('motorbike') && !sort.includes('摩托車') && sort.includes('機油');
+                });
+
+                console.log(`[Search] Multi-Vehicle: Motorcycle=${motorcycleProducts.length}, Car=${carProducts.length}`);
+
+                if (motorcycleProducts.length > 0 || carProducts.length > 0) {
+                    return formatMultiVehicleProducts(motorcycleProducts.slice(0, 15), carProducts.slice(0, 15));
+                }
+            }
+        }
+
+        // 5. 單一車型摩托車過濾
+        if (vehicleType === '摩托車' && productCategory === '機油') {
+            const filteredResults = allResults.filter(p => {
+                const title = (p.title || '').toLowerCase();
+                const sort = (p.sort || '').toLowerCase();
+                return title.includes('motorbike') || sort.includes('摩托車');
+            });
+            console.log(`[Search] Motorcycle filter: ${allResults.length} -> ${filteredResults.length}`);
+            if (filteredResults.length > 0) {
+                return formatProducts(filteredResults.slice(0, 30), searchInfo);
+            }
+        }
+
+        // 6. SKU 優先排序
+        if (allResults.length > 0) {
+            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
+            const allSkuMatches = [...query.matchAll(skuPattern)];
+
+            if (allSkuMatches.length > 0) {
+                let allSkuProducts = [];
+                let allMatchedTitles = new Set();
+
+                for (const skuMatch of allSkuMatches) {
+                    const skuNum = skuMatch[1] || skuMatch[2];
+                    const fullSku = `LM${skuNum}`;
+                    const skuProduct = allResults.find(p => p.partno === fullSku);
+
+                    if (skuProduct && skuProduct.title) {
+                        allMatchedTitles.add(skuProduct.title);
+                        const sameTitle = allResults.filter(p => p.title === skuProduct.title);
+                        allSkuProducts = allSkuProducts.concat(sameTitle);
+                    }
+                }
+
+                if (allSkuProducts.length > 0) {
+                    const skuProductsUnique = [...new Map(allSkuProducts.map(p => [p.id, p])).values()];
+                    const others = allResults.filter(p => !allMatchedTitles.has(p.title)).slice(0, 5);
+                    const prioritized = [...skuProductsUnique, ...others];
+                    return formatProducts(prioritized.slice(0, 20), searchInfo);
+                }
+            }
+        }
+
+        // 7. 一般格式化輸出
+        if (allResults.length > 0) {
+            return formatProducts(allResults.slice(0, 30), searchInfo);
+        }
+
+        return '目前沒有匹配的產品資料';
+
+    } catch (error) {
+        console.error('[Search] Global error:', error);
+        return '搜尋產品時發生錯誤';
+    }
 }
 
-// 格式化產品資料 (精簡版，避免 AI 截斷)
-function formatProducts(products) {
+// ============================================
+// 格式化產品資料（完整版）
+// ============================================
+function formatProducts(products, searchInfo = null) {
     if (!products || products.length === 0) {
         return '目前沒有匹配的產品資料';
     }
 
-    let context = `## ⚠️ 重要：只能推薦以下產品，禁止編造產品編號！
+    const productCategory = searchInfo?.productCategory || '產品';
+    const isAdditive = productCategory === '添加劑';
+    const additiveMatch = searchInfo?.additiveGuideMatch;
 
-## 可用產品列表 (共 ${products.length} 筆)
+    // 強烈警告，防止 AI 編造
+    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
 
-| 編號 | 產品名稱 | 容量 | 連結 |
-|------|----------|------|------|
+**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
 `;
 
-    products.forEach(p => {
-        const url = p.partno
-            ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}`
-            : 'https://www.liqui-moly-tw.com/products/';
+    // 加入產品類別提示和推薦依據
+    if (isAdditive) {
+        context += `
+## 🚨 本次詢問是「添加劑」推薦，不是機油！
+`;
+        // 如果有匹配到的症狀，顯示說明
+        if (additiveMatch && additiveMatch.items && additiveMatch.items.length > 0) {
+            context += `
+### 📋 症狀分析與推薦依據
+用戶描述的問題匹配到以下症狀，請根據說明向用戶解釋推薦原因：
 
-        context += `| ${p.partno || 'N/A'} | ${p.title || '未命名'} | ${p.size || 'N/A'} | ${url} |\n`;
+`;
+            for (const item of additiveMatch.items) {
+                context += `**症狀：${item.problem}**
+🔍 原因說明：${item.explanation}
+💊 推薦產品：${item.solutions.join(', ')}
+
+`;
+            }
+            context += `**回覆要求：**
+1. 先說明可能的原因（參考上述「原因說明」）
+2. 再推薦對應的產品
+3. 解釋產品如何解決這個問題
+
+`;
+        } else {
+            context += `**用戶詢問的是症狀問題，請推薦添加劑產品！**
+
+`;
+        }
+    } else if (productCategory === '機油') {
+        context += `
+### 📋 機油推薦依據
+**回覆要求：**
+1. 說明推薦的黏度依據（如 5W-30 適合日韓系車）
+2. 說明認證依據（如符合 API SP）
+3. 列出推薦產品
+
+`;
+    }
+
+    context += `---
+
+## 可用${productCategory}資料庫
+
+`;
+
+    products.forEach((p, i) => {
+        const pid = p.partno || p.partNo || p.Partno || p.PartNo || p.sku || p.SKU;
+        let url = p.productPageUrl || 'https://www.liqui-moly-tw.com/products/';
+
+        if (pid) {
+            url = `${PRODUCT_BASE_URL}${pid.toLowerCase()}`;
+        } else if (p.title) {
+            const match = p.title.match(/(?:LM|lm)?[- ]?(\d{4,5})/);
+            if (match) {
+                url = `${PRODUCT_BASE_URL}lm${match[1]}`;
+            }
+        }
+
+        context += `### ${i + 1}. ${p.title || '未命名產品'}
+- 產品編號: ${pid || 'N/A'}
+- 容量/尺寸: ${p.size || 'N/A'}
+- 系列/次分類: ${p.word1 || 'N/A'}
+- 黏度: ${p.word2 || 'N/A'}
+- 認證/規格: ${p.cert || 'N/A'}
+- 分類: ${p.sort || 'N/A'}
+- 建議售價: ${p.price || '請洽店家詢價'}
+- 產品連結: ${url}
+- 產品說明: ${p.content || 'N/A'}
+
+`;
     });
+
+    return context;
+}
+
+// ============================================
+// 格式化多車型產品資料
+// ============================================
+function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
+    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
+
+**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
+
+---
+
+## 🏍️ 摩托車機油（標題含 Motorbike）
+
+**以下產品專用於摩托車/重機/速克達，請推薦給摩托車用戶：**
+
+`;
+
+    if (motorcycleProducts.length > 0) {
+        motorcycleProducts.forEach((p, i) => {
+            const pid = p.partno || p.partNo || p.sku;
+            const url = pid ? `${PRODUCT_BASE_URL}${pid.toLowerCase()}` : 'https://www.liqui-moly-tw.com/products/';
+
+            context += `### ${i + 1}. ${p.title || '未命名產品'}
+- 產品編號: ${pid || 'N/A'}
+- 容量: ${p.size || 'N/A'}
+- 黏度: ${p.word2 || 'N/A'}
+- 認證: ${p.cert || 'N/A'}
+- 產品連結: ${url}
+
+`;
+        });
+    } else {
+        context += `（無符合的摩托車機油產品）
+
+`;
+    }
+
+    context += `---
+
+## 🚗 汽車機油（不含 Motorbike）
+
+**以下產品專用於汽車，請推薦給汽車用戶：**
+
+`;
+
+    if (carProducts.length > 0) {
+        carProducts.forEach((p, i) => {
+            const pid = p.partno || p.partNo || p.sku;
+            const url = pid ? `${PRODUCT_BASE_URL}${pid.toLowerCase()}` : 'https://www.liqui-moly-tw.com/products/';
+
+            context += `### ${i + 1}. ${p.title || '未命名產品'}
+- 產品編號: ${pid || 'N/A'}
+- 容量: ${p.size || 'N/A'}
+- 黏度: ${p.word2 || 'N/A'}
+- 認證: ${p.cert || 'N/A'}
+- 產品連結: ${url}
+
+`;
+        });
+    } else {
+        context += `（無符合的汽車機油產品）
+
+`;
+    }
+
+    context += `---
+
+## ⚠️ 多車型推薦規則
+- **摩托車/重機/速克達**：只能推薦上方「🏍️ 摩托車機油」區塊的產品
+- **汽車**：只能推薦上方「🚗 汽車機油」區塊的產品
+- 禁止混用！汽車不可推薦 Motorbike 產品，摩托車不可推薦汽車機油
+`;
 
     return context;
 }
