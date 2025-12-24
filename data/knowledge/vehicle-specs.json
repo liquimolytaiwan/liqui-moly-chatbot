@@ -685,5 +685,317 @@
                 "note": "Harley-Davidson 需使用高黏度機油"
             }
         ]
+    },
+    "SYM": {
+        "曼巴 MMBCU": [
+            {
+                "years": "2021+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "recommendedSKU": "LM20754",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "曼巴",
+                    "mamba",
+                    "mmbcu",
+                    "MMBCU",
+                    "SYM曼巴"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "DRG": [
+            {
+                "years": "2019+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "drg",
+                    "DRG",
+                    "龍",
+                    "sym drg"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "JET": [
+            {
+                "years": "2016+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "jet",
+                    "JET",
+                    "sym jet",
+                    "jet s",
+                    "jet sl",
+                    "jet sr"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "FNX": [
+            {
+                "years": "2018+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "fnx",
+                    "FNX",
+                    "sym fnx"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ]
+    },
+    "Yamaha-Scooter": {
+        "勁戰": [
+            {
+                "years": "全年式",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "勁戰",
+                    "cygnus",
+                    "新勁戰",
+                    "五代勁戰",
+                    "六代勁戰",
+                    "勁戰6代",
+                    "勁戰5代"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "Force": [
+            {
+                "years": "2016+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "force",
+                    "Force",
+                    "force 2.0"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "SMAX": [
+            {
+                "years": "2014+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "smax",
+                    "SMAX",
+                    "s-max",
+                    "大羊"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "NMAX": [
+            {
+                "years": "2020+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "nmax",
+                    "NMAX"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ]
+    },
+    "KYMCO": {
+        "KRV": [
+            {
+                "years": "2021+",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "krv",
+                    "KRV",
+                    "光陽 krv"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "Many": [
+            {
+                "years": "全年式",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "many",
+                    "Many",
+                    "光陽 many"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "GP125": [
+            {
+                "years": "全年式",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "gp125",
+                    "GP125",
+                    "gp 125"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ],
+        "Racing": [
+            {
+                "years": "全年式",
+                "type": "速克達",
+                "fuel": "汽油",
+                "certification": [
+                    "JASO MB"
+                ],
+                "viscosity": "10W-40",
+                "searchKeywords": [
+                    "Motorbike",
+                    "Scooter",
+                    "JASO MB",
+                    "10W-40"
+                ],
+                "aliases": [
+                    "racing",
+                    "Racing",
+                    "雷霆"
+                ],
+                "note": "速克達無濕式離合器，使用 JASO MB 認證機油"
+            }
+        ]
+    },
+    "Gogoro": {
+        "全車系": [
+            {
+                "years": "全年式",
+                "type": "電動速克達",
+                "fuel": "純電",
+                "certification": [],
+                "viscosity": "無需機油",
+                "isElectricVehicle": true,
+                "searchKeywords": [],
+                "aliases": [
+                    "gogoro",
+                    "Gogoro",
+                    "狗肉"
+                ],
+                "note": "電動機車不需更換機油，但傳動系統仍需保養"
+            }
+        ]
     }
 }

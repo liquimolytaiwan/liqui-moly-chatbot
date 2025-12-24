@@ -30,22 +30,14 @@
         "Monster",
         "Sportster"
     ],
-    "taiwan_scooters": [
-        "勁戰",
-        "JET",
-        "DRG",
-        "SMAX",
-        "Force",
-        "KRV",
-        "Many",
-        "Tigra",
-        "4MICA",
-        "MMBCU",
-        "Racing",
-        "JBUBU",
-        "RCS"
-    ],
-    "motorcycle_product_rule": "摩托車產品標題包含 'Motorbike'",
-    "scooter_product_rule": "速克達產品標題包含 'Scooter'",
-    "car_product_rule": "汽車產品不包含 'Motorbike'"
+    "scooter_note": "速克達車型資料已移至 vehicle-specs.json 統一管理",
+    "product_rules": {
+        "motorcycle": "摩托車產品標題包含 'Motorbike'",
+        "scooter": "速克達產品標題包含 'Scooter' 或支援 JASO MB 認證",
+        "car": "汽車產品不包含 'Motorbike'"
+    },
+    "jaso_rules": {
+        "scooter": "速克達（無濕式離合器）→ JASO MB",
+        "motorcycle": "檔車/重機（有濕式離合器）→ JASO MA/MA2"
+    }
 }

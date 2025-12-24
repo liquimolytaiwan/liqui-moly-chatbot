@@ -37,7 +37,7 @@ try {
 }
 
 try {
-    const guidePath = path.join(process.cwd(), 'data', 'additive-guide.json');
+    const guidePath = path.join(process.cwd(), 'data', 'knowledge', 'additive-guide.json');
     additiveGuide = JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
     console.log(`[Additive Guide] Loaded ${additiveGuide.length} items`);
 } catch (e) {
@@ -162,14 +162,25 @@ ${symptomGuide}
     "needsProductRecommendation": true
 }
 
-【重要：對話記憶】
-- ⚠️ 如果對話上下文中已經提供車型資訊（如 BRZ、Elantra 等），直接使用，不要再問！
-- 用戶補充資訊時，要結合之前的問題（如「吃機油」+「BRZ」= 為 BRZ 推薦解決吃機油的添加劑）
+【⚠️ 最重要：對話記憶 - 嚴格遵守！】
+- 如果對話上下文已經提到車型（如「曼巴」「勁戰」「Camry」），你就已經知道車型了，不要再問！
+- 用戶說「那推薦什麼添加劑」時，必須從上文找車型，禁止再問「是汽車還是機車」！
+- 繼承規則：上文有車型 → 直接使用，用戶只補充問題不是要換車
+
+【⚠️ 台灣速克達識別 - 超級重要！】
+- **曼巴 = SYM MMBCU = 速克達（不是重機！不是檔車！）**
+- 勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many = 速克達
+- 速克達特徵：無濕式離合器、CVT 變速箱
+- 速克達 → vehicleSubType = "速克達"，strokeType = "4T"
+
+【⚠️ JASO 認證規則 - 非常重要！】
+- **速克達（無濕式離合器）→ JASO MB 認證**
+- **檔車/重機（有濕式離合器）→ JASO MA/MA2 認證**
+- 搜尋關鍵字：速克達要加 "JASO MB"，檔車要加 "JASO MA2"
 
 【摩托車識別】
-- 品牌：Honda (CBR/CB/Rebel)、Yamaha (R1/R3/R6/MT/YZF)、Kawasaki (Ninja/Z)、Suzuki (GSX/SV)、Ducati、Harley、KTM、Triumph、BMW Motorrad
-- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many（都是 4T）
-- 2T 機車：老式速克達、競技車（需 2T 混合油）
+- 重機/檔車品牌：Honda CBR/CB、Yamaha R1/R3/R6/MT、Kawasaki Ninja/Z、Ducati、Harley、KTM、BMW
+- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many
 - 摩托車機油：searchKeywords 必須包含 "Motorbike"
 
 【汽車識別】
@@ -177,6 +188,7 @@ ${symptomGuide}
 - 柴油車關鍵字：TDI、CDI、dCi、diesel、柴油
 - 油電車關鍵字：Hybrid、PHEV、油電
 - 如果對話中已有車型，不要再問「是汽車還是機車」！
+
 
 【燃料類型判斷】
 - 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）

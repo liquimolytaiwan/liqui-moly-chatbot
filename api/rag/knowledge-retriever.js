@@ -92,6 +92,9 @@ async function retrieveKnowledge(intent) {
         knowledge.specialScenario = getSpecialScenarioData(intent.specialScenario);
     }
 
+    // 8. 載入統一 URL
+    knowledge.urls = loadJSON('urls.json');
+
     console.log('[KnowledgeRetriever] Retrieved knowledge keys:', Object.keys(knowledge).filter(k => knowledge[k] !== null));
     return knowledge;
 }

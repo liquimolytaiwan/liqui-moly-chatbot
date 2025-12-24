@@ -1,0 +1,16 @@
+{
+    "official": {
+        "storefinder": "https://www.liqui-moly-tw.com/storefinder",
+        "contact": "https://www.liqui-moly-tw.com/contact",
+        "cooperate": "https://www.liqui-moly-tw.com/cooperate",
+        "carmall": "https://www.carmall.com.tw/"
+    },
+    "social": {
+        "facebook": "https://www.facebook.com/liquimolytaiwan",
+        "instagram": "https://www.instagram.com/liquimolytaiwan"
+    },
+    "global": {
+        "main": "https://www.liqui-moly.com"
+    },
+    "product_base": "https://www.liqui-moly-tw.com/products/"
+}

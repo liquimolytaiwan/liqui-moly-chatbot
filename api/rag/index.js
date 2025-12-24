@@ -37,7 +37,7 @@ function getAnalyzeFunction() {
                 // 載入添加劑指南
                 let additiveGuide = [];
                 try {
-                    const guidePath = path.join(process.cwd(), 'data', 'additive-guide.json');
+                    const guidePath = path.join(process.cwd(), 'data', 'knowledge', 'additive-guide.json');
                     additiveGuide = JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
                 } catch (e) {
                     console.warn('[RAG-AI] Failed to load additive guide');
@@ -92,37 +92,40 @@ ${symptomGuide}
     "needsProductRecommendation": true
 }
 
-【車型識別規則】
-- 使用你的汽機車專業知識判斷車型、認證、黏度
-- 摩托車品牌：Honda、Yamaha、Kawasaki、Suzuki、Ducati、Harley、KTM
-- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX
-- 如果對話已有車型資訊，直接從上下文獲取，不要重複詢問
+【⚠️ 最重要：對話記憶】
+- 對話上下文已有車型 → 直接使用，不要再問！
+- 用戶補充問題時，繼承之前的車型
 
-【燃料類型判斷】
-- 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）
+【⚠️ 台灣速克達識別】
+- **曼巴 = SYM MMBCU = 速克達（不是重機！）**
+- 勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX = 速克達
+- 速克達 → vehicleSubType = "速克達"
+
+【⚠️ JASO 認證規則】
+- **速克達（無濕式離合器）→ JASO MB**
+- **檔車/重機（有濕式離合器）→ JASO MA2**
+
+【車型識別】
+- 重機/檔車：Honda CBR/CB、Yamaha R系列/MT、Kawasaki Ninja、Ducati
+- 速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX
+
+【燃料類型】
+- 汽車：汽油/柴油/油電/純電
 - 機車：汽油(4T)/2T混合油/純電
 
-【使用場景判斷】
-- 跑山、油門到底、重踩油門、激烈操駕、山路 → usageScenario = "跑山"
-- 賽道、下賽道、track day、練車 → usageScenario = "下賽道"
-- 長途、旅行、長時間高速、環島 → usageScenario = "長途旅行"
-- 其他/未提及 → usageScenario = "一般通勤"
+【使用場景】
+- 跑山、油門到底、激烈操駕 → usageScenario = "跑山"
+- 賽道、track day → usageScenario = "下賽道"
+- 長途、環島 → usageScenario = "長途旅行"
+- 其他 → usageScenario = "一般通勤"
 
-【機油基礎油推薦規則】
-- 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
-- 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
+【機油推薦】
+- 跑山/賽道 → recommendSynthetic = "full"（全合成優先）
 - 一般通勤 → recommendSynthetic = "any"
 
-【添加劑推薦規則】
-- 柴油車 → 優先推薦 Diesel 系列添加劑
-- 激烈操駕/跑山 → 推薦 Engine Flush 清積碳
-- 高里程/老車 → 推薦 Oil Leak Stop 止漏
-- 嚴重症狀 → 優先推薦 Pro-Line 系列（強效）
-
-【症狀嚴重度判斷】
-- 輕微：聲音變大、動力下降 → symptomSeverity = "mild"
-- 中度：換檔頓挫、怠速不穩 → symptomSeverity = "moderate"
-- 嚴重：吃機油、冒藍煙、漏油 → symptomSeverity = "severe"
+【添加劑推薦】
+- 柴油車 → Diesel 系列
+- 嚴重症狀 → Pro-Line 系列
 
 只返回 JSON，不要其他文字。`;
 
