@@ -22,10 +22,7 @@ function buildPrompt(knowledge, intent, productContext = '') {
         sections.push(vehicleSection);
     }
 
-    // === 2. 對話規則（精簡版，約 200 tokens）===
-    if (knowledge.rules?.conversation) {
-        sections.push(buildConversationRules(knowledge.rules.conversation));
-    }
+    // (舊的会話規則已合併至核心身份)
 
     // === 3. 車型規格（按需載入）===
     if (knowledge.vehicleSpec) {
@@ -216,63 +213,32 @@ ${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須�
 - 用戶問進貨/批發 → 回覆：「${core.business_model.wholesale_inquiry_response}」`;
     }
 
-    return section;
-}
-
-
-
-/**
- * 建構對話規則（適配精簡後的新結構）
- */
-function buildConversationRules(rules) {
-    if (!rules) return '';
-
-    let section = `## 對話規則`;
-
-    // 新結構：principles
-    if (rules.principles) {
-        const p = rules.principles;
+    // 加入產品推薦優先順序規則
+    if (core.recommendation_rules) {
+        const rp = core.recommendation_rules;
         section += `
-### 原則
-        - ** 車型特例 **：Ford Focus / Kuga EcoBoost 引擎只能用 5W - 20(948 - B)，** 絕對禁止 ** 推薦 5W - 30(913 - D)
-            - ** 精確匹配認證 **：Ford 1.5 EcoBoost 必須用 948 - B，不可用 913 - D 或 946 - A
-                - ${p.inquiry || '使用你的專業知識判斷需要哪些資訊，缺少則追問'}
-    - ${p.context || '記住對話中用戶提供的所有車型資訊'}
-    - ${p.format || '推薦前先說明理由（認證、黏度），再列出產品'}
-    - ${p.professional_judgment || '使用 AI 內建的汽車知識判斷認證、黏度等'} `;
+        
+## ⭐ 產品推薦優先順序（重要！）
+- **特定認證優先**：${rp.specific_certification_first}
+- **日韓系用黏度**：${rp.generic_api_use_viscosity}
+- **有產品就推薦**：${rp.always_recommend}`;
     }
 
-    // 推薦優先順序規則（新增）
-    if (rules.recommendation_priority) {
-        const rp = rules.recommendation_priority;
+    // 加入強制提醒語 (Disclaimer)
+    if (core.disclaimer) {
         section += `
-### ⭐ 產品推薦優先順序（重要！）
-- ** 特定認證優先 **：${rp.specific_certification_first || '若車輛有車廠認證需求，必須優先推薦符合該認證的產品'}
-- ** 日韓系用黏度 **：${rp.generic_api_use_viscosity || '日韓系車輛僅需 API 認證時，以符合建議黏度的產品為主'}
-- ** 有產品就推薦 **：${rp.always_recommend || '只要資料庫有符合條件的產品就應該推薦，不要說「未顯示完全符合」'} `;
-    }
 
-    // 新結構：hard_rules
-    if (rules.hard_rules) {
-        const hr = rules.hard_rules;
-        section += `
-### 硬規則
-        - ${hr.motorcycle_products || '摩托車用戶只能推薦標題含 Motorbike 的產品'}
-    - ${hr.no_repeat || '禮貌性回應時禁止重複推薦產品'}
-    - ${hr.category_match || '用戶問機油不可推薦添加劑'} `;
-    }
-
-    // 新結構：disclaimer（只在機油推薦時顯示）
-    // 注意：這裡的 intent 需要在 buildConversationRules 被調用時傳入
-    if (rules.disclaimer) {
-        section += `
-### 強制提醒語（僅適用於機油推薦）
-- 如果推薦的是機油產品，回覆結尾加上：${rules.disclaimer.zh || '⚠️ 建議您參閱車主手冊確認適合的黏度與認證標準。'}
-- 如果推薦的是添加劑或其他產品，不需要加上這段提醒語 `;
+## ⚠️ 強制提醒語（僅適用於機油推薦）
+- 如果推薦的是機油產品，回覆結尾加上：${core.disclaimer.zh}
+- 如果推薦的是添加劑或其他產品，不需要加上這段提醒語`;
     }
 
     return section;
 }
+
+
+
+
 
 
 

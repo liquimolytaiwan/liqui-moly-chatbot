@@ -90,5 +90,15 @@
     "max_products": 3,
     "max_chars": 300,
     "priority": "按相關性排序，最符合需求的產品放前面"
+  },
+  "recommendation_rules": {
+    "description": "產品推薦優先順序規則",
+    "specific_certification_first": "若車輛有特定車廠認證需求（如 Ford WSS、BMW LL、MB 229、VW 504/507/508/509、Volvo VCC），必須優先推薦符合該認證的產品",
+    "generic_api_use_viscosity": "日韓系車輛僅需 API 認證時（API SP/SN），以符合建議黏度的產品為主要推薦依據",
+    "always_recommend": "只要資料庫中有符合條件的產品就應該推薦，不要說『資料庫未顯示完全符合』"
+  },
+  "disclaimer": {
+    "zh": "⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。",
+    "en": "⚠️ Please consult your owner's manual for the correct viscosity and approval specifications."
   }
 }
