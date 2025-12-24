@@ -106,9 +106,9 @@ ${core.core_rules.map(r => `- ${r}`).join('\n')}
 ${core.hallucination_blacklist.map(p => `- ❌ ${p.sku} "${p.name}" - ${p.reason}`).join('\n')}
 
 ### 連結格式
-${core.link_format_rules.rule}
-- ❌ 錯誤：${core.link_format_rules.examples.wrong}
-- ✅ 正確：${core.link_format_rules.examples.correct}`;
+${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須使用純文字 URL'}
+- ❌ 錯誤：${core.link_format_rules?.examples?.wrong || '[店家查詢](https://...)'}
+- ✅ 正確：${core.link_format_rules?.examples?.correct || '店家查詢：https://...'}`;
 
     // 加入 B2B 銷售模式規則
     if (core.business_model) {
