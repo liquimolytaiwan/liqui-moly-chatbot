@@ -217,11 +217,19 @@ ${symptomGuide}
 - 中度：換檔頓挫、怠速不穩、引擎抖動 → symptomSeverity = "moderate"
 - 嚴重：吃機油、冒藍煙、嚴重漏油、引擎過熱 → symptomSeverity = "severe"
 
-【searchKeywords 規則】
-- 如果是添加劑：必須包含匹配到的症狀對應 SKU（如 LM1019、LM2506）
-- 如果是柴油車添加劑：加入 "Diesel" 關鍵字
-- 如果症狀嚴重：加入 "Pro-Line" 關鍵字
-- 如果是機油：包含黏度、認證代碼
+【searchKeywords 規則 - 非常重要！】
+⚠️ 摩托車/速克達機油：searchKeywords 第一個必須是 "Motorbike"
+⚠️ 速克達：加入 "Scooter" 或 "JASO MB"
+⚠️ 檔車/重機：加入 "JASO MA2"
+
+範例：
+- 曼巴跑山推薦機油 → searchKeywords: ["Motorbike", "10W-40", "Synth", "Race"]
+- 勁戰日常通勤 → searchKeywords: ["Motorbike", "Scooter", "10W-40"]
+- 速克達機油 → searchKeywords: ["Motorbike", "Scooter", "4T"]
+
+如果是添加劑：必須包含匹配到的症狀對應 SKU
+如果是柴油車添加劑：加入 "Diesel" 關鍵字
+如果症狀嚴重：加入 "Pro-Line" 關鍵字
 
 只返回 JSON，不要其他文字。`;
 

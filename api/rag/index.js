@@ -127,6 +127,11 @@ ${symptomGuide}
 - 柴油車 → Diesel 系列
 - 嚴重症狀 → Pro-Line 系列
 
+【searchKeywords 規則 - 必須遵守！】
+⚠️ 摩托車/速克達：searchKeywords 第一個必須是 "Motorbike"
+- 曼巴機油 → ["Motorbike", "10W-40", "Synth"]
+- 速克達機油 → ["Motorbike", "Scooter", "4T"]
+
 只返回 JSON，不要其他文字。`;
 
                 const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
