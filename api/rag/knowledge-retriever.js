@@ -196,6 +196,5 @@ function getSpecialScenarioData(scenario) {
 module.exports = {
     retrieveKnowledge,
     loadJSON,
-    loadRule,
     findVehicleByMessage
 };
