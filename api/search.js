@@ -432,13 +432,26 @@ function searchProducts(products, query, searchInfo) {
         const fuelTypeForAdditive = searchInfo?.fuelType || searchInfo?.vehicles?.[0]?.fuelType;
         const usageScenario = searchInfo?.usageScenario;
 
-        if (productCategory === '添加劑' && allResults.length > 1) {
+        if (productCategory === '添加劑' && allResults.length > 2) {
             console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
             allResults.sort((a, b) => {
-                const aScore = getAdditivePriorityScore(a.title, symptomSeverity, fuelTypeForAdditive, usageScenario);
-                const bScore = getAdditivePriorityScore(b.title, symptomSeverity, fuelTypeForAdditive, usageScenario);
+                const aScore = getAdditivePriorityScore(a, symptomSeverity, fuelTypeForAdditive, usageScenario);
+                const bScore = getAdditivePriorityScore(b, symptomSeverity, fuelTypeForAdditive, usageScenario);
+
+                // Debug: 輸出前幾個產品的評分
+                if (Math.random() < 0.1) { // 抽樣 log 避免洗版，或是只在前幾次 log
+                    // console.log(`[Score] ${a.partno}: ${aScore}, ${b.partno}: ${bScore}`);
+                }
+
                 return bScore - aScore; // 降冪排序
             });
+
+            // 輸出排序後的前 3 名產品名稱和分數，用於驗證
+            console.log('[Search] Top 3 additives after sort:', allResults.slice(0, 3).map(p => ({
+                sku: p.partno,
+                title: p.title,
+                score: getAdditivePriorityScore(p, symptomSeverity, fuelTypeForAdditive, usageScenario)
+            })));
         }
 
         // 8. 最終 Fallback：如果完全沒有結果，返回對應類別的產品樣本
@@ -528,8 +541,13 @@ function getSyntheticScore(title) {
 // ============================================
 // 判斷添加劑優先級（用於症狀嚴重度和使用場景排序）
 // ============================================
-function getAdditivePriorityScore(title, symptomSeverity, fuelType, usageScenario) {
-    if (!title) return 0;
+// ============================================
+// 判斷添加劑優先級（用於症狀嚴重度和使用場景排序）
+// ============================================
+function getAdditivePriorityScore(product, symptomSeverity, fuelType, usageScenario) {
+    if (!product) return 0;
+    const title = product.title || '';
+    const partno = product.partno || '';
     const titleLower = title.toLowerCase();
     let score = 1;
 
@@ -556,9 +574,9 @@ function getAdditivePriorityScore(title, symptomSeverity, fuelType, usageScenari
 
     // 使用場景排序（跑山/激烈操駕 → 性能提升類優先）
     if (usageScenario === '跑山' || usageScenario === '下賽道') {
-        // LM7820 Speed Shooter 性能提升
-        if (titleLower.includes('speed') || titleLower.includes('7820')) {
-            score += 3;  // 跑山場景最優先
+        // LM7820 Speed Shooter 性能提升 (檢查標題或料號)
+        if (titleLower.includes('speed') || titleLower.includes('7820') || partno.includes('7820')) {
+            score += 3;  // 跑山場景最優先 (LM7820)
         }
         // 性能相關產品
         if (titleLower.includes('race') || titleLower.includes('boost') || titleLower.includes('octane')) {
@@ -568,10 +586,10 @@ function getAdditivePriorityScore(title, symptomSeverity, fuelType, usageScenari
 
     // 長途旅行 → 清潔保養類優先
     if (usageScenario === '長途旅行') {
-        if (titleLower.includes('shooter') || titleLower.includes('clean') || titleLower.includes('7822')) {
-            score += 2;  // 清潔類優先
+        if (titleLower.includes('shooter') || titleLower.includes('clean') || titleLower.includes('7822') || partno.includes('7822')) {
+            score += 2;  // 清潔類優先 (LM7822)
         }
-        if (titleLower.includes('stabilizer') || titleLower.includes('21600')) {
+        if (titleLower.includes('stabilizer') || titleLower.includes('21600') || partno.includes('21600')) {
             score += 1.5;  // 穩定劑也適合長途
         }
     }
