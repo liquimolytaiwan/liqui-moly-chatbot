@@ -112,35 +112,52 @@ function searchProducts(products, query, searchInfo) {
         if (vehicleInfo && vehicleInfo.vehicleType === '摩托車') {
             console.log('[Search] Using User Defined Motorcycle Rules:', JSON.stringify(vehicleInfo));
 
+            // 先檢查有多少 Motorbike 產品
+            const motorbikeProducts = products.filter(p => p.title && p.title.toLowerCase().includes('motorbike'));
+            console.log(`[Search] Total Motorbike products in DB: ${motorbikeProducts.length}`);
+
+            // Debug: 列出前 5 個 Motorbike 產品的 cert 欄位格式
+            const certSamples = motorbikeProducts.slice(0, 5).map(p => ({ title: p.title?.substring(0, 50), cert: p.cert, word2: p.word2 }));
+            console.log('[Search] Motorbike cert samples:', JSON.stringify(certSamples));
+
             const matches = products.filter(p => {
                 // Rule 1: Title must contain "Motorbike" (Case Insensitive)
                 if (!p.title || !p.title.toLowerCase().includes('motorbike')) return false;
 
-                // Rule 2: Classification (JASO) via "cert" field
-                const cert = (p.cert || '').toUpperCase();
+                // Rule 2: Classification (JASO) via "cert" field - 放寬匹配條件
+                const cert = (p.cert || '').toUpperCase().replace(/[-\s]/g, ''); // 移除連字號和空格
+                const title = (p.title || '').toUpperCase();
+
                 if (vehicleInfo.vehicleSubType === '速克達' || (vehicleInfo.certifications && vehicleInfo.certifications.includes('JASO MB'))) {
-                    if (!cert.includes('JASO MB')) return false;
+                    // 速克達/JASO MB：多種格式匹配
+                    const hasMB = cert.includes('JASOMB') || cert.includes('MB') || title.includes('SCOOTER');
+                    // 排除 MA2/MA 產品（這些是給檔車的）
+                    const hasMA = cert.includes('JASOMA2') || cert.includes('JASOMA') || (cert.includes('MA') && !cert.includes('MB'));
+                    if (hasMA && !hasMB) return false;  // 有 MA 沒有 MB → 不要
+                    if (!hasMB && !title.includes('SCOOTER')) return false;  // 沒有 MB 也不是 Scooter 標題 → 不要
                 } else {
                     // 檔車/重機/一般摩托車 (預設 JASO MA/MA2)
-                    // 如果沒有明確說是速克達，通常需要 MA/MA2
                     if (vehicleInfo.certifications && (vehicleInfo.certifications.includes('JASO MA2') || vehicleInfo.certifications.includes('JASO MA'))) {
-                        if (!cert.includes('JASO MA') && !cert.includes('JASO MA2')) return false;
+                        const hasMA = cert.includes('JASOMA2') || cert.includes('JASOMA') || cert.includes('MA2') || cert.includes('MA');
+                        if (!hasMA) return false;
                     }
                 }
 
-                // Rule 3: Viscosity via "word2" field
+                // Rule 3: Viscosity via "word2" field - 放寬匹配
                 if (vehicleInfo.viscosity) {
-                    const word2 = (p.word2 || '').toUpperCase();
-                    const targetViscosity = vehicleInfo.viscosity.toUpperCase();
-                    // 簡單包含匹配 (e.g., matching "10W-40" in word2)
+                    const word2 = (p.word2 || '').toUpperCase().replace('-', '');
+                    const targetViscosity = vehicleInfo.viscosity.toUpperCase().replace('-', '');
+                    // 簡單包含匹配 (e.g., matching "10W40" in word2)
                     if (!word2.includes(targetViscosity)) return false;
                 }
 
                 return true;
             });
 
+            console.log(`[Search] User Rules matched ${matches.length} products`);
             if (matches.length > 0) {
-                console.log(`[Search] User Rules matched ${matches.length} products`);
+                // Debug: 列出匹配到的產品
+                console.log('[Search] Matched products:', matches.slice(0, 3).map(p => p.title));
                 for (const p of matches) {
                     if (p.id && !seenIds.has(p.id)) {
                         seenIds.add(p.id);
@@ -315,14 +332,33 @@ function searchProducts(products, query, searchInfo) {
             }
         }
 
-        // 5. 單一車型摩托車過濾
+        // 5. 單一車型摩托車過濾（含 JASO 認證過濾）
         if (vehicleType === '摩托車' && productCategory === '機油') {
+            const vehicleSubType = searchInfo?.vehicles?.[0]?.vehicleSubType;
+            const certifications = searchInfo?.vehicles?.[0]?.certifications || [];
+            const isScooter = vehicleSubType === '速克達' || certifications.includes('JASO MB');
+
             const filteredResults = allResults.filter(p => {
                 const title = (p.title || '').toLowerCase();
                 const sort = (p.sort || '').toLowerCase();
-                return title.includes('motorbike') || sort.includes('摩托車') || sort.includes('motorbike') || sort.includes('scooter');
+                const cert = (p.cert || '').toUpperCase().replace(/[-\s]/g, '');
+
+                // 必須是摩托車產品
+                const isMotorbikeProduct = title.includes('motorbike') || sort.includes('摩托車') || sort.includes('motorbike') || sort.includes('scooter');
+                if (!isMotorbikeProduct) return false;
+
+                // JASO 認證過濾
+                if (isScooter) {
+                    // 速克達：優先 JASO MB，排除純 MA/MA2 產品
+                    const hasMB = cert.includes('JASOMB') || cert.includes('MB') || title.includes('scooter');
+                    const hasOnlyMA = (cert.includes('JASOMA2') || cert.includes('JASOMA')) && !hasMB;
+                    if (hasOnlyMA) return false;  // 排除只有 MA 沒有 MB 的產品
+                }
+                // 如果是檔車且有 MA2 認證要求，這裡不做額外過濾（fallback 保留所有摩托車產品）
+
+                return true;
             });
-            console.log(`[Search] Motorcycle filter: ${allResults.length} -> ${filteredResults.length}`);
+            console.log(`[Search] Motorcycle filter (isScooter=${isScooter}): ${allResults.length} -> ${filteredResults.length}`);
             if (filteredResults.length > 0) {
                 return formatProducts(filteredResults.slice(0, 30), searchInfo);
             }
