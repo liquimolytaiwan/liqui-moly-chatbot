@@ -134,7 +134,7 @@ ${transmissionProblems.join('\n')}
 `;
     }
 
-    // === AI 主導分析提示詞 ===
+    // === AI 主導分析提示詞（增強版） ===
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
@@ -145,19 +145,21 @@ ${symptomGuide}
     "vehicles": [{
         "vehicleName": "完整車型名稱",
         "vehicleType": "汽車/摩托車/船舶/自行車",
-        "vehicleSubType": "速克達/檔車/重機/未知",
+        "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
+        "fuelType": "汽油/柴油/油電/純電/2T混合油",
+        "strokeType": "4T/2T/電動",
         "isElectricVehicle": false,
         "certifications": ["認證代碼"],
         "viscosity": "建議黏度",
         "searchKeywords": ["搜尋關鍵字"]
     }],
     "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
+    "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
+    "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": "匹配到的症狀名稱（如有）",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
 }
-
-車型識別規則（使用你的汽機車專業知識）：
 
 【重要：對話記憶】
 - ⚠️ 如果對話上下文中已經提供車型資訊（如 BRZ、Elantra 等），直接使用，不要再問！
@@ -165,12 +167,30 @@ ${symptomGuide}
 
 【摩托車識別】
 - 品牌：Honda (CBR/CB/Rebel)、Yamaha (R1/R3/R6/MT/YZF)、Kawasaki (Ninja/Z)、Suzuki (GSX/SV)、Ducati、Harley、KTM、Triumph、BMW Motorrad
-- 台灣速克達：勁戰/JET/DRG/MMBCU/Force/SMAX/Tigra/KRV/Many
+- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX/Tigra/KRV/Many（都是 4T）
+- 2T 機車：老式速克達、競技車（需 2T 混合油）
 - 摩托車機油：searchKeywords 必須包含 "Motorbike"
 
-【汽車識別 - 使用你的專業知識！】
-- **重要**：使用你的汽車專業知識判斷！Subaru BRZ、Hyundai Elantra 等都是汽車
+【汽車識別】
+- 使用你的汽車專業知識判斷車型、品牌、燃料類型
+- 柴油車關鍵字：TDI、CDI、dCi、diesel、柴油
+- 油電車關鍵字：Hybrid、PHEV、油電
 - 如果對話中已有車型，不要再問「是汽車還是機車」！
+
+【燃料類型判斷】
+- 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）
+- 機車：汽油(4T)/2T混合油/純電
+
+【使用場景判斷】
+- 跑山、油門到底、重踩油門、激烈操駕、山路 → usageScenario = "跑山"
+- 賽道、下賽道、track day、練車 → usageScenario = "下賽道"
+- 長途、旅行、長時間高速、環島 → usageScenario = "長途旅行"
+- 其他/未提及 → usageScenario = "一般通勤"
+
+【機油基礎油推薦規則】
+- 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
+- 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
+- 一般通勤 → recommendSynthetic = "any"
 
 【searchKeywords 規則】
 - 如果是添加劑：必須包含匹配到的症狀對應 SKU（如 LM1019、LM2506）

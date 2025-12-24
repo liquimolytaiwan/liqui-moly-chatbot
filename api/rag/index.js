@@ -65,7 +65,7 @@ function getAnalyzeFunction() {
                     }
                 }
 
-                // AI 分析提示詞
+                // AI 分析提示詞（增強版）
                 const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${contextSummary}用戶問題：「${message}」
@@ -76,22 +76,41 @@ ${symptomGuide}
     "vehicles": [{
         "vehicleName": "完整車型名稱",
         "vehicleType": "汽車/摩托車/船舶/自行車",
-        "vehicleSubType": "速克達/檔車/重機/未知",
+        "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
+        "fuelType": "汽油/柴油/油電/純電/2T混合油",
+        "strokeType": "4T/2T/電動",
         "isElectricVehicle": false,
         "certifications": ["認證代碼"],
         "viscosity": "建議黏度",
         "searchKeywords": ["搜尋關鍵字"]
     }],
     "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
+    "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
+    "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": "匹配到的症狀名稱（如有）",
     "needsProductRecommendation": true
 }
 
-車型識別規則：
+【車型識別規則】
 - 使用你的汽機車專業知識判斷車型、認證、黏度
 - 摩托車品牌：Honda、Yamaha、Kawasaki、Suzuki、Ducati、Harley、KTM
 - 台灣速克達：勁戰/JET/DRG/MMBCU/Force/SMAX
 - 如果對話已有車型資訊，直接從上下文獲取，不要重複詢問
+
+【燃料類型判斷】
+- 汽車：汽油/柴油/油電/純電（根據車型專業知識判斷）
+- 機車：汽油(4T)/2T混合油/純電
+
+【使用場景判斷】
+- 跑山、油門到底、重踩油門、激烈操駕、山路 → usageScenario = "跑山"
+- 賽道、下賽道、track day、練車 → usageScenario = "下賽道"
+- 長途、旅行、長時間高速、環島 → usageScenario = "長途旅行"
+- 其他/未提及 → usageScenario = "一般通勤"
+
+【機油基礎油推薦規則】
+- 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
+- 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
+- 一般通勤 → recommendSynthetic = "any"
 
 只返回 JSON，不要其他文字。`;
 

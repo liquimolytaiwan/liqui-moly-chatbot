@@ -300,7 +300,18 @@ function searchProducts(products, query, searchInfo) {
             }
         }
 
-        // 7. 一般格式化輸出
+        // 7. 全合成優先排序（根據使用場景）
+        const recommendSynthetic = searchInfo?.recommendSynthetic;
+        if (recommendSynthetic === 'full' && allResults.length > 1) {
+            console.log('[Search] Applying synthetic priority sorting (full synthetic first)');
+            allResults.sort((a, b) => {
+                const aScore = getSyntheticScore(a.title);
+                const bScore = getSyntheticScore(b.title);
+                return bScore - aScore; // 降冪排序
+            });
+        }
+
+        // 8. 一般格式化輸出
         if (allResults.length > 0) {
             return formatProducts(allResults.slice(0, 30), searchInfo);
         }
@@ -311,6 +322,39 @@ function searchProducts(products, query, searchInfo) {
         console.error('[Search] Global error:', error);
         return '搜尋產品時發生錯誤';
     }
+}
+
+// ============================================
+// 判斷產品基礎油等級（用於全合成優先排序）
+// ============================================
+function getSyntheticScore(title) {
+    if (!title) return 0;
+    const titleLower = title.toLowerCase();
+
+    // 全合成關鍵字（最高優先）
+    if (titleLower.includes('synth') ||
+        titleLower.includes('race') ||
+        titleLower.includes('全合成') ||
+        titleLower.includes('top tec') ||
+        titleLower.includes('special tec')) {
+        return 3;
+    }
+
+    // 合成技術/半合成（次優先）
+    if (titleLower.includes('合成') ||
+        titleLower.includes('street') ||
+        titleLower.includes('formula')) {
+        return 2;
+    }
+
+    // 礦物油（最低優先）
+    if (titleLower.includes('mineral') ||
+        titleLower.includes('礦物')) {
+        return 1;
+    }
+
+    // 無法判斷，給預設分數
+    return 1.5;
 }
 
 // ============================================

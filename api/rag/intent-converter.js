@@ -81,6 +81,22 @@ function convertAIResultToIntent(aiResult) {
         intent.wixQueries = aiResult.wixQueries;
     }
 
+    // 處理燃料類型
+    if (vehicle.fuelType) {
+        intent.fuelType = vehicle.fuelType;
+    }
+
+    // 處理衝程類型（4T/2T）
+    if (vehicle.strokeType) {
+        intent.strokeType = vehicle.strokeType;
+    }
+
+    // 處理使用場景
+    intent.usageScenario = aiResult.usageScenario || '一般通勤';
+
+    // 處理全合成推薦等級
+    intent.recommendSynthetic = aiResult.recommendSynthetic || 'any';
+
     console.log('[IntentConverter] Converted AI result to intent:', JSON.stringify(intent, null, 2));
     return intent;
 }
