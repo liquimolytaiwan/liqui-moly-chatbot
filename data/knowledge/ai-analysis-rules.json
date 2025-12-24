@@ -22,6 +22,14 @@
             }
         }
     },
+    "product_category_rules": {
+        "description": "產品分類規則 - 強制修正 AI 分類",
+        "rules": [
+            "汽油精、燃油添加劑、機油精、Engine Flush → productCategory = '添加劑'",
+            "雨刷水、煞車油、水箱精 → productCategory = '化學品'",
+            "洗車精、蠟、鍍膜 → productCategory = '美容'"
+        ]
+    },
     "scooter_identification": {
         "description": "台灣速克達識別",
         "models": [

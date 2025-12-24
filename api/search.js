@@ -432,7 +432,7 @@ function searchProducts(products, query, searchInfo) {
         const fuelTypeForAdditive = searchInfo?.fuelType || searchInfo?.vehicles?.[0]?.fuelType;
         const usageScenario = searchInfo?.usageScenario;
 
-        if (productCategory === '添加劑' && allResults.length > 2) {
+        if ((productCategory === '添加劑' || productCategory === '化學品') && allResults.length > 2) {
             console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
             allResults.sort((a, b) => {
                 const aScore = getAdditivePriorityScore(a, symptomSeverity, fuelTypeForAdditive, usageScenario);

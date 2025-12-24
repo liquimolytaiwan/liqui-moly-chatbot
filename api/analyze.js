@@ -638,6 +638,15 @@ ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
 `;
     }
 
+    // 產品分類規則
+    if (rules.product_category_rules) {
+        const pcRules = rules.product_category_rules;
+        promptRules += `
+【產品分類規則 - 強制遵守】
+${pcRules.rules.map(r => `- ${r}`).join('\n')}
+`;
+    }
+
     // searchKeywords 規則
     if (rules.search_keyword_rules) {
         const skRules = rules.search_keyword_rules;
