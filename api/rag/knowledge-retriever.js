@@ -74,9 +74,9 @@ async function retrieveKnowledge(intent) {
         knowledge.certification = getCertificationForVehicle(intent);
     }
 
-    // 5. 症狀映射
+    // 5. 症狀映射（從 additive-guide.json 讀取）
     if (intent.needsSymptoms) {
-        knowledge.symptoms = loadJSON('symptoms.json');
+        knowledge.symptoms = loadJSON('additive-guide.json');
     }
 
     // 6. 載入回覆範本
