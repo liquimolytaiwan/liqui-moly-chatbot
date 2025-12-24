@@ -137,7 +137,14 @@ function findVehicleByMessage(message) {
 
     // 遍歷所有品牌和車型
     for (const [brand, models] of Object.entries(allSpecs)) {
+        // 跳過 _metadata 等非車型資料
+        if (brand.startsWith('_')) continue;
+        if (!models || typeof models !== 'object') continue;
+
         for (const [modelName, specs] of Object.entries(models)) {
+            // 確保 specs 是陣列才進行迭代
+            if (!Array.isArray(specs)) continue;
+
             for (const spec of specs) {
                 // 檢查 aliases
                 if (spec.aliases && Array.isArray(spec.aliases)) {
