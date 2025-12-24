@@ -112,6 +112,25 @@ function buildConfirmedVehicleInfo(intent) {
 - **認證需求**：${certifications.join(', ')}`;
     }
 
+    // 注入使用場景與推薦策略
+    const usageScenario = aiAnalysis.usageScenario;
+    if (usageScenario) {
+        section += `
+- **使用場景**：${usageScenario}`;
+
+        if (usageScenario === '跑山' || usageScenario === '下賽道' || usageScenario === '激烈操駕') {
+            section += `
+**⚠️ 推薦重點（跑山/賽道）**：
+1. **必須優先推薦**能提升動力、油門反應的性能添加劑（如 Speed Shooter / LM7820）。產品列表中如果有 Speed Shooter / 7820，請絕對優先推薦！
+2. 對於機油，優先推薦全合成、高黏度保護性好的產品（如 10W-50, Street Race）。`;
+        } else if (usageScenario === '長途旅行' || usageScenario === '高里程') {
+            section += `
+**⚠️ 推薦重點（長途/高里程）**：
+1. **必須優先推薦**清潔燃油系統、降低油耗的產品（如 4T Shooter / LM7822）。
+2. 可推薦引擎內部清潔劑（Engine Flush）。`;
+        }
+    }
+
     section += `
 
 **📢 請直接根據上述已確認資訊推薦產品！**`;
