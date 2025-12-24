@@ -106,11 +106,12 @@ function searchProducts(products, query, searchInfo) {
     try {
         let allResults = [];
         const seenIds = new Set();
+        const productCategory = searchInfo?.productCategory || '機油';
 
-        // 0. 用戶定義的明確搜尋規則 (User Defined Rules)
+        // 0. 用戶定義的明確搜尋規則 (User Defined Rules) - 只針對機油
         const vehicleInfo = searchInfo?.vehicles?.[0];
-        if (vehicleInfo && vehicleInfo.vehicleType === '摩托車') {
-            console.log('[Search] Using User Defined Motorcycle Rules:', JSON.stringify(vehicleInfo));
+        if (vehicleInfo && vehicleInfo.vehicleType === '摩托車' && productCategory === '機油') {
+            console.log('[Search] Using User Defined Motorcycle Rules (Oil):', JSON.stringify(vehicleInfo));
 
             // 先檢查有多少 Motorbike 產品
             const motorbikeProducts = products.filter(p => p.title && p.title.toLowerCase().includes('motorbike'));
@@ -303,7 +304,6 @@ function searchProducts(products, query, searchInfo) {
         // 4. 多車型處理
         const vehicles = searchInfo?.vehicles || [];
         const isMultiVehicle = searchInfo?.isMultiVehicleQuery || vehicles.length > 1;
-        const productCategory = searchInfo?.productCategory;
         const vehicleType = searchInfo?.vehicleType;
 
         if (isMultiVehicle && productCategory === '機油') {
