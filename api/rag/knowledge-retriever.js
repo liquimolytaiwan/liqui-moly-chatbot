@@ -50,6 +50,8 @@ async function retrieveKnowledge(intent) {
 
     // 2. 載入對話規則
     knowledge.rules.conversation = loadJSON('conversation-rules.json');
+    // 2.5 載入 AI 分析與繼承規則
+    knowledge.rules.analysis = loadJSON('ai-analysis-rules.json');
 
     // 3. 根據需求載入車型規格
     if (intent.needsSpecs && intent.vehicleBrand) {

@@ -17,7 +17,7 @@ function buildPrompt(knowledge, intent, productContext = '') {
     sections.push(buildCoreIdentity(knowledge.core));
 
     // === 1.5 已確認車型資訊（避免重複追問）===
-    const vehicleSection = buildConfirmedVehicleInfo(intent);
+    const vehicleSection = buildConfirmedVehicleInfo(intent, knowledge.rules?.analysis);
     if (vehicleSection) {
         sections.push(vehicleSection);
     }
@@ -64,7 +64,7 @@ function buildPrompt(knowledge, intent, productContext = '') {
 /**
  * 建構已確認車型資訊（避免重複追問）
  */
-function buildConfirmedVehicleInfo(intent) {
+function buildConfirmedVehicleInfo(intent, analysisRules) {
     const aiAnalysis = intent?._aiAnalysis;
     if (!aiAnalysis || !aiAnalysis.vehicles || aiAnalysis.vehicles.length === 0) {
         return null;
@@ -112,22 +112,28 @@ function buildConfirmedVehicleInfo(intent) {
 - **認證需求**：${certifications.join(', ')}`;
     }
 
-    // 注入使用場景與推薦策略
+    // 動態注入使用場景推薦規則 (不再硬編碼)
     const usageScenario = aiAnalysis.usageScenario;
     if (usageScenario) {
         section += `
 - **使用場景**：${usageScenario}`;
 
-        if (usageScenario === '跑山' || usageScenario === '下賽道' || usageScenario === '激烈操駕') {
-            section += `
-**⚠️ 推薦重點（跑山/賽道）**：
-1. **必須優先推薦**能提升動力、油門反應的性能添加劑（如 Speed Shooter / LM7820）。產品列表中如果有 Speed Shooter / 7820，請絕對優先推薦！
-2. 對於機油，優先推薦全合成、高黏度保護性好的產品（如 10W-50, Street Race）。`;
-        } else if (usageScenario === '長途旅行' || usageScenario === '高里程') {
-            section += `
-**⚠️ 推薦重點（長途/高里程）**：
-1. **必須優先推薦**清潔燃油系統、降低油耗的產品（如 4T Shooter / LM7822）。
-2. 可推薦引擎內部清潔劑（Engine Flush）。`;
+        const scenarioRules = analysisRules?.conversation_memory_rules?.scenario_inheritance;
+        if (scenarioRules && scenarioRules.mapping) {
+            let matchedRule = null;
+            // 嘗試匹配規則
+            for (const [key, rule] of Object.entries(scenarioRules.mapping)) {
+                if (key.includes(usageScenario) || usageScenario.includes(key.split('/')[0])) {
+                    matchedRule = rule;
+                    break;
+                }
+            }
+
+            if (matchedRule) {
+                section += `
+**⚠️ 推薦重點（${usageScenario}）**：${matchedRule}
+請優先推薦符合此策略的產品（例如列表中的對應產品）！`;
+            }
         }
     }
 
