@@ -88,13 +88,14 @@ ${symptomGuide}
     "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
     "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": "匹配到的症狀名稱（如有）",
+    "symptomSeverity": "mild/moderate/severe/none",
     "needsProductRecommendation": true
 }
 
 【車型識別規則】
 - 使用你的汽機車專業知識判斷車型、認證、黏度
 - 摩托車品牌：Honda、Yamaha、Kawasaki、Suzuki、Ducati、Harley、KTM
-- 台灣速克達：勁戰/JET/DRG/MMBCU/Force/SMAX
+- 台灣速克達：勁戰/JET/DRG/曼巴(MMBCU)/Force/SMAX
 - 如果對話已有車型資訊，直接從上下文獲取，不要重複詢問
 
 【燃料類型判斷】
@@ -111,6 +112,17 @@ ${symptomGuide}
 - 下賽道/跑山/激烈操駕 → recommendSynthetic = "full"（全合成優先）
 - 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
 - 一般通勤 → recommendSynthetic = "any"
+
+【添加劑推薦規則】
+- 柴油車 → 優先推薦 Diesel 系列添加劑
+- 激烈操駕/跑山 → 推薦 Engine Flush 清積碳
+- 高里程/老車 → 推薦 Oil Leak Stop 止漏
+- 嚴重症狀 → 優先推薦 Pro-Line 系列（強效）
+
+【症狀嚴重度判斷】
+- 輕微：聲音變大、動力下降 → symptomSeverity = "mild"
+- 中度：換檔頓挫、怠速不穩 → symptomSeverity = "moderate"
+- 嚴重：吃機油、冒藍煙、漏油 → symptomSeverity = "severe"
 
 只返回 JSON，不要其他文字。`;
 

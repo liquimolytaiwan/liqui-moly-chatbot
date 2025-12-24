@@ -157,6 +157,7 @@ ${symptomGuide}
     "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
     "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": "匹配到的症狀名稱（如有）",
+    "symptomSeverity": "mild/moderate/severe/none",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
 }
@@ -192,8 +193,22 @@ ${symptomGuide}
 - 長途旅行/高里程 → recommendSynthetic = "full" 或 "semi"
 - 一般通勤 → recommendSynthetic = "any"
 
+【添加劑推薦規則】⭐新增
+- 柴油車 → 優先推薦 Diesel 系列添加劑（如 Diesel Purge、Diesel Additive）
+- 激烈操駕/跑山/賽道 → 推薦 Engine Flush 清積碳、MoS2 抗磨損
+- 長途旅行 → 推薦 Oil Additive 機油添加劑保護引擎
+- 高里程/老車 → 推薦 Oil Leak Stop 止漏、Valve Clean 汽門清潔
+- 嚴重症狀（吃機油、嚴重積碳、冒藍煙） → 優先推薦 Pro-Line 系列（強效）
+
+【症狀嚴重度判斷】⭐新增
+- 輕微：聲音變大、動力下降、油耗增加 → symptomSeverity = "mild"
+- 中度：換檔頓挫、怠速不穩、引擎抖動 → symptomSeverity = "moderate"
+- 嚴重：吃機油、冒藍煙、嚴重漏油、引擎過熱 → symptomSeverity = "severe"
+
 【searchKeywords 規則】
 - 如果是添加劑：必須包含匹配到的症狀對應 SKU（如 LM1019、LM2506）
+- 如果是柴油車添加劑：加入 "Diesel" 關鍵字
+- 如果症狀嚴重：加入 "Pro-Line" 關鍵字
 - 如果是機油：包含黏度、認證代碼
 
 只返回 JSON，不要其他文字。`;

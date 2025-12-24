@@ -311,6 +311,19 @@ function searchProducts(products, query, searchInfo) {
             });
         }
 
+        // 7.5 添加劑優先排序（根據症狀嚴重度和燃料類型）
+        const symptomSeverity = searchInfo?.symptomSeverity;
+        const fuelTypeForAdditive = searchInfo?.fuelType || searchInfo?.vehicles?.[0]?.fuelType;
+
+        if (productCategory === '添加劑' && allResults.length > 1) {
+            console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive})`);
+            allResults.sort((a, b) => {
+                const aScore = getAdditivePriorityScore(a.title, symptomSeverity, fuelTypeForAdditive);
+                const bScore = getAdditivePriorityScore(b.title, symptomSeverity, fuelTypeForAdditive);
+                return bScore - aScore; // 降冪排序
+            });
+        }
+
         // 8. 一般格式化輸出
         if (allResults.length > 0) {
             return formatProducts(allResults.slice(0, 30), searchInfo);
@@ -355,6 +368,43 @@ function getSyntheticScore(title) {
 
     // 無法判斷，給預設分數
     return 1.5;
+}
+
+// ============================================
+// 判斷添加劑優先級（用於症狀嚴重度排序）
+// ============================================
+function getAdditivePriorityScore(title, symptomSeverity, fuelType) {
+    if (!title) return 0;
+    const titleLower = title.toLowerCase();
+    let score = 1;
+
+    // 柴油車 + Diesel 產品 = 加分
+    if (fuelType === '柴油' && titleLower.includes('diesel')) {
+        score += 2;
+    }
+
+    // 嚴重症狀 + Pro-Line 產品 = 加分
+    if (symptomSeverity === 'severe') {
+        if (titleLower.includes('pro-line') || titleLower.includes('proline')) {
+            score += 3;  // Pro-Line 最高優先
+        } else {
+            score += 1;  // 其他產品稍微加分
+        }
+    }
+
+    // 中度症狀
+    if (symptomSeverity === 'moderate') {
+        if (titleLower.includes('pro-line') || titleLower.includes('proline')) {
+            score += 2;
+        }
+    }
+
+    // Engine Flush 清積碳產品
+    if (titleLower.includes('flush') || titleLower.includes('clean')) {
+        score += 0.5;
+    }
+
+    return score;
 }
 
 // ============================================
