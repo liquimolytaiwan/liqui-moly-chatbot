@@ -107,6 +107,51 @@ function searchProducts(products, query, searchInfo) {
         let allResults = [];
         const seenIds = new Set();
 
+        // 0. 用戶定義的明確搜尋規則 (User Defined Rules)
+        const vehicleInfo = searchInfo?.vehicles?.[0];
+        if (vehicleInfo && vehicleInfo.vehicleType === '摩托車') {
+            console.log('[Search] Using User Defined Motorcycle Rules:', JSON.stringify(vehicleInfo));
+
+            const matches = products.filter(p => {
+                // Rule 1: Title must contain "Motorbike" (Case Insensitive)
+                if (!p.title || !p.title.toLowerCase().includes('motorbike')) return false;
+
+                // Rule 2: Classification (JASO) via "cert" field
+                const cert = (p.cert || '').toUpperCase();
+                if (vehicleInfo.vehicleSubType === '速克達' || (vehicleInfo.certifications && vehicleInfo.certifications.includes('JASO MB'))) {
+                    if (!cert.includes('JASO MB')) return false;
+                } else {
+                    // 檔車/重機/一般摩托車 (預設 JASO MA/MA2)
+                    // 如果沒有明確說是速克達，通常需要 MA/MA2
+                    if (vehicleInfo.certifications && (vehicleInfo.certifications.includes('JASO MA2') || vehicleInfo.certifications.includes('JASO MA'))) {
+                        if (!cert.includes('JASO MA') && !cert.includes('JASO MA2')) return false;
+                    }
+                }
+
+                // Rule 3: Viscosity via "word2" field
+                if (vehicleInfo.viscosity) {
+                    const word2 = (p.word2 || '').toUpperCase();
+                    const targetViscosity = vehicleInfo.viscosity.toUpperCase();
+                    // 簡單包含匹配 (e.g., matching "10W-40" in word2)
+                    if (!word2.includes(targetViscosity)) return false;
+                }
+
+                return true;
+            });
+
+            if (matches.length > 0) {
+                console.log(`[Search] User Rules matched ${matches.length} products`);
+                for (const p of matches) {
+                    if (p.id && !seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allResults.push(p);
+                    }
+                }
+            } else {
+                console.log('[Search] User Rules matched 0 products, falling back to query search');
+            }
+        }
+
         // 1. 執行 Vercel 傳來的搜尋指令
         const queries = searchInfo?.wixQueries || [];
 
