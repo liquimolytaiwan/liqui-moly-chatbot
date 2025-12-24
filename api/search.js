@@ -159,12 +159,20 @@ function searchProducts(products, query, searchInfo) {
             if (matches.length > 0) {
                 // Debug: 列出匹配到的產品
                 console.log('[Search] Matched products:', matches.slice(0, 3).map(p => p.title));
-                for (const p of matches) {
-                    if (p.id && !seenIds.has(p.id)) {
-                        seenIds.add(p.id);
-                        allResults.push(p);
-                    }
+
+                // 全合成優先排序（跑山/賽道場景）
+                const recommendSynthetic = searchInfo?.recommendSynthetic;
+                if (recommendSynthetic === 'full' && matches.length > 1) {
+                    console.log('[Search] Applying synthetic priority sorting for User Rules (full synthetic first)');
+                    matches.sort((a, b) => {
+                        const aScore = getSyntheticScore(a.title);
+                        const bScore = getSyntheticScore(b.title);
+                        return bScore - aScore; // 降冪排序，全合成優先
+                    });
+                    console.log('[Search] After sorting:', matches.slice(0, 3).map(p => p.title));
                 }
+
+                return formatProducts(matches.slice(0, 30), searchInfo);
             } else {
                 console.log('[Search] User Rules matched 0 products, falling back to query search');
             }
