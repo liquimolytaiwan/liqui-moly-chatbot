@@ -213,8 +213,14 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
         if (vehicleType && allResults.length > 0) {
             console.log(`[RAG] Sorting products for vehicle type: ${vehicleType}`);
             allResults = sortProductsByVehicleType(allResults, vehicleType, aiAnalysis);
-        }
 
+            // 調試：顯示排序後前3個產品
+            const top3 = allResults.slice(0, 3).map(p => ({
+                sku: p.partno || p.partNo,
+                title: (p.title || '').substring(0, 40)
+            }));
+            console.log(`[RAG] Top 3 products after sorting:`, JSON.stringify(top3));
+        }
 
         // 格式化產品為 prompt context
         if (allResults.length === 0) {
@@ -446,7 +452,10 @@ function formatProductContext(products, category, baseUrl, vehicleType = null, a
 
 **以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
 
-${vehicleHint}${subtypeHint}---
+${vehicleHint}${subtypeHint}
+## 📋 重要：請按照以下順序推薦產品（排名越前越優先）
+
+---
 
 ## 可用${category}產品清單（共 ${products.length} 項）
 
@@ -462,12 +471,15 @@ ${vehicleHint}${subtypeHint}---
         const isMotorbike = title.toLowerCase().includes('motorbike') || (p.sort || '').includes('摩托車');
         const marker = isMotorbike ? '🏍️ [摩托車專用]' : '';
 
-        context += `### ${i + 1}. ${title} ${marker}
-- 產品編號: ${pid || 'N/A'}
-- 容量: ${p.size || 'N/A'}
-- 系列: ${p.word1 || 'N/A'}
-- 分類: ${p.sort || 'N/A'}
+        // 標記 Scooter 產品的優先級
+        const isScooterProduct = title.toLowerCase().includes('scooter');
+        const priorityMark = isScooterProduct ? '⭐ [速克達專用]' : '';
+
+        context += `### ${i + 1}. ${title} ${marker} ${priorityMark}
+- 產品編號: **${pid || 'N/A'}**
 - 產品連結: ${url}
+- 容量: ${p.size || 'N/A'}
+- 分類: ${p.sort || 'N/A'}
 
 `;
     });
