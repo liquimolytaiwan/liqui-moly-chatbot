@@ -280,7 +280,7 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
         }
 
         // 格式化結果（傳入車型資訊以增加優先級提示）
-        return formatProductContext(allResults, productCategory, PRODUCT_BASE_URL, vehicleType, aiAnalysis?.additiveSubtype);
+        return formatProductContext(allResults, productCategory, PRODUCT_BASE_URL, vehicleType, aiAnalysis?.additiveSubtype, aiAnalysis);
 
     } catch (e) {
 
@@ -486,9 +486,15 @@ function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
  * @param {string} vehicleType - 車型（可選）
  * @param {string} additiveSubtype - 添加劑子類型（可選）
  */
-function formatProductContext(products, category, baseUrl, vehicleType = null, additiveSubtype = null) {
+function formatProductContext(products, category, baseUrl, vehicleType = null, additiveSubtype = null, aiAnalysis = null) {
     // 車型專用提示
     let vehicleHint = '';
+
+    // 判斷是否為速克達
+    const vehicleSubType = aiAnalysis?.vehicles?.[0]?.vehicleSubType ||
+        aiAnalysis?.matchedVehicle?.type || '';
+    const isScooter = vehicleSubType.includes('速克達') || vehicleSubType.toLowerCase().includes('scooter');
+
     if (vehicleType === '摩托車') {
         vehicleHint = `
 ## 🏍️ 重要：摩托車產品優先規則
@@ -501,6 +507,20 @@ function formatProductContext(products, category, baseUrl, vehicleType = null, a
 - 如果用戶問的是燃油添加劑，優先推薦 "Motorbike 4T Shooter (LM7822)" 或 "Motorbike Speed Shooter (LM7820)"
 
 `;
+        // 速克達專用規則
+        if (isScooter) {
+            vehicleHint += `
+## ⭐⚠️ 速克達專用規則（超重要！）
+
+**用戶的車型是速克達（無濕式離合器），必須使用 JASO MB 認證機油！**
+
+- ⭐ **優先推薦產品名稱包含 "Scooter" 的速克達專用機油**
+- ⛔ **絕對禁止推薦 "Street Race" 或 "Street" 系列**（這是給檔車用的，認證不符！）
+- 速克達專用產品已標記 ⭐ [速克達專用]，請**嚴格按照產品編號順序**從這些產品中推薦
+- 如果清單中有 Scooter 產品，必須優先推薦，不可跳過！
+
+`;
+        }
     } else if (vehicleType === '汽車') {
         vehicleHint = `
 ## 🚗 重要：汽車產品優先規則
