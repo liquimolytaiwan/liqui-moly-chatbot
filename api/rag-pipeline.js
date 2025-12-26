@@ -579,11 +579,15 @@ ${vehicleHint}${subtypeHint}
         const isScooterProduct = title.toLowerCase().includes('scooter');
         const priorityMark = isScooterProduct ? '⭐ [速克達專用]' : '';
 
-        context += `### ${i + 1}. ${title} ${marker} ${priorityMark}
+        // 內部優先級標記（不要在回覆中顯示給用戶！）
+        const internalPriority = (isMotorbike ? '[MOTORBIKE]' : '') + (isScooterProduct ? '[SCOOTER-PRIORITY]' : '');
+
+        context += `### ${i + 1}. ${title}
 - 產品編號: **${pid || 'N/A'}**
 - 產品連結: ${url}
 - 容量: ${p.size || 'N/A'}
 - 分類: ${p.sort || 'N/A'}
+- 🔒 內部標記: ${internalPriority || '無'}
 
 `;
     });
@@ -591,7 +595,12 @@ ${vehicleHint}${subtypeHint}
     context += `---
 
 ## ⛔ 禁止編造產品！
-只能從上方列表中推薦產品。優先推薦帶有 🏍️ 標記的產品給摩托車用戶。
+只能從上方列表中推薦產品。優先推薦帶有 [SCOOTER-PRIORITY] 或 [MOTORBIKE] 標記的產品。
+
+## ⚠️ 回覆格式規則（超重要！）
+- **禁止在回覆中顯示 [MOTORBIKE]、[SCOOTER-PRIORITY] 等內部標記！**
+- **禁止在產品名稱後加上任何方括號標記！**
+- 只需顯示產品名稱、編號、連結即可
 `;
 
     return context;
