@@ -135,6 +135,10 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
             .map(item => `- ${item.problem}: ${item.solutions.join(', ')}`)
             .slice(0, 10);
 
+        const otherProblems = additiveGuide
+            .filter(item => item.hasProduct && (item.sort === '其他疑難雜症' || item.type === '通用'))
+            .map(item => `- ${item.problem}: ${item.solutions.join(', ')}`);
+
         symptomGuide = `
 【症狀與添加劑產品對照表 - 從知識庫載入】
 ⚠️ 如果用戶描述的問題與以下症狀相似，productCategory 應設為「添加劑」，並將對應 SKU 加入 searchKeywords！
@@ -144,6 +148,9 @@ ${engineProblems.join('\n')}
 
 **變速箱相關症狀（需要問變速箱類型）：**
 ${transmissionProblems.join('\n')}
+
+**其他疑難雜症（通用問題）：**
+${otherProblems.join('\n')}
 
 **判斷規則：**
 - 如果用戶問的是「引擎相關症狀」（如：吃機油、過熱、啟動困難、異音、積碳），productCategory = 添加劑，不需要問變速箱
@@ -428,11 +435,13 @@ function matchAdditiveGuide(message, vehicleType = null) {
         '漏油': ['漏油', '滲油', '油封'],
         '異音': ['異音', '噪音', '達達聲', '敲擊聲'],
         '積碳': ['積碳', '積炭'],
-        '缸壓不足': ['缸壓', '壓縮']
+        '缸壓不足': ['缸壓', '壓縮'],
+        '老鼠': ['老鼠', '貓', '小動物', '咬破', '躲藏']
     };
 
     for (const item of additiveGuide) {
-        if (item.area !== targetArea) continue;
+        // 通用問題（如防鼠）不分汽機車，或是符合目標區域
+        if (item.type !== '通用' && item.area !== targetArea) continue;
         if (!item.hasProduct) continue;
 
         const problem = (item.problem || '').toLowerCase();

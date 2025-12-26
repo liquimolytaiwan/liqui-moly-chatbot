@@ -1108,5 +1108,16 @@
       "LM3444"
     ],
     "hasProduct": true
+  },
+  {
+    "area": "汽車",
+    "type": "通用",
+    "sort": "其他疑難雜症",
+    "problem": "引擎室有老鼠/貓/小動物躲藏",
+    "explanation": "小動物喜歡躲在溫暖的引擎室咬破管路或電線。Marder-Spray 防鼠噴劑可發出老鼠討厭的氣味，防止牠們靠近。",
+    "solutions": [
+      "LM1515"
+    ],
+    "hasProduct": true
   }
 ]

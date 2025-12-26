@@ -189,6 +189,17 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
             for (const task of wixQueries) {
                 const matched = searchInField(products, task.field, task.value, task.method);
                 addToResults(matched, allResults, seenIds, task.limit || 20);
+
+                // === 關鍵字拆分搜尋 ===
+                // 如果完整關鍵字找不到結果，嘗試拆分關鍵字
+                if (matched.length === 0 && task.value.length > 2) {
+                    const subKeywords = splitChineseKeywords(task.value);
+                    console.log(`[RAG] Splitting keyword "${task.value}" into:`, subKeywords);
+                    for (const subKw of subKeywords) {
+                        const subMatched = searchInField(products, task.field, subKw, 'contains');
+                        addToResults(subMatched, allResults, seenIds, 10);
+                    }
+                }
             }
             console.log(`[RAG] Phase 1 results: ${allResults.length} products`);
         }
@@ -196,9 +207,21 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
         // === 階段 2: 多欄位關鍵字搜尋 ===
         if (allResults.length < 5) {
             console.log('[RAG] Phase 2: Multi-field keyword search...');
-            const allKeywords = [...new Set([...userKeywords, ...searchKeywords])];
 
-            for (const keyword of allKeywords) {
+            // 合併所有關鍵字並拆分
+            const allKeywords = [...new Set([...userKeywords, ...searchKeywords])];
+            const expandedKeywords = [];
+            for (const kw of allKeywords) {
+                expandedKeywords.push(kw);
+                // 對較長的中文關鍵字進行拆分
+                if (kw.length > 3 && /[\u4e00-\u9fff]/.test(kw)) {
+                    expandedKeywords.push(...splitChineseKeywords(kw));
+                }
+            }
+            const uniqueKeywords = [...new Set(expandedKeywords)];
+            console.log('[RAG] Expanded keywords:', uniqueKeywords);
+
+            for (const keyword of uniqueKeywords) {
                 // 搜尋多個欄位
                 const fields = ['title', 'content', 'word1', 'word2', 'sort'];
                 for (const field of fields) {
@@ -208,6 +231,7 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
             }
             console.log(`[RAG] Phase 2 results: ${allResults.length} products`);
         }
+
 
         // === 階段 3: 產品類別 + 車型 Fallback ===
         if (allResults.length === 0) {
@@ -263,6 +287,52 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
         console.error('[RAG] searchProductsInternal error:', e);
         throw e;
     }
+}
+
+/**
+ * 拆分中文關鍵字為子關鍵字
+ * 例如: "電子接點噴劑" → ["電子接點", "電子", "接點", "噴劑"]
+ */
+function splitChineseKeywords(keyword) {
+    const subKeywords = [];
+
+    // 移除常見的通用詞彙後綴
+    const suffixes = ['噴劑', '清潔劑', '添加劑', '保護劑', '潤滑劑', '修復劑', '清洗劑'];
+    let cleaned = keyword;
+    for (const suffix of suffixes) {
+        if (keyword.endsWith(suffix)) {
+            cleaned = keyword.slice(0, -suffix.length);
+            if (cleaned.length >= 2) {
+                subKeywords.push(cleaned);
+            }
+            break;
+        }
+    }
+
+    // 拆分為前半和後半（適用於較長的關鍵字）
+    if (keyword.length >= 4) {
+        const mid = Math.floor(keyword.length / 2);
+        const firstHalf = keyword.slice(0, mid + 1);
+        const secondHalf = keyword.slice(mid);
+        if (firstHalf.length >= 2) subKeywords.push(firstHalf);
+        if (secondHalf.length >= 2) subKeywords.push(secondHalf);
+    }
+
+    // 嘗試常見的產品關鍵字模式
+    const patterns = [
+        /^(.{2,3})(?:噴劑|清潔|保護|添加)/,
+        /^(電子|引擎|冷卻|煞車|變速)(.{2,})/
+    ];
+
+    for (const pattern of patterns) {
+        const match = keyword.match(pattern);
+        if (match && match[1] && match[1].length >= 2) {
+            subKeywords.push(match[1]);
+        }
+    }
+
+    // 去重並過濾太短的
+    return [...new Set(subKeywords)].filter(k => k.length >= 2);
 }
 
 /**
