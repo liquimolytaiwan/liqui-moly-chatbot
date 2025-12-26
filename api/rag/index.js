@@ -209,11 +209,12 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
             console.log(`[RAG] Phase 3 results: ${allResults.length} products`);
         }
 
-        // === 產品排序：車型專用產品優先 ===
+        // === 產品排序：車型專用產品優先 + 認證 + 合成度 ===
         if (vehicleType && allResults.length > 0) {
             console.log(`[RAG] Sorting products for vehicle type: ${vehicleType}`);
-            allResults = sortProductsByVehicleType(allResults, vehicleType);
+            allResults = sortProductsByVehicleType(allResults, vehicleType, aiAnalysis);
         }
+
 
         // 格式化產品為 prompt context
         if (allResults.length === 0) {
@@ -294,38 +295,81 @@ function addToResults(matched, allResults, seenIds, limit) {
 }
 
 /**
- * 按照車型排序產品（車型專用產品優先）
+ * 按照車型、認證、合成度排序產品
+ * 權重優先級：
+ * 1. 用戶指定的產品編號（最高）
+ * 2. 車型匹配 + 認證匹配
+ * 3. 合成度匹配（recommendSynthetic: full）
  */
-function sortProductsByVehicleType(products, vehicleType) {
+function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
     const vehicleKeywords = {
-        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t'],
+        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t', 'scooter'],
         '汽車': ['car', 'auto', '汽車']
     };
 
     const keywords = vehicleKeywords[vehicleType] || [];
+
+    // 從 AI 分析結果中提取認證和合成度資訊
+    const certifications = aiAnalysis?.certifications || aiAnalysis?.matchedVehicle?.certification || [];
+    const recommendSynthetic = aiAnalysis?.recommendSynthetic || 'any';
+    const matchedVehicleSKU = aiAnalysis?.matchedVehicle?.recommendedSKU;
+
+    console.log(`[RAG] Sorting with certifications: ${certifications}, synthetic: ${recommendSynthetic}`);
 
     return products.sort((a, b) => {
         const titleA = (a.title || '').toLowerCase();
         const titleB = (b.title || '').toLowerCase();
         const sortA = (a.sort || '').toLowerCase();
         const sortB = (b.sort || '').toLowerCase();
+        const certA = (a.cert || '').toLowerCase();
+        const certB = (b.cert || '').toLowerCase();
+        const word1A = (a.word1 || '').toLowerCase();
+        const word1B = (b.word1 || '').toLowerCase();
+        const partnoA = (a.partno || a.partNo || '').toUpperCase();
+        const partnoB = (b.partno || b.partNo || '').toUpperCase();
 
-        // 計算匹配分數
         let scoreA = 0;
         let scoreB = 0;
 
-        for (const kw of keywords) {
-            if (titleA.includes(kw) || sortA.includes(kw)) scoreA += 10;
-            if (titleB.includes(kw) || sortB.includes(kw)) scoreB += 10;
+        // === 權重 1：車型推薦 SKU（最高優先級 +100）===
+        if (matchedVehicleSKU) {
+            if (partnoA === matchedVehicleSKU.toUpperCase()) scoreA += 100;
+            if (partnoB === matchedVehicleSKU.toUpperCase()) scoreB += 100;
         }
 
-        // sort 欄位包含對應車型分類的加分
-        if (sortA.includes(vehicleType.toLowerCase())) scoreA += 20;
-        if (sortB.includes(vehicleType.toLowerCase())) scoreB += 20;
+        // === 權重 2：認證匹配（+50）===
+        for (const cert of certifications) {
+            const certLower = cert.toLowerCase().replace(/\s+/g, '');
+            if (certA.includes(certLower) || titleA.includes(certLower)) scoreA += 50;
+            if (certB.includes(certLower) || titleB.includes(certLower)) scoreB += 50;
+            // JASO MB 認證特別處理
+            if (cert.toUpperCase() === 'JASO MB') {
+                if (certA.includes('mb') || titleA.includes('mb')) scoreA += 30;
+                if (certB.includes('mb') || titleB.includes('mb')) scoreB += 30;
+            }
+        }
+
+        // === 權重 3：合成度匹配（+40）===
+        if (recommendSynthetic === 'full') {
+            // 優先推薦全合成
+            if (titleA.includes('synth') || word1A.includes('全合成')) scoreA += 40;
+            if (titleB.includes('synth') || word1B.includes('全合成')) scoreB += 40;
+        }
+
+        // === 權重 4：車型關鍵字匹配（+20）===
+        for (const kw of keywords) {
+            if (titleA.includes(kw) || sortA.includes(kw)) scoreA += 20;
+            if (titleB.includes(kw) || sortB.includes(kw)) scoreB += 20;
+        }
+
+        // === 權重 5：sort 欄位包含對應車型分類（+10）===
+        if (sortA.includes(vehicleType.toLowerCase())) scoreA += 10;
+        if (sortB.includes(vehicleType.toLowerCase())) scoreB += 10;
 
         return scoreB - scoreA; // 分數高的在前
     });
 }
+
 
 /**
  * 格式化產品資料為 prompt context
