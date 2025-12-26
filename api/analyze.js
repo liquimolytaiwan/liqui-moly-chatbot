@@ -291,8 +291,23 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             result.searchKeywords.unshift(...spec.searchKeywords);
         }
 
-        // 補充認證和黏度（如果 AI 沒有推論出）
-        if (result.vehicles?.[0]) {
+        // ⚠️ 關鍵修復：如果 AI 沒有識別出車型，但對話歷史中有，創建車型物件
+        if (!result.vehicles || result.vehicles.length === 0) {
+            console.log(`[Knowledge Base] Creating vehicle from history: ${vehicleMatch.brand} ${vehicleMatch.model}`);
+            result.vehicles = [{
+                vehicleName: `${vehicleMatch.brand} ${vehicleMatch.model}`,
+                vehicleType: spec.type?.includes('速克達') || spec.type?.includes('檔車') ? '摩托車' : '汽車',
+                vehicleSubType: spec.type || '未知',
+                fuelType: spec.fuel || '汽油',
+                strokeType: spec.type?.includes('2T') ? '2T' : '4T',
+                isElectricVehicle: false,
+                certifications: spec.certification || [],
+                viscosity: spec.viscosity || '',
+                searchKeywords: spec.searchKeywords || []
+            }];
+            result.vehicleType = result.vehicles[0].vehicleType;
+        } else {
+            // 補充認證和黏度（如果 AI 沒有推論出）
             if (spec.certification && (!result.vehicles[0].certifications || result.vehicles[0].certifications.length === 0)) {
                 result.vehicles[0].certifications = spec.certification;
             }
