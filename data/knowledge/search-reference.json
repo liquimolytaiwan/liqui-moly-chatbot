@@ -178,5 +178,116 @@
             "word2",
             "sort"
         ]
+    },
+    "keywordMapping": {
+        "_description": "用戶訊息關鍵字 → 搜尋關鍵字對照",
+        "mos2": [
+            "MoS2",
+            "Shooter"
+        ],
+        "oil additiv": [
+            "Oil Additive",
+            "Shooter",
+            "添加劑"
+        ],
+        "shooter": [
+            "Shooter"
+        ],
+        "cera tec": [
+            "Cera Tec"
+        ],
+        "機油精": [
+            "Oil Additive",
+            "機油添加劑"
+        ],
+        "添加劑": [
+            "添加劑",
+            "Additive"
+        ],
+        "汽油精": [
+            "Super Diesel",
+            "Speed",
+            "Shooter"
+        ],
+        "引擎": [
+            "Engine",
+            "Motor"
+        ],
+        "變速箱": [
+            "Gear",
+            "ATF",
+            "Transmission"
+        ],
+        "煞車": [
+            "Brake"
+        ],
+        "冷卻": [
+            "Coolant",
+            "Radiator"
+        ],
+        "香氛": [
+            "Air Freshener",
+            "香氛磚",
+            "車輛美容"
+        ],
+        "香氛磚": [
+            "Air Freshener",
+            "香氛磚"
+        ],
+        "清香": [
+            "Air Freshener"
+        ],
+        "air freshener": [
+            "Air Freshener",
+            "香氛磚"
+        ],
+        "美容": [
+            "車輛美容",
+            "Car Care",
+            "Wash"
+        ],
+        "洗車": [
+            "Car Wash",
+            "Wash",
+            "Wax"
+        ],
+        "蠟": [
+            "Wax",
+            "Polish"
+        ],
+        "清潔": [
+            "Cleaner",
+            "Clean"
+        ]
+    },
+    "categoryToSort": {
+        "_description": "產品類別 → Wix sort 欄位值",
+        "機油_摩托車": "【摩托車】機油",
+        "機油_汽車": "【汽車】機油",
+        "添加劑_摩托車": "【摩托車】添加劑",
+        "添加劑_汽車": "【汽車】添加劑",
+        "變速箱油": "變速箱",
+        "煞車油": "煞車系統",
+        "冷卻系統": "冷卻系統",
+        "美容": "車輛美容",
+        "香氛": "車輛美容",
+        "自行車": "自行車系列",
+        "船舶": "船舶系列"
+    },
+    "vehicleKeywords": {
+        "_description": "車型 → 產品名稱關鍵字",
+        "摩托車": [
+            "motorbike",
+            "motorcycle",
+            "摩托車",
+            "機車",
+            "4t",
+            "2t"
+        ],
+        "汽車": [
+            "car",
+            "auto",
+            "汽車"
+        ]
     }
 }

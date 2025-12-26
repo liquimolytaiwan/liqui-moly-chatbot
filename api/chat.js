@@ -5,7 +5,7 @@
  * RAG 重構版本 - 動態載入知識，大幅減少 Token 消耗
  */
 
-const { processWithRAG } = require('./rag/index');
+const { processWithRAG } = require('./rag-pipeline');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';

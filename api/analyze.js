@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { findVehicleByMessage } = require('./rag/knowledge-retriever');
+const { findVehicleByMessage } = require('./knowledge-retriever');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 

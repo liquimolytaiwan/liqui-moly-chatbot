@@ -8,9 +8,13 @@
  */
 
 const { classifyIntent } = require('./intent-classifier');
-const { retrieveKnowledge } = require('./knowledge-retriever');
+const { retrieveKnowledge, loadJSON } = require('./knowledge-retriever');
 const { buildPrompt } = require('./prompt-builder');
 const { convertAIResultToIntent, isValidAIResult } = require('./intent-converter');
+
+// 載入 search-reference.json 取得關鍵字對照表
+const searchRef = loadJSON('search-reference.json') || {};
+
 
 // AI 分析模組（動態載入避免循環依賴）
 let analyzeUserQueryFn = null;
@@ -22,7 +26,7 @@ async function loadAnalyzeFunction() {
     if (!analyzeUserQueryFn) {
         try {
             // 動態載入 ESM 模組
-            const analyzeModule = await import('../analyze.js');
+            const analyzeModule = await import('./analyze.js');
             if (analyzeModule && analyzeModule.analyzeUserQuery) {
                 analyzeUserQueryFn = analyzeModule.analyzeUserQuery;
                 console.log('[RAG] Successfully loaded analyze.js module');
@@ -209,19 +213,23 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
         if (allResults.length === 0) {
             console.log('[RAG] Phase 3: Category fallback search...');
 
-            // 根據類別搜尋 sort 欄位
-            const categoryMapping = {
-                '機油': vehicleType === '摩托車' ? '【摩托車】機油' : '【汽車】機油',
-                '添加劑': vehicleType === '摩托車' ? '【摩托車】添加劑' : '【汽車】添加劑',
-                '變速箱油': '變速箱',
-                '煞車油': '煞車系統',
-                '冷卻系統': '冷卻系統',
-                '美容': '車輛美容',
-                '自行車': '自行車系列',
-                '船舶': '船舶系列'
-            };
+            // 根據類別搜尋 sort 欄位（使用 JSON 資料）
+            const categoryToSort = searchRef.categoryToSort || {};
+            let sortKeyword = productCategory;
 
-            const sortKeyword = categoryMapping[productCategory] || productCategory;
+            // 機油和添加劑需要根據車型分類
+            if (productCategory === '機油') {
+                sortKeyword = vehicleType === '摩托車'
+                    ? categoryToSort['機油_摩托車'] || '【摩托車】機油'
+                    : categoryToSort['機油_汽車'] || '【汽車】機油';
+            } else if (productCategory === '添加劑') {
+                sortKeyword = vehicleType === '摩托車'
+                    ? categoryToSort['添加劑_摩托車'] || '【摩托車】添加劑'
+                    : categoryToSort['添加劑_汽車'] || '【汽車】添加劑';
+            } else {
+                sortKeyword = categoryToSort[productCategory] || productCategory;
+            }
+
             const matched = products.filter(p =>
                 (p.sort || '').toLowerCase().includes(sortKeyword.toLowerCase())
             );
@@ -264,20 +272,9 @@ function extractKeywordsFromMessage(message) {
     const keywords = [];
     const lowerMsg = message.toLowerCase();
 
-    // 產品關鍵字對照表
-    const keywordMap = {
-        'mos2': ['MoS2', 'Shooter'],
-        'oil additiv': ['Oil Additive', 'Shooter', '添加劑'],
-        'shooter': ['Shooter'],
-        'cera tec': ['Cera Tec'],
-        '機油精': ['Oil Additive', '機油添加劑'],
-        '添加劑': ['添加劑', 'Additive'],
-        '汽油精': ['Super Diesel', 'Speed', 'Shooter'],
-        '引擎': ['Engine', 'Motor'],
-        '變速箱': ['Gear', 'ATF', 'Transmission'],
-        '煞車': ['Brake'],
-        '冷卻': ['Coolant', 'Radiator']
-    };
+    // 產品關鍵字對照表（使用 JSON 資料）
+    const keywordMap = searchRef.keywordMapping || {};
+
 
     for (const [key, values] of Object.entries(keywordMap)) {
         if (lowerMsg.includes(key)) {
@@ -329,12 +326,9 @@ function addToResults(matched, allResults, seenIds, limit) {
  * 4. 車型關鍵字匹配
  */
 function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
-    const vehicleKeywords = {
-        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t'],
-        '汽車': ['car', 'auto', '汽車']
-    };
-
-    const keywords = vehicleKeywords[vehicleType] || [];
+    // 使用 JSON 資料
+    const vehicleKeywordsMap = searchRef.vehicleKeywords || {};
+    const keywords = vehicleKeywordsMap[vehicleType] || [];
 
     // 從 AI 分析結果中提取資訊
     const certifications = aiAnalysis?.certifications || aiAnalysis?.matchedVehicle?.certification || [];
