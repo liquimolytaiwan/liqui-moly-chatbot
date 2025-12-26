@@ -209,15 +209,22 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
             console.log(`[RAG] Phase 3 results: ${allResults.length} products`);
         }
 
+        // === 產品排序：車型專用產品優先 ===
+        if (vehicleType && allResults.length > 0) {
+            console.log(`[RAG] Sorting products for vehicle type: ${vehicleType}`);
+            allResults = sortProductsByVehicleType(allResults, vehicleType);
+        }
+
         // 格式化產品為 prompt context
         if (allResults.length === 0) {
             return `⚠️ 沒有找到符合「${productCategory}」的產品。請告訴用戶「目前資料庫未顯示符合條件的產品」，不要編造任何產品！`;
         }
 
-        // 格式化結果
-        return formatProductContext(allResults, productCategory, PRODUCT_BASE_URL);
+        // 格式化結果（傳入車型資訊以增加優先級提示）
+        return formatProductContext(allResults, productCategory, PRODUCT_BASE_URL, vehicleType, aiAnalysis?.additiveSubtype);
 
     } catch (e) {
+
         console.error('[RAG] searchProductsInternal error:', e);
         throw e;
     }
@@ -287,24 +294,114 @@ function addToResults(matched, allResults, seenIds, limit) {
 }
 
 /**
- * 格式化產品資料為 prompt context
+ * 按照車型排序產品（車型專用產品優先）
  */
-function formatProductContext(products, category, baseUrl) {
+function sortProductsByVehicleType(products, vehicleType) {
+    const vehicleKeywords = {
+        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t'],
+        '汽車': ['car', 'auto', '汽車']
+    };
+
+    const keywords = vehicleKeywords[vehicleType] || [];
+
+    return products.sort((a, b) => {
+        const titleA = (a.title || '').toLowerCase();
+        const titleB = (b.title || '').toLowerCase();
+        const sortA = (a.sort || '').toLowerCase();
+        const sortB = (b.sort || '').toLowerCase();
+
+        // 計算匹配分數
+        let scoreA = 0;
+        let scoreB = 0;
+
+        for (const kw of keywords) {
+            if (titleA.includes(kw) || sortA.includes(kw)) scoreA += 10;
+            if (titleB.includes(kw) || sortB.includes(kw)) scoreB += 10;
+        }
+
+        // sort 欄位包含對應車型分類的加分
+        if (sortA.includes(vehicleType.toLowerCase())) scoreA += 20;
+        if (sortB.includes(vehicleType.toLowerCase())) scoreB += 20;
+
+        return scoreB - scoreA; // 分數高的在前
+    });
+}
+
+/**
+ * 格式化產品資料為 prompt context
+ * @param {Array} products - 產品清單
+ * @param {string} category - 產品類別
+ * @param {string} baseUrl - 產品連結基礎 URL
+ * @param {string} vehicleType - 車型（可選）
+ * @param {string} additiveSubtype - 添加劑子類型（可選）
+ */
+function formatProductContext(products, category, baseUrl, vehicleType = null, additiveSubtype = null) {
+    // 車型專用提示
+    let vehicleHint = '';
+    if (vehicleType === '摩托車') {
+        vehicleHint = `
+## 🏍️ 重要：摩托車產品優先規則
+
+**用戶的車型是摩托車，請優先推薦以下標記的摩托車專用產品！**
+
+- 產品名稱包含 "Motorbike" 或 "摩托車" 的是**摩托車專用**產品
+- **禁止推薦汽車專用產品給摩托車用戶**
+- 如果用戶問的是機油添加劑，優先推薦 "Motorbike MoS2 Shooter (LM3444)"
+- 如果用戶問的是燃油添加劑，優先推薦 "Motorbike 4T Shooter (LM7822)" 或 "Motorbike Speed Shooter (LM7820)"
+
+`;
+    } else if (vehicleType === '汽車') {
+        vehicleHint = `
+## 🚗 重要：汽車產品優先規則
+
+**用戶的車型是汽車，請優先推薦通用或汽車專用產品。**
+
+- 避免推薦 "Motorbike" 開頭的摩托車專用產品
+
+`;
+    }
+
+    // 添加劑子類型提示
+    let subtypeHint = '';
+    if (additiveSubtype === '機油添加劑') {
+        subtypeHint = `
+## 📍 用戶詢問的是：機油添加劑
+
+請**只推薦機油添加劑**，不要推薦燃油添加劑（如 Shooter、Speed 等燃油系統清潔劑）。
+摩托車專用機油添加劑：Motorbike MoS2 Shooter (LM3444)
+汽車專用機油添加劑：Oil Additive (LM2500)、Cera Tec (LM3721)
+
+`;
+    } else if (additiveSubtype === '汽油添加劑' || additiveSubtype === '燃油添加劑') {
+        subtypeHint = `
+## 📍 用戶詢問的是：燃油添加劑/汽油精
+
+請**只推薦燃油添加劑**，不要推薦機油添加劑。
+
+`;
+    }
+
     let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
 
 **以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
 
----
+${vehicleHint}${subtypeHint}---
 
 ## 可用${category}產品清單（共 ${products.length} 項）
 
 `;
 
+    // 標記車型專用產品
     products.slice(0, 30).forEach((p, i) => {
         const pid = p.partno || p.partNo || p.sku;
         const url = pid ? `${baseUrl}${pid.toLowerCase()}` : baseUrl;
+        const title = p.title || '未命名產品';
 
-        context += `### ${i + 1}. ${p.title || '未命名產品'}
+        // 標記是否為摩托車專用
+        const isMotorbike = title.toLowerCase().includes('motorbike') || (p.sort || '').includes('摩托車');
+        const marker = isMotorbike ? '🏍️ [摩托車專用]' : '';
+
+        context += `### ${i + 1}. ${title} ${marker}
 - 產品編號: ${pid || 'N/A'}
 - 容量: ${p.size || 'N/A'}
 - 系列: ${p.word1 || 'N/A'}
@@ -317,7 +414,7 @@ function formatProductContext(products, category, baseUrl) {
     context += `---
 
 ## ⛔ 禁止編造產品！
-只能從上方列表中推薦產品。如果列表中沒有合適的產品，請說「目前資料庫未顯示符合條件的產品」。
+只能從上方列表中推薦產品。優先推薦帶有 🏍️ 標記的產品給摩托車用戶。
 `;
 
     return context;
