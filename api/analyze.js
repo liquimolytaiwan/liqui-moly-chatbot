@@ -178,7 +178,7 @@ ${transmissionProblems.join('\n')}
         "viscosity": "建議黏度",
         "searchKeywords": ["搜尋關鍵字"]
     }],
-    "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
+    "productCategory": "機油/添加劑/變速箱油/煞車系統/冷卻系統/空調系統/化學品/美容/香氛/自行車/船舶/商用車/PRO-LINE/其他",
     "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
     "recommendSynthetic": "full/semi/mineral/any",
     "symptomMatched": null,
@@ -752,11 +752,33 @@ ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
     }
 
     // 產品分類規則
-    if (rules.product_category_rules) {
-        const pcRules = rules.product_category_rules;
+    if (rules.product_category_rules?.categories) {
+        const categories = rules.product_category_rules.categories;
         promptRules += `
-【產品分類規則 - 強制遵守】
-${pcRules.rules.map(r => `- ${r}`).join('\n')}
+
+【⚠️ 產品類別識別規則 - 非常重要！】
+${rules.product_category_rules.priority_note || '用戶明確指定的產品類別優先'}
+
+**各類別識別關鍵字：**`;
+
+        for (const [category, config] of Object.entries(categories)) {
+            if (config.keywords && config.keywords.length > 0) {
+                promptRules += `
+- ${config.keywords.slice(0, 5).join('、')} → productCategory = "${category}"`;
+            }
+        }
+
+        promptRules += `
+
+**特殊處理規則：**
+- 變速箱油：需要透過 LLM 知識判斷車型對應的變速箱認證（如 ATF Type、DSG 等）
+- 美容/香氛/自行車：可直接推薦，並推薦 CarMall 車魔商城購買
+- 冷卻系統/煞車系統：需繼承車型資訊
+- 如果用戶沒有之前提供車型，才需要詢問
+
+**車型繼承規則：**
+- 如果對話中已有車型資訊，自動繼承使用
+- 只有用戶從未提供車型時才詢問
 `;
     }
 

@@ -101,12 +101,252 @@
         }
     },
     "product_category_rules": {
-        "description": "產品分類規則 - 強制修正 AI 分類",
-        "rules": [
-            "汽油精、燃油添加劑、機油精、Engine Flush → productCategory = '添加劑'",
-            "雨刷水、煞車油、水箱精 → productCategory = '化學品'",
-            "洗車精、蠟、鍍膜 → productCategory = '美容'"
-        ]
+        "description": "產品分類規則 - 完整定義所有產品類別",
+        "priority_note": "⚠️ 用戶明確指定的產品類別優先於場景推薦",
+        "categories": {
+            "機油": {
+                "keywords": [
+                    "機油",
+                    "引擎油",
+                    "潤滑油",
+                    "motor oil",
+                    "engine oil"
+                ],
+                "sort_values": [
+                    "【汽車】機油",
+                    "【摩托車】機油"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型、使用場景"
+            },
+            "添加劑": {
+                "keywords": [
+                    "添加劑",
+                    "汽油精",
+                    "機油精",
+                    "燃油添加劑",
+                    "機油添加劑",
+                    "engine flush",
+                    "shooter",
+                    "oil additive"
+                ],
+                "sort_values": [
+                    "【汽車】添加劑",
+                    "【摩托車】添加劑"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型",
+                "subcategories": {
+                    "機油添加劑": [
+                        "機油精",
+                        "機油添加劑",
+                        "MoS2",
+                        "oil additive",
+                        "抗磨"
+                    ],
+                    "汽油添加劑": [
+                        "汽油精",
+                        "燃油添加劑",
+                        "shooter",
+                        "清積碳"
+                    ]
+                }
+            },
+            "變速箱油": {
+                "keywords": [
+                    "變速箱油",
+                    "ATF",
+                    "齒輪油",
+                    "手排油",
+                    "自排油",
+                    "CVT油",
+                    "DSG",
+                    "transmission",
+                    "gear oil",
+                    "波箱油"
+                ],
+                "sort_values": [
+                    "【汽車】變速箱"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型",
+                "llm_knowledge_required": "⚠️ 需透過 LLM 知識判斷車型對應的變速箱認證規範"
+            },
+            "煞車系統": {
+                "keywords": [
+                    "煞車油",
+                    "DOT",
+                    "brake fluid",
+                    "煞車"
+                ],
+                "sort_values": [
+                    "煞車系統"
+                ],
+                "word1_values": [
+                    "煞車油"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型"
+            },
+            "冷卻系統": {
+                "keywords": [
+                    "水箱精",
+                    "冷卻液",
+                    "防凍液",
+                    "coolant",
+                    "antifreeze",
+                    "冷卻系統",
+                    "水箱"
+                ],
+                "sort_values": [
+                    "冷卻系統"
+                ],
+                "word1_values": [
+                    "水箱精",
+                    "冷卻系統添加劑"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型"
+            },
+            "空調系統": {
+                "keywords": [
+                    "冷媒",
+                    "空調",
+                    "冷氣",
+                    "A/C",
+                    "空調系統"
+                ],
+                "sort_values": [
+                    "【汽車】空調系統"
+                ],
+                "requires_vehicle_info": false
+            },
+            "化學品": {
+                "keywords": [
+                    "雨刷水",
+                    "雨刷精",
+                    "玻璃水",
+                    "化學品"
+                ],
+                "sort_values": [
+                    "化學品系列"
+                ],
+                "requires_vehicle_info": false
+            },
+            "美容": {
+                "keywords": [
+                    "洗車",
+                    "蠟",
+                    "鍍膜",
+                    "美容",
+                    "清潔",
+                    "打蠟",
+                    "拋光"
+                ],
+                "sort_values": [
+                    "車輛美容系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true,
+                "carmall_available": true
+            },
+            "香氛": {
+                "keywords": [
+                    "香氛",
+                    "香氛磚",
+                    "芳香",
+                    "除臭",
+                    "車用香氛"
+                ],
+                "sort_values": [
+                    "車輛美容系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true,
+                "carmall_available": true
+            },
+            "自行車": {
+                "keywords": [
+                    "自行車",
+                    "腳踏車",
+                    "單車",
+                    "bike",
+                    "bicycle",
+                    "鏈條油",
+                    "鏈條清潔"
+                ],
+                "sort_values": [
+                    "自行車系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true,
+                "carmall_available": true
+            },
+            "船舶": {
+                "keywords": [
+                    "船",
+                    "船外機",
+                    "船舶",
+                    "marine",
+                    "outboard"
+                ],
+                "sort_values": [
+                    "船舶系列"
+                ],
+                "requires_vehicle_info": false
+            },
+            "商用車": {
+                "keywords": [
+                    "商用車",
+                    "卡車",
+                    "貨車",
+                    "大型車",
+                    "柴油車"
+                ],
+                "sort_values": [
+                    "商用車系列"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型"
+            },
+            "PRO-LINE": {
+                "keywords": [
+                    "pro-line",
+                    "proline",
+                    "專業",
+                    "濃縮"
+                ],
+                "sort_values": [
+                    "PRO-LINE 專業系列"
+                ],
+                "requires_vehicle_info": false,
+                "note": "專業維修廠使用的濃縮產品"
+            },
+            "其他油品_摩托車": {
+                "keywords": [
+                    "前叉油",
+                    "齒輪油"
+                ],
+                "sort_values": [
+                    "【摩托車】其他油品"
+                ],
+                "requires_vehicle_info": true,
+                "inheritance": "車型"
+            },
+            "人車養護_摩托車": {
+                "keywords": [
+                    "鏈條油",
+                    "鏈條清潔",
+                    "安全帽",
+                    "皮革"
+                ],
+                "sort_values": [
+                    "【摩托車】人車養護"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true
+            }
+        }
     },
     "scooter_identification": {
         "description": "台灣速克達識別",

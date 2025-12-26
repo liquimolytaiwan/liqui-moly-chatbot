@@ -121,6 +121,35 @@
             "Oil Additive",
             "Pro-Line",
             "Cera Tec"
+        ],
+        "變速箱油": [
+            "ATF",
+            "Top Tec ATF",
+            "Gear Oil",
+            "DSG",
+            "CVT"
+        ],
+        "煞車油": [
+            "Brake Fluid",
+            "DOT 4",
+            "DOT 5.1"
+        ],
+        "冷卻系統": [
+            "Coolant",
+            "Antifreeze",
+            "KFS",
+            "Radiator"
+        ],
+        "美容": [
+            "Wash",
+            "Wax",
+            "Clean",
+            "Polish"
+        ],
+        "自行車": [
+            "Bike",
+            "Chain",
+            "Lube"
         ]
     },
     "wix_field_priority": {

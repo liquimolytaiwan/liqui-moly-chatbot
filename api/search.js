@@ -461,21 +461,55 @@ function searchProducts(products, query, searchInfo) {
             let sampleProducts = [];
             const vehicleType = searchInfo?.vehicleType;
 
-            // 根據 productCategory 和 vehicleType 返回對應類型的產品
-            if (productCategory === '機油') {
-                if (vehicleType === '摩托車') {
-                    sampleProducts = products.filter(p =>
-                        p.sort && (p.sort.includes('摩托車') || (p.title && p.title.toLowerCase().includes('motorbike')))
-                    ).slice(0, 20);
-                } else {
-                    sampleProducts = products.filter(p =>
-                        p.sort && p.sort.includes('機油') && !p.sort.includes('摩托車')
-                    ).slice(0, 20);
-                }
-            } else if (productCategory === '添加劑') {
+            // 產品類別與 sort 欄位對應表
+            const categoryToSort = {
+                '機油': vehicleType === '摩托車' ? '【摩托車】機油' : '【汽車】機油',
+                '添加劑': vehicleType === '摩托車' ? '【摩托車】添加劑' : '【汽車】添加劑',
+                '變速箱油': '【汽車】變速箱',
+                '煞車系統': '煞車系統',
+                '冷卻系統': '冷卻系統',
+                '空調系統': '【汽車】空調系統',
+                '化學品': '化學品系列',
+                '美容': '車輛美容系列',
+                '香氛': '車輛美容系列',
+                '自行車': '自行車系列',
+                '船舶': '船舶系列',
+                '商用車': '商用車系列',
+                'PRO-LINE': 'PRO-LINE 專業系列',
+                '其他油品_摩托車': '【摩托車】其他油品',
+                '人車養護_摩托車': '【摩托車】人車養護'
+            };
+
+            // 根據 productCategory 取得對應的 sort 值
+            const sortValue = categoryToSort[productCategory];
+
+            if (sortValue) {
                 sampleProducts = products.filter(p =>
-                    p.sort && p.sort.includes('添加劑')
+                    p.sort && p.sort.includes(sortValue.replace('【', '').replace('】', ''))
                 ).slice(0, 20);
+                console.log(`[Search] Fallback by sort "${sortValue}": found ${sampleProducts.length} products`);
+            }
+
+            // 如果使用 sort 沒找到，嘗試使用標題關鍵字搜尋
+            if (sampleProducts.length === 0) {
+                const categoryKeywords = {
+                    '變速箱油': ['atf', 'gear', '變速箱', 'transmission'],
+                    '煞車系統': ['brake', 'dot', '煞車'],
+                    '冷卻系統': ['coolant', 'antifreeze', '冷卻', '水箱'],
+                    '美容': ['wash', 'wax', '洗車', '美容', '鍍膜'],
+                    '自行車': ['bike', 'bicycle', '自行車'],
+                    '船舶': ['marine', 'outboard', '船']
+                };
+
+                const keywords = categoryKeywords[productCategory] || [];
+                if (keywords.length > 0) {
+                    sampleProducts = products.filter(p => {
+                        const title = (p.title || '').toLowerCase();
+                        const sort = (p.sort || '').toLowerCase();
+                        return keywords.some(kw => title.includes(kw) || sort.includes(kw));
+                    }).slice(0, 20);
+                    console.log(`[Search] Fallback by keywords: found ${sampleProducts.length} products`);
+                }
             }
 
             // 如果還是沒有，返回前 20 個產品
@@ -657,6 +691,41 @@ function formatProducts(products, searchInfo = null) {
 1. 說明推薦的黏度依據（如 5W-30 適合日韓系車）
 2. 說明認證依據（如符合 API SP）
 3. 列出推薦產品
+
+`;
+    } else if (productCategory === '變速箱油') {
+        context += `
+### 📋 變速箱油推薦依據
+**回覆要求：**
+1. 說明車型對應的變速箱類型（自排/手排/CVT/DSG 等）
+2. 說明適用的規格或認證（如 Dexron VI、ATF+4 等）
+3. 列出推薦產品
+
+`;
+    } else if (productCategory === '煞車系統' || productCategory === '冷卻系統') {
+        context += `
+### 📋 ${productCategory}產品推薦
+**回覆要求：**
+1. 確認車型資訊（如有繼承）
+2. 推薦適合的產品
+
+`;
+    } else if (productCategory === '美容' || productCategory === '香氛' || productCategory === '自行車') {
+        context += `
+### 📋 ${productCategory}產品直接推薦
+**🛒 購買方式：**
+此類產品可直接在 **CarMall 車魔商城** 購買：https://www.carmall.com.tw/
+宜福工業官方直營，品質有保障！
+
+**回覆要求：**
+1. 直接推薦適合的產品
+2. 提供產品連結
+3. 補充說明可在 CarMall 車魔商城購買
+
+`;
+    } else {
+        context += `
+### 📋 ${productCategory}產品推薦
 
 `;
     }
