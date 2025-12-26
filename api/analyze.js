@@ -479,84 +479,151 @@ function matchAdditiveGuide(message, vehicleType = null) {
 
 /**
  * 根據 AI 分析結果生成 Wix 查詢
- * 簡化版 - 只做 AI 結果到查詢的映射
+ * v2.2: 按 productCategory 分流搜尋，避免類別間關鍵字污染
  */
 function generateWixQueries(analysis) {
     const queries = [];
     const vehicles = analysis.vehicles || [];
     const productCategory = analysis.productCategory;
 
+    // 機油專用關鍵字清單（不應用於其他類別搜尋）
+    const OIL_ONLY_KEYWORDS = [
+        'scooter', 'street', 'race', 'synth', 'top tec', 'special tec',
+        '10w-', '5w-', '0w-', '20w-', '15w-',
+        'jaso', 'api ', 'ilsac', 'acea',
+        'motorbike 4t', 'motorbike synth'
+    ];
+
+    // 根據類別取得對應的 sort 欄位值
+    const categoryToSort = {
+        '機油': { car: '【汽車】機油', motorcycle: '【摩托車】機油' },
+        '添加劑': { car: '【汽車】添加劑', motorcycle: '【摩托車】添加劑' },
+        '變速箱油': { default: '【汽車】變速箱' },
+        '煞車系統': { default: '煞車系統' },
+        '冷卻系統': { default: '冷卻系統' },
+        '空調系統': { default: '【汽車】空調系統' },
+        '化學品': { default: '化學品系列' },
+        '美容': { default: '車輛美容系列' },
+        '香氛': { default: '車輛美容系列' },
+        '自行車': { default: '自行車系列' },
+        '船舶': { default: '船舶系列' },
+        '商用車': { default: '商用車系列' },
+        'PRO-LINE': { default: 'PRO-LINE 專業系列' },
+        '其他油品_摩托車': { default: '【摩托車】其他油品' },
+        '人車養護_摩托車': { default: '【摩托車】人車養護' }
+    };
+
+    /**
+     * 檢查關鍵字是否為機油專用
+     */
+    function isOilOnlyKeyword(kw) {
+        const lowerKw = kw.toLowerCase();
+        return OIL_ONLY_KEYWORDS.some(ok => lowerKw.includes(ok));
+    }
+
+    /**
+     * 過濾關鍵字：非機油類別時移除機油專用關鍵字
+     */
+    function filterKeywordsForCategory(keywords, category) {
+        if (category === '機油') {
+            return keywords; // 機油可使用所有關鍵字
+        }
+        // 非機油類別：過濾掉機油專用關鍵字，但保留 SKU
+        return keywords.filter(kw => {
+            if (kw.startsWith('LM') || /^\d{4,5}$/.test(kw)) {
+                return true; // SKU 始終保留
+            }
+            return !isOilOnlyKeyword(kw);
+        });
+    }
+
     for (const vehicle of vehicles) {
         const isMotorcycle = vehicle.vehicleType === '摩托車';
         const isScooter = vehicle.vehicleSubType === '速克達';
 
-        // 1. 黏度搜尋 - 只在機油推薦時執行
-        if (vehicle.viscosity && productCategory === '機油') {
-            // word2 是黏度專用欄位，優先搜尋
-            queries.push({ field: 'word2', value: vehicle.viscosity, limit: 30, method: 'contains' });
-            // 同時也搜尋 title 以增加命中率
-            queries.push({ field: 'title', value: vehicle.viscosity, limit: 20, method: 'contains' });
-            // 無連字號版本（如 5W30）
-            const viscosityNoHyphen = vehicle.viscosity.replace('-', '');
-            if (viscosityNoHyphen !== vehicle.viscosity) {
-                queries.push({ field: 'word2', value: viscosityNoHyphen, limit: 20, method: 'contains' });
-            }
-        }
-
-        // 2. 認證搜尋 - 只在機油推薦時執行
+        // === 機油專用搜尋 ===
         if (productCategory === '機油') {
+            // 1. 黏度搜尋
+            if (vehicle.viscosity) {
+                queries.push({ field: 'word2', value: vehicle.viscosity, limit: 30, method: 'contains' });
+                queries.push({ field: 'title', value: vehicle.viscosity, limit: 20, method: 'contains' });
+                const viscosityNoHyphen = vehicle.viscosity.replace('-', '');
+                if (viscosityNoHyphen !== vehicle.viscosity) {
+                    queries.push({ field: 'word2', value: viscosityNoHyphen, limit: 20, method: 'contains' });
+                }
+            }
+
+            // 2. 認證搜尋
             const certs = vehicle.certifications || [];
             for (const cert of certs) {
                 queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
                 queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
-                // 去空格版本
                 const certNoSpace = cert.replace(/\s+/g, '');
                 if (certNoSpace !== cert) {
                     queries.push({ field: 'cert', value: certNoSpace, limit: 20, method: 'contains' });
                 }
             }
+
+            // 3. 摩托車機油特殊處理
+            if (isMotorcycle) {
+                queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
+                if (isScooter) {
+                    queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
+                }
+                queries.push({ field: 'sort', value: '【摩托車】機油', limit: 30, method: 'contains' });
+            } else {
+                queries.push({ field: 'sort', value: '【汽車】機油', limit: 50, method: 'contains' });
+            }
         }
 
-        // 3. AI 指定的搜尋關鍵字
-        const keywords = vehicle.searchKeywords || [];
+        // === 添加劑專用搜尋 ===
+        else if (productCategory === '添加劑') {
+            const sortPrefix = isMotorcycle ? '【摩托車】' : '【汽車】';
+            queries.push({ field: 'sort', value: `${sortPrefix}添加劑`, limit: 30, method: 'contains' });
+
+            // 摩托車添加劑額外加入 Motorbike 關鍵字
+            if (isMotorcycle) {
+                queries.push({ field: 'title', value: 'Motorbike', limit: 30, method: 'contains' });
+            }
+        }
+
+        // === 其他產品類別（根據 sort 欄位搜尋）===
+        else if (categoryToSort[productCategory]) {
+            const sortConfig = categoryToSort[productCategory];
+            let sortValue;
+            if (sortConfig.default) {
+                sortValue = sortConfig.default;
+            } else {
+                sortValue = isMotorcycle ? sortConfig.motorcycle : sortConfig.car;
+            }
+            if (sortValue) {
+                queries.push({ field: 'sort', value: sortValue, limit: 30, method: 'contains' });
+            }
+        }
+
+        // === 車型相關關鍵字（過濾後使用）===
+        const keywords = filterKeywordsForCategory(vehicle.searchKeywords || [], productCategory);
         for (const kw of keywords) {
             if (kw.startsWith('LM')) {
                 queries.push({ field: 'partno', value: kw.toUpperCase(), limit: 5, method: 'eq' });
-            } else {
+            } else if (kw.includes('Additive') || kw.includes('添加') || kw.includes('Shooter')) {
+                // 添加劑關鍵字搜尋 title
+                queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
+            } else if (productCategory === '機油') {
+                // 只有機油類別才使用一般 title 搜尋
                 queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
             }
         }
-
-        // 4. 摩托車強制加入 Motorbike 搜尋
-        if (isMotorcycle && productCategory === '機油') {
-            const hasMotorbikeKw = keywords.some(k => k.toLowerCase().includes('motorbike'));
-            if (!hasMotorbikeKw) {
-                queries.push({ field: 'title', value: 'Motorbike', limit: 50, method: 'contains' });
-            }
-            if (isScooter) {
-                queries.push({ field: 'title', value: 'Scooter', limit: 30, method: 'contains' });
-            }
-            // 使用 sort 分類搜尋
-            queries.push({ field: 'sort', value: '【摩托車】機油', limit: 30, method: 'contains' });
-        }
-
-        // 5. 汽車機油分類搜尋
-        if (!isMotorcycle && productCategory === '機油') {
-            queries.push({ field: 'sort', value: '【汽車】機油', limit: 50, method: 'contains' });
-        }
-
-        // 6. 添加劑分類搜尋
-        if (productCategory === '添加劑') {
-            const sortPrefix = isMotorcycle ? '【摩托車】' : '【汽車】';
-            queries.push({ field: 'sort', value: `${sortPrefix}添加劑`, limit: 30, method: 'contains' });
-        }
     }
 
-    // 7. 全域搜尋關鍵字（從知識庫增強來的）
+    // === 全域 SKU 搜尋（始終執行）===
     const globalKeywords = analysis.searchKeywords || [];
     for (const kw of globalKeywords) {
         if (kw.startsWith('LM')) {
             queries.push({ field: 'partno', value: kw.toUpperCase(), limit: 5, method: 'eq' });
+        } else if (productCategory === '添加劑' && (kw.includes('Additive') || kw.includes('添加') || kw.includes('MoS2'))) {
+            // 添加劑專用關鍵字
+            queries.push({ field: 'title', value: kw, limit: 20, method: 'contains' });
         }
     }
 
@@ -571,6 +638,7 @@ function generateWixQueries(analysis) {
         }
     }
 
+    console.log(`[WixQueries] Generated ${uniqueQueries.length} queries for category: ${productCategory}`);
     return uniqueQueries;
 }
 
