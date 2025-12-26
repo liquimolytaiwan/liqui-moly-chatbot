@@ -111,25 +111,55 @@ function buildConfirmedVehicleInfo(intent, analysisRules) {
 
     // 動態注入使用場景推薦規則 (不再硬編碼)
     const usageScenario = aiAnalysis.usageScenario;
+    const productCategory = aiAnalysis.productCategory || '機油';
+
     if (usageScenario) {
         section += `
 - **使用場景**：${usageScenario}`;
 
         const scenarioRules = analysisRules?.conversation_memory_rules?.scenario_inheritance;
-        if (scenarioRules && scenarioRules.mapping) {
+        if (scenarioRules) {
+            // ⚠️ 根據產品類別選擇對應的場景規則（優先級規則）
+            // 用戶明確指定的產品類別 > 場景繼承
             let matchedRule = null;
-            // 嘗試匹配規則
-            for (const [key, rule] of Object.entries(scenarioRules.mapping)) {
-                if (key.includes(usageScenario) || usageScenario.includes(key.split('/')[0])) {
-                    matchedRule = rule;
-                    break;
+            let scenarioMapping = null;
+
+            if (productCategory === '機油') {
+                scenarioMapping = scenarioRules.oil_scenarios;
+            } else if (productCategory === '添加劑') {
+                scenarioMapping = scenarioRules.additive_scenarios;
+            }
+
+            // 只在有對應的場景規則時才套用
+            if (scenarioMapping) {
+                for (const [key, rule] of Object.entries(scenarioMapping)) {
+                    if (key === 'description') continue; // 跳過說明欄位
+                    if (key.includes(usageScenario) || usageScenario.includes(key.split('/')[0])) {
+                        matchedRule = rule;
+                        break;
+                    }
                 }
             }
 
             if (matchedRule) {
                 section += `
-**⚠️ 推薦重點（${usageScenario}）**：${matchedRule}
-請優先推薦符合此策略的產品（例如列表中的對應產品）！`;
+**⚠️ 推薦重點（${productCategory} - ${usageScenario}）**：${matchedRule}
+請根據用戶指定的產品類別（${productCategory}）推薦符合此策略的產品！`;
+            }
+        }
+
+        // 添加劑子類別識別
+        const additiveSubtypeRules = analysisRules?.conversation_memory_rules?.additive_subtype_rules;
+        if (productCategory === '添加劑' && additiveSubtypeRules && aiAnalysis.additiveSubtype) {
+            const subtypeMapping = additiveSubtypeRules.mapping?.[aiAnalysis.additiveSubtype];
+            if (subtypeMapping) {
+                const vehicleType = aiAnalysis.vehicles?.[0]?.vehicleType;
+                const products = vehicleType === '摩托車'
+                    ? subtypeMapping.motorcycle_products
+                    : subtypeMapping.car_products;
+                section += `
+**⚠️ 添加劑子類別**：${aiAnalysis.additiveSubtype}
+**建議產品 SKU**：${products?.join(', ') || '依搜尋結果'}`;
             }
         }
     }

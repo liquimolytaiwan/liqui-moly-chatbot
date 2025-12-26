@@ -335,6 +335,78 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             }
         }
     }
+
+    // === 4. 添加劑子類別識別（機油添加劑 vs 汽油添加劑）===
+    if (result.productCategory === '添加劑' || lowerMessage.includes('添加劑')) {
+        const subtypeRules = aiAnalysisRules?.conversation_memory_rules?.additive_subtype_rules;
+        if (subtypeRules) {
+            const oilAdditiveKws = subtypeRules.oil_additive_keywords || [];
+            const fuelAdditiveKws = subtypeRules.fuel_additive_keywords || [];
+
+            // 檢查用戶訊息是否明確提到機油添加劑或汽油添加劑
+            const isOilAdditive = oilAdditiveKws.some(kw =>
+                lowerMessage.includes(kw.toLowerCase())
+            );
+            const isFuelAdditive = fuelAdditiveKws.some(kw =>
+                lowerMessage.includes(kw.toLowerCase())
+            );
+
+            if (isOilAdditive && !isFuelAdditive) {
+                result.additiveSubtype = '機油添加劑';
+                result.productCategory = '添加劑';
+                console.log('[Additive] Detected subtype: 機油添加劑');
+
+                // 根據車型推薦產品
+                const vehicleType = result.vehicles?.[0]?.vehicleType;
+                const mapping = subtypeRules.mapping?.['機油添加劑'];
+                if (mapping) {
+                    const products = vehicleType === '摩托車'
+                        ? mapping.motorcycle_products
+                        : mapping.car_products;
+                    if (products && products.length > 0) {
+                        if (!result.searchKeywords) result.searchKeywords = [];
+                        // 將建議的 SKU 加入搜尋關鍵字
+                        for (const sku of products) {
+                            if (!result.searchKeywords.includes(sku)) {
+                                result.searchKeywords.push(sku);
+                            }
+                        }
+                    }
+                    // 補充搜尋關鍵字
+                    for (const kw of mapping.searchKeywords || []) {
+                        if (!result.searchKeywords.includes(kw)) {
+                            result.searchKeywords.push(kw);
+                        }
+                    }
+                }
+            } else if (isFuelAdditive && !isOilAdditive) {
+                result.additiveSubtype = '汽油添加劑';
+                result.productCategory = '添加劑';
+                console.log('[Additive] Detected subtype: 汽油添加劑');
+
+                const vehicleType = result.vehicles?.[0]?.vehicleType;
+                const mapping = subtypeRules.mapping?.['汽油添加劑'];
+                if (mapping) {
+                    const products = vehicleType === '摩托車'
+                        ? mapping.motorcycle_products
+                        : mapping.car_products;
+                    if (products && products.length > 0) {
+                        if (!result.searchKeywords) result.searchKeywords = [];
+                        for (const sku of products) {
+                            if (!result.searchKeywords.includes(sku)) {
+                                result.searchKeywords.push(sku);
+                            }
+                        }
+                    }
+                    for (const kw of mapping.searchKeywords || []) {
+                        if (!result.searchKeywords.includes(kw)) {
+                            result.searchKeywords.push(kw);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -518,6 +590,19 @@ function buildAnalysisPromptRules() {
 【⚠️ 最重要：對話記憶 - 嚴格遵守！】
 ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
 
+        // ⚠️ 優先級層次規則（新增）
+        if (memRules.priority_hierarchy) {
+            const ph = memRules.priority_hierarchy;
+            promptRules += `
+
+【⚠️⚠️⚠️ 繼承優先級（最高到最低）- 非常重要！】
+- Level 1（最高）：${ph.level_1_highest}
+- Level 2：${ph.level_2}
+- Level 3：${ph.level_3}
+- Level 4（最低）：${ph.level_4_lowest}
+- ⛔ ${ph.critical_rule}`;
+        }
+
         // 添加劑繼承規則
         if (memRules.additive_inheritance) {
             const ai = memRules.additive_inheritance;
@@ -527,13 +612,41 @@ ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
 - ⚠️ ${ai.motorcycle_additive}`;
         }
 
+        // 添加劑子類別規則（新增）
+        if (memRules.additive_subtype_rules) {
+            const asr = memRules.additive_subtype_rules;
+            promptRules += `
+
+【⚠️ 添加劑子類別識別（非常重要！）】
+- 機油添加劑關鍵字：${(asr.oil_additive_keywords || []).join('、')}
+- 汽油添加劑關鍵字：${(asr.fuel_additive_keywords || []).join('、')}
+- ⚠️ 用戶說「機油添加劑」「MoS2」→ 搜尋機油添加劑，不是汽油精！
+- ⚠️ 用戶說「汽油精」「清積碳」「Shooter」→ 搜尋汽油添加劑`;
+        }
+
         // 使用場景繼承規則
         if (memRules.scenario_inheritance) {
             const si = memRules.scenario_inheritance;
             promptRules += `
-- ⚠️ ⭐ ${si.rule}`;
-            if (si.mapping) {
-                for (const [scenario, recommendation] of Object.entries(si.mapping)) {
+- ⚠️ ⭐ ${si.rule}
+- ⚠️ ${si.priority_rule || ''}`;
+            // 使用新的 oil_scenarios 和 additive_scenarios
+            if (si.oil_scenarios) {
+                promptRules += `
+
+**機油推薦時的場景規則：**`;
+                for (const [scenario, recommendation] of Object.entries(si.oil_scenarios)) {
+                    if (scenario === 'description') continue;
+                    promptRules += `
+  - ${scenario} → ${recommendation}`;
+                }
+            }
+            if (si.additive_scenarios) {
+                promptRules += `
+
+**添加劑推薦時的場景規則：**`;
+                for (const [scenario, recommendation] of Object.entries(si.additive_scenarios)) {
+                    if (scenario === 'description') continue;
                     promptRules += `
   - ${scenario} → ${recommendation}`;
                 }

@@ -7,18 +7,96 @@
             "用戶補充問題時，必須從上文找車型",
             "上文有車型 → 直接使用，不重複詢問"
         ],
+        "priority_hierarchy": {
+            "description": "⚠️ 繼承優先級規則（最高到最低）",
+            "level_1_highest": "用戶當前訊息明確指定的產品類別（如：機油添加劑、MoS2、汽油精）",
+            "level_2": "用戶當前訊息明確指定的產品子類別（如：機油添加劑 vs 汽油添加劑）",
+            "level_3": "從對話歷史繼承的車型（如：速克達、摩托車、汽車）",
+            "level_4_lowest": "從對話歷史繼承的使用場景（如：跑山、長途）",
+            "critical_rule": "⚠️ 低優先級規則不可覆蓋高優先級！場景(level_4)絕不可覆蓋用戶明確指定的產品(level_1/2)"
+        },
         "additive_inheritance": {
             "description": "添加劑查詢繼承規則",
             "vehicle_inheritance": "用戶問「那有汽油精嗎」「有添加劑推薦嗎」時，必須從上下文繼承車型（摩托車/汽車/速克達）",
             "no_repeat_question": "禁止重新詢問「是汽車還是機車」，直接使用已知車型推薦對應的添加劑",
             "motorcycle_additive": "摩托車用戶推薦 Motorbike 系列添加劑"
         },
-        "scenario_inheritance": {
-            "description": "使用場景繼承規則",
-            "rule": "如果用戶之前說「跑山」「長途」「賽道」，推薦添加劑時也要考量這個場景",
+        "additive_subtype_rules": {
+            "description": "⚠️ 添加劑子類別識別規則（非常重要！）",
+            "oil_additive_keywords": [
+                "機油添加劑",
+                "機油精",
+                "Oil Additive",
+                "MoS2",
+                "二硫化鉬",
+                "抗磨",
+                "抗摩"
+            ],
+            "fuel_additive_keywords": [
+                "汽油精",
+                "汽油添加劑",
+                "燃油添加劑",
+                "Fuel Additive",
+                "Speed Shooter",
+                "Shooter",
+                "清積碳"
+            ],
             "mapping": {
-                "跑山/激烈操駕": "優先推薦性能提升類（如 LM7820 Speed Shooter）",
-                "長途/高里程": "優先推薦清潔保養類（如 LM7822 Shooter）"
+                "機油添加劑": {
+                    "searchKeywords": [
+                        "Oil Additive",
+                        "MoS2",
+                        "機油添加劑"
+                    ],
+                    "motorcycle_products": [
+                        "LM3444",
+                        "LM1673",
+                        "LM3901"
+                    ],
+                    "car_products": [
+                        "LM2500",
+                        "LM2591",
+                        "LM3721"
+                    ]
+                },
+                "汽油添加劑": {
+                    "searchKeywords": [
+                        "Fuel Additive",
+                        "汽油精",
+                        "Shooter",
+                        "Speed"
+                    ],
+                    "motorcycle_products": [
+                        "LM7820",
+                        "LM7822",
+                        "LM7823"
+                    ],
+                    "car_products": [
+                        "LM3040",
+                        "LM5129",
+                        "LM2030"
+                    ]
+                }
+            }
+        },
+        "scenario_inheritance": {
+            "description": "使用場景繼承規則（按產品類別區分）",
+            "rule": "場景繼承規則只適用於對應的產品類別，不可跨類別套用",
+            "priority_rule": "⚠️ 用戶明確詢問「添加劑」「汽油精」「機油精」時，productCategory 必須是「添加劑」，不受之前場景影響！",
+            "oil_scenarios": {
+                "description": "機油推薦時的場景對應（僅適用於 productCategory = 機油）",
+                "跑山/激烈操駕": "優先推薦全合成高性能機油（如 Race Tech/Street Race 系列）",
+                "長途/高里程": "優先推薦耐久性高的全合成機油"
+            },
+            "additive_scenarios": {
+                "description": "添加劑推薦時的場景對應（僅適用於 productCategory = 添加劑）",
+                "跑山/激烈操駕": "優先推薦性能提升類 Motorbike 添加劑（如 Speed Shooter、Motorbike Oil Additive）",
+                "長途/高里程": "優先推薦清潔保養類添加劑（如 Shooter、Engine Flush）"
+            },
+            "deprecated_mapping": {
+                "_comment": "舊規則已廢棄，僅供參考",
+                "跑山/激烈操駕": "（舊）LM7820 Speed Shooter - 這是機油不是添加劑！",
+                "長途/高里程": "（舊）LM7822 Shooter"
             }
         }
     },
