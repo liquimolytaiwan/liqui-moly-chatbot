@@ -298,23 +298,29 @@ function addToResults(matched, allResults, seenIds, limit) {
  * 按照車型、認證、合成度排序產品
  * 權重優先級：
  * 1. 用戶指定的產品編號（最高）
- * 2. 車型匹配 + 認證匹配
- * 3. 合成度匹配（recommendSynthetic: full）
+ * 2. 車型子類型匹配（速克達 → Scooter）
+ * 3. 認證匹配 + 合成度匹配
+ * 4. 車型關鍵字匹配
  */
 function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
     const vehicleKeywords = {
-        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t', 'scooter'],
+        '摩托車': ['motorbike', 'motorcycle', '摩托車', '機車', '4t', '2t'],
         '汽車': ['car', 'auto', '汽車']
     };
 
     const keywords = vehicleKeywords[vehicleType] || [];
 
-    // 從 AI 分析結果中提取認證和合成度資訊
+    // 從 AI 分析結果中提取資訊
     const certifications = aiAnalysis?.certifications || aiAnalysis?.matchedVehicle?.certification || [];
     const recommendSynthetic = aiAnalysis?.recommendSynthetic || 'any';
     const matchedVehicleSKU = aiAnalysis?.matchedVehicle?.recommendedSKU;
 
-    console.log(`[RAG] Sorting with certifications: ${certifications}, synthetic: ${recommendSynthetic}`);
+    // 取得車輛子類型（速克達、檔車等）
+    const vehicleSubType = aiAnalysis?.vehicles?.[0]?.vehicleSubType ||
+        aiAnalysis?.matchedVehicle?.type || '';
+    const isScooter = vehicleSubType.includes('速克達') || vehicleSubType.toLowerCase().includes('scooter');
+
+    console.log(`[RAG] Sorting with certifications: ${certifications}, synthetic: ${recommendSynthetic}, subType: ${vehicleSubType}, isScooter: ${isScooter}`);
 
     return products.sort((a, b) => {
         const titleA = (a.title || '').toLowerCase();
@@ -331,38 +337,49 @@ function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
         let scoreA = 0;
         let scoreB = 0;
 
-        // === 權重 1：車型推薦 SKU（最高優先級 +100）===
+        // === 權重 1：車型推薦 SKU（最高優先級 +200）===
         if (matchedVehicleSKU) {
-            if (partnoA === matchedVehicleSKU.toUpperCase()) scoreA += 100;
-            if (partnoB === matchedVehicleSKU.toUpperCase()) scoreB += 100;
+            if (partnoA === matchedVehicleSKU.toUpperCase()) scoreA += 200;
+            if (partnoB === matchedVehicleSKU.toUpperCase()) scoreB += 200;
         }
 
-        // === 權重 2：認證匹配（+50）===
+        // === 權重 2：車輛子類型匹配（+100）===
+        // 速克達 → Scooter 產品優先
+        if (isScooter) {
+            if (titleA.includes('scooter')) scoreA += 100;
+            if (titleB.includes('scooter')) scoreB += 100;
+            // 降低 Street Race 類型產品的分數（這是給檔車用的）
+            if (titleA.includes('street') && !titleA.includes('scooter')) scoreA -= 50;
+            if (titleB.includes('street') && !titleB.includes('scooter')) scoreB -= 50;
+        }
+
+        // === 權重 3：認證精確匹配（+80）===
         for (const cert of certifications) {
-            const certLower = cert.toLowerCase().replace(/\s+/g, '');
-            if (certA.includes(certLower) || titleA.includes(certLower)) scoreA += 50;
-            if (certB.includes(certLower) || titleB.includes(certLower)) scoreB += 50;
-            // JASO MB 認證特別處理
+            // 精確匹配 JASO MB（用空格分隔確保不會匹配到 MA）
             if (cert.toUpperCase() === 'JASO MB') {
-                if (certA.includes('mb') || titleA.includes('mb')) scoreA += 30;
-                if (certB.includes('mb') || titleB.includes('mb')) scoreB += 30;
+                // 檢查產品 cert 欄位是否有 MB（不是 MA 或 MA2）
+                if (certA.includes('mb') && !certA.includes('ma2') && !certA.match(/\bma\b/)) scoreA += 80;
+                if (certB.includes('mb') && !certB.includes('ma2') && !certB.match(/\bma\b/)) scoreB += 80;
+            } else {
+                const certLower = cert.toLowerCase().replace(/\s+/g, '');
+                if (certA.includes(certLower)) scoreA += 60;
+                if (certB.includes(certLower)) scoreB += 60;
             }
         }
 
-        // === 權重 3：合成度匹配（+40）===
+        // === 權重 4：合成度匹配（+50）===
         if (recommendSynthetic === 'full') {
-            // 優先推薦全合成
-            if (titleA.includes('synth') || word1A.includes('全合成')) scoreA += 40;
-            if (titleB.includes('synth') || word1B.includes('全合成')) scoreB += 40;
+            if (titleA.includes('synth') || word1A.includes('全合成')) scoreA += 50;
+            if (titleB.includes('synth') || word1B.includes('全合成')) scoreB += 50;
         }
 
-        // === 權重 4：車型關鍵字匹配（+20）===
+        // === 權重 5：車型關鍵字匹配（+20）===
         for (const kw of keywords) {
             if (titleA.includes(kw) || sortA.includes(kw)) scoreA += 20;
             if (titleB.includes(kw) || sortB.includes(kw)) scoreB += 20;
         }
 
-        // === 權重 5：sort 欄位包含對應車型分類（+10）===
+        // === 權重 6：sort 欄位包含對應車型分類（+10）===
         if (sortA.includes(vehicleType.toLowerCase())) scoreA += 10;
         if (sortB.includes(vehicleType.toLowerCase())) scoreB += 10;
 
