@@ -132,10 +132,29 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
     const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
 
     try {
-        // 從 Wix 取得產品列表
+        // 從 Wix 取得產品列表（帶重試機制）
         console.log('[RAG] Fetching products from Wix API...');
-        const response = await fetch(`${WIX_API_URL}/products`);
-        const data = await response.json();
+
+        const fetchWithRetry = async (url, retries = 2) => {
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 8000); // 8秒超時
+
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeout);
+
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (e) {
+                    console.warn(`[RAG] Wix API attempt ${i + 1} failed:`, e.message);
+                    if (i === retries) throw e;
+                    await new Promise(r => setTimeout(r, 500)); // 等待 500ms 後重試
+                }
+            }
+        };
+
+        const data = await fetchWithRetry(`${WIX_API_URL}/products`);
 
         if (!data.success || !data.products || data.products.length === 0) {
             console.warn('[RAG] No products from Wix API');
@@ -144,6 +163,7 @@ async function searchProductsInternal(message, intent, aiAnalysis) {
 
         const products = data.products;
         console.log(`[RAG] Fetched ${products.length} products from Wix`);
+
 
         const productCategory = intent?.productCategory || '機油';
         const vehicleType = intent?.vehicleType;
