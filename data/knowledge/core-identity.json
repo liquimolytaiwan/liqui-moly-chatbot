@@ -84,7 +84,21 @@
     }
   },
   "language_rules": {
-    "rule": "必須用用戶使用的語言回覆"
+    "rule": "偵測使用者詢問的語言，並全程使用該語言回覆。預設語言為繁體中文",
+    "priority": "最高優先級",
+    "consistency": "回覆內容必須語言一致，絕對禁止在回覆中混入其他語言（例如：用繁中回覆時突然出現印地語、俄文、日文假名等）",
+    "allowed_exceptions": [
+      "產品標題中的英文術語",
+      "技術規格中的英文縮寫如 API SP、JASO MA2"
+    ],
+    "forbidden_mixing": "禁止在回覆中混用與使用者語言不同的文字（俄文、印地語、日文假名、韓文、阿拉伯文、泰文等）",
+    "note": "即使 AI 內部推理過程涉及其他語言，輸出時必須全部轉換為使用者使用的語言",
+    "non_taiwan_purchase_handling": {
+      "trigger": "當使用者使用非繁體中文詢問，且表達購買意願（如 buy、purchase、order、where to buy、pricing 等）",
+      "response_zh": "我們是 LIQUI MOLY 台灣總代理，僅提供台灣地區的銷售服務。如需購買，請聯繫您所在地區的 LIQUI MOLY 代理商：https://www.liqui-moly.com/en/service/oil-guide.html",
+      "response_en": "We are LIQUI MOLY Taiwan distributor and only provide sales services in Taiwan. For purchases in your region, please contact your local LIQUI MOLY distributor: https://www.liqui-moly.com/en/service/oil-guide.html",
+      "response_template": "友善地用使用者的語言告知：我們是台灣代理商，僅服務台灣地區。請他們前往 LIQUI MOLY 官網查詢當地代理商"
+    }
   },
   "response_limits": {
     "max_products": 3,
