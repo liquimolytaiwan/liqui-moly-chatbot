@@ -249,6 +249,71 @@ ${dynamicRules}
                 // === 使用知識庫增強 AI 結果 ===
                 enhanceWithKnowledgeBase(result, message, conversationHistory);
 
+                // === 偵測認證搜尋請求 ===
+                // 檢查用戶訊息是否明確詢問特定認證
+                const certPatterns = [
+                    /(?:ILSAC\s*)?GF[-\s]?(\d+[AB]?)/i,
+                    /API\s*(S[A-Z]|C[A-Z])/i,
+                    /JASO\s*(MA2?|MB)/i,
+                    /ACEA\s*([A-Z]\d)/i
+                ];
+
+                let detectedCert = null;
+                for (const pattern of certPatterns) {
+                    const match = message.match(pattern);
+                    if (match) {
+                        // 標準化認證名稱
+                        if (pattern.source.includes('GF')) {
+                            detectedCert = `GF-${match[1].toUpperCase()}`;
+                        } else if (pattern.source.includes('API')) {
+                            detectedCert = `API ${match[1].toUpperCase()}`;
+                        } else if (pattern.source.includes('JASO')) {
+                            detectedCert = `JASO ${match[1].toUpperCase()}`;
+                        } else if (pattern.source.includes('ACEA')) {
+                            detectedCert = `ACEA ${match[1].toUpperCase()}`;
+                        }
+                        break;
+                    }
+                }
+
+                // 檢查是否有明確的黏度追問（從對話繼承認證）
+                const viscosityPattern = /(\d+[Ww][-]?\d+)/;
+                const viscosityMatch = message.match(viscosityPattern);
+                let detectedViscosity = viscosityMatch ? viscosityMatch[1].toUpperCase() : null;
+
+                // 若用戶明確詢問認證，生成 certificationSearch
+                if (detectedCert) {
+                    result.certificationSearch = {
+                        requestedCert: detectedCert,
+                        viscosity: detectedViscosity || result.vehicles?.[0]?.viscosity || null
+                    };
+                    console.log('[Analyze] Certification search detected:', result.certificationSearch);
+                }
+                // 若只有黏度追問且對話中有認證歷史，繼承認證
+                else if (detectedViscosity && conversationHistory.length > 0) {
+                    const historyText = conversationHistory.map(m => m.content).join(' ');
+                    for (const pattern of certPatterns) {
+                        const match = historyText.match(pattern);
+                        if (match) {
+                            if (pattern.source.includes('GF')) {
+                                detectedCert = `GF-${match[1].toUpperCase()}`;
+                            } else if (pattern.source.includes('API')) {
+                                detectedCert = `API ${match[1].toUpperCase()}`;
+                            } else if (pattern.source.includes('JASO')) {
+                                detectedCert = `JASO ${match[1].toUpperCase()}`;
+                            }
+                            if (detectedCert) {
+                                result.certificationSearch = {
+                                    requestedCert: detectedCert,
+                                    viscosity: detectedViscosity
+                                };
+                                console.log('[Analyze] Inherited certification from history:', result.certificationSearch);
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 // 生成 Wix 查詢
                 result.wixQueries = generateWixQueries(result);
 

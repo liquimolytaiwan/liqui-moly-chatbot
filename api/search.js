@@ -7,7 +7,11 @@
  * - 多車型分類輸出
  * - 症狀格式化說明
  * - 產品快取機制
+ * - 認證兼容性搜尋（GF-7A → GF-6A 等）
  */
+
+import fs from 'fs';
+import path from 'path';
 
 const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
@@ -16,6 +20,17 @@ const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
 let productsCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 30 * 60 * 1000; // 30 分鐘
+
+// 載入認證兼容表
+let certCompatibility = null;
+try {
+    const refPath = path.join(process.cwd(), 'data', 'knowledge', 'search-reference.json');
+    const searchRef = JSON.parse(fs.readFileSync(refPath, 'utf-8'));
+    certCompatibility = searchRef.certification_compatibility || null;
+    console.log('[Search] Certification compatibility table loaded');
+} catch (e) {
+    console.warn('[Search] Failed to load certification compatibility:', e.message);
+}
 
 // CORS headers
 const corsHeaders = {
@@ -106,13 +121,149 @@ async function getProducts() {
 // ============================================
 // 完整版搜尋邏輯（移植自 Wix searchProducts）
 // ============================================
+
+// ============================================
+// 認證搜尋（含升級兼容機制）
+// ============================================
+/**
+ * 根據認證和黏度進行交集搜尋，支援認證升級
+ * @param {Array} products - 產品列表
+ * @param {string} requestedCert - 用戶請求的認證 (如 "GF-6A")
+ * @param {string} viscosity - 可選的黏度 (如 "5W-30")
+ * @returns {Object} { products, requestedCert, usedCert, isUpgrade, certNotice }
+ */
+function searchWithCertUpgrade(products, requestedCert, viscosity = null) {
+    if (!requestedCert || !certCompatibility) {
+        return { products: [], requestedCert, usedCert: null, isUpgrade: false, certNotice: null };
+    }
+
+    const normalizedRequest = requestedCert.toUpperCase().replace(/[-\s]/g, '');
+    console.log(`[CertSearch] Searching for: ${requestedCert}${viscosity ? ` + ${viscosity}` : ''}`);
+
+    // 搜尋產品的輔助函式
+    const searchProducts = (certPattern, visc = null) => {
+        return products.filter(p => {
+            if (!p.cert) return false;
+            const certValue = p.cert.toUpperCase().replace(/[-\s]/g, '');
+            const certMatch = certValue.includes(certPattern);
+            if (!certMatch) return false;
+
+            // 如果有黏度條件，還要匹配黏度
+            if (visc) {
+                const word2 = (p.word2 || '').toUpperCase().replace('-', '');
+                const targetVisc = visc.toUpperCase().replace('-', '');
+                if (!word2.includes(targetVisc)) return false;
+            }
+            return true;
+        });
+    };
+
+    // 1. 先精確搜尋用戶請求的認證
+    let results = searchProducts(normalizedRequest, viscosity);
+    if (results.length > 0) {
+        console.log(`[CertSearch] Found ${results.length} products with exact cert: ${requestedCert}`);
+        return {
+            products: results,
+            requestedCert,
+            usedCert: requestedCert,
+            isUpgrade: false,
+            certNotice: null
+        };
+    }
+
+    // 2. 查找升級認證
+    console.log(`[CertSearch] No exact match, looking for upgrade certification...`);
+
+    // 遍歷所有認證標準（ILSAC, API, JASO）
+    for (const [standard, upgrades] of Object.entries(certCompatibility)) {
+        if (standard === '_description') continue;
+
+        // 遍歷每個升級認證
+        for (const [upgradeCert, compatibleWith] of Object.entries(upgrades)) {
+            const normalizedUpgrade = upgradeCert.toUpperCase().replace(/[-\s]/g, '');
+
+            // 檢查用戶請求的認證是否在兼容列表中
+            const isCompatible = compatibleWith.some(c =>
+                c.toUpperCase().replace(/[-\s]/g, '') === normalizedRequest
+            );
+
+            if (isCompatible) {
+                // 嘗試用升級認證搜尋
+                results = searchProducts(normalizedUpgrade, viscosity);
+                if (results.length > 0) {
+                    console.log(`[CertSearch] Found ${results.length} products with upgrade cert: ${upgradeCert} (compatible with ${requestedCert})`);
+                    return {
+                        products: results,
+                        requestedCert,
+                        usedCert: upgradeCert,
+                        isUpgrade: true,
+                        certNotice: `目前無 ${requestedCert} 認證產品，以下是 ${upgradeCert} 認證產品（向後兼容 ${requestedCert}）`
+                    };
+                }
+            }
+        }
+    }
+
+    // 3. 都沒有結果
+    console.log(`[CertSearch] No products found for ${requestedCert} or compatible upgrades`);
+    return {
+        products: [],
+        requestedCert,
+        usedCert: null,
+        isUpgrade: false,
+        certNotice: `目前沒有符合 ${requestedCert}${viscosity ? ` + ${viscosity}` : ''} 的產品`
+    };
+}
 function searchProducts(products, query, searchInfo) {
     try {
         let allResults = [];
         const seenIds = new Set();
         const productCategory = searchInfo?.productCategory || '機油';
 
-        // 0. 用戶定義的明確搜尋規則 (User Defined Rules) - 只針對機油
+        // ============================================
+        // 0. 認證搜尋優先處理（當用戶明確詢問認證時）
+        // ============================================
+        const certSearchRequest = searchInfo?.certificationSearch;
+        if (certSearchRequest && certSearchRequest.requestedCert) {
+            console.log('[Search] Certification search mode activated:', JSON.stringify(certSearchRequest));
+
+            const certResult = searchWithCertUpgrade(
+                products,
+                certSearchRequest.requestedCert,
+                certSearchRequest.viscosity || null
+            );
+
+            if (certResult.products.length > 0) {
+                // 將認證搜尋結果加入
+                for (const p of certResult.products.slice(0, 30)) {
+                    if (p.id && !seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        allResults.push(p);
+                    }
+                }
+
+                // 傳遞認證通知給格式化函式
+                const formattedResult = formatProducts(allResults, {
+                    ...searchInfo,
+                    certNotice: certResult.certNotice,
+                    usedCert: certResult.usedCert,
+                    isUpgrade: certResult.isUpgrade,
+                    requestedCert: certResult.requestedCert
+                });
+                return formattedResult;
+            } else {
+                // 無結果時，返回明確的無結果訊息
+                return `## ⚠️ 查無符合條件的產品
+
+${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert} 認證的產品`}
+
+請確認：
+1. 認證名稱是否正確（如 ILSAC GF-6A、API SP 等）
+2. 是否可接受更高等級的兼容認證`;
+            }
+        }
+
+        // 0.5 用戶定義的明確搜尋規則 (User Defined Rules) - 只針對機油
         const vehicleInfo = searchInfo?.vehicles?.[0];
         if (vehicleInfo && vehicleInfo.vehicleType === '摩托車' && productCategory === '機油') {
             console.log('[Search] Using User Defined Motorcycle Rules (Oil):', JSON.stringify(vehicleInfo));
@@ -653,6 +804,29 @@ function formatProducts(products, searchInfo = null) {
 
 **以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
 `;
+
+    // 認證搜尋通知（升級認證說明）
+    const certNotice = searchInfo?.certNotice;
+    const isUpgrade = searchInfo?.isUpgrade;
+    const requestedCert = searchInfo?.requestedCert;
+    const usedCert = searchInfo?.usedCert;
+
+    if (certNotice) {
+        context += `
+## 📋 認證搜尋結果
+
+**用戶詢問:** ${requestedCert} 認證
+**實際結果:** ${usedCert || '無'} ${isUpgrade ? '(升級認證，向後兼容)' : '(精確匹配)'}
+
+> ⚠️ ${certNotice}
+
+**回覆要求:**
+1. 向用戶說明目前無 ${requestedCert} 認證產品
+2. 解釋 ${usedCert} 是更新一代的認證，向後兼容 ${requestedCert}
+3. 推薦以下產品
+
+`;
+    }
 
     // 加入產品類別提示和推薦依據
     if (isAdditive) {

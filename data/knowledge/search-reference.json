@@ -1,5 +1,45 @@
 {
     "_description": "精簡參照表 - 供 AI prompt 使用，避免膨脹",
+    "certification_compatibility": {
+        "_description": "認證向後兼容對照表 - 新一代認證可滿足舊一代需求",
+        "ILSAC": {
+            "GF-7A": [
+                "GF-6A",
+                "GF-6B",
+                "GF-5"
+            ],
+            "GF-6A": [
+                "GF-6B",
+                "GF-5"
+            ],
+            "GF-6B": [
+                "GF-5"
+            ]
+        },
+        "API": {
+            "SQ": [
+                "SP",
+                "SN",
+                "SM",
+                "SL"
+            ],
+            "SP": [
+                "SN",
+                "SM",
+                "SL"
+            ],
+            "SN": [
+                "SM",
+                "SL"
+            ]
+        },
+        "JASO": {
+            "MA2": [
+                "MA",
+                "MB"
+            ]
+        }
+    },
     "viscosity_by_vehicle": {
         "日系車(Toyota/Lexus/Honda/Mazda/Nissan)": "0W-20",
         "韓系車(Hyundai/Kia)": "0W-20 或 5W-30",
