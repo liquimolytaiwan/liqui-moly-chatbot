@@ -82,9 +82,19 @@ export default async function handler(req, res) {
 function buildContents(message, history, systemPrompt) {
     const contents = [];
 
-    if (history && history.length > 0) {
+    // 限制對話歷史長度，節省 Token
+    const MAX_HISTORY = 15;
+    const recentHistory = history && history.length > MAX_HISTORY
+        ? history.slice(-MAX_HISTORY)
+        : history;
+
+    if (history && history.length > MAX_HISTORY) {
+        console.log(`[Chat] Truncating history from ${history.length} to ${MAX_HISTORY} messages`);
+    }
+
+    if (recentHistory && recentHistory.length > 0) {
         let isFirstUser = true;
-        for (const msg of history) {
+        for (const msg of recentHistory) {
             if (msg.role === 'user') {
                 if (isFirstUser) {
                     contents.push({
