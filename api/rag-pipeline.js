@@ -12,8 +12,10 @@ const { retrieveKnowledge, loadJSON } = require('./knowledge-retriever');
 const { buildPrompt } = require('./prompt-builder');
 const { convertAIResultToIntent, isValidAIResult } = require('./intent-converter');
 
-// 載入 search-reference.json 取得關鍵字對照表
+// 載入 search-reference.json 取得關鍵字對照表和認證兼容表
 const searchRef = loadJSON('search-reference.json') || {};
+const certCompatibility = searchRef.certification_compatibility || null;
+console.log('[RAG] Certification compatibility table loaded:', certCompatibility ? 'YES' : 'NO');
 
 
 // AI 分析模組（動態載入避免循環依賴）
@@ -101,13 +103,39 @@ async function processWithRAG(message, conversationHistory = [], productContext 
     const knowledge = await retrieveKnowledge(intent);
     console.log('[RAG] Knowledge retrieved');
 
-    // === Step 3.5: 產品搜尋（強制執行，忽略傳入的 productContext）===
-    // 始終從 Wix API 取得最新產品資料，確保 AI 有正確的產品清單
+    // === Step 3.5: 產品搜尋（呼叫統一的 /api/search 端點）===
+    // 統一使用 search.js 的搜尋邏輯，確保認證升級等功能在所有平台生效
     console.log('[RAG] === Step 3.5: Product Search ===');
-    console.log('[RAG] Always fetching products from Wix API...');
+    console.log('[RAG] Calling unified /api/search endpoint...');
     try {
-        productContext = await searchProductsInternal(message, intent, aiAnalysis);
-        console.log(`[RAG] Product search completed, context length: ${productContext.length}`);
+        // 判斷是在 Vercel 內部還是外部呼叫
+        const searchUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}/api/search`
+            : 'https://liqui-moly-chatbot.vercel.app/api/search';
+
+        const searchResponse = await fetch(searchUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message,
+                searchInfo: {
+                    ...intent,
+                    ...aiAnalysis,
+                    vehicles: aiAnalysis?.vehicles || [],
+                    wixQueries: aiAnalysis?.wixQueries || [],
+                    certificationSearch: aiAnalysis?.certificationSearch || null
+                }
+            })
+        });
+
+        const searchData = await searchResponse.json();
+        if (searchData.success && searchData.productContext) {
+            productContext = searchData.productContext;
+            console.log(`[RAG] Product search completed via API, context length: ${productContext.length}`);
+        } else {
+            console.warn('[RAG] Search API returned no context, using fallback');
+            productContext = '⚠️ 產品搜尋無結果，請告訴用戶目前無符合條件的產品。';
+        }
     } catch (e) {
         console.error('[RAG] Product search failed:', e.message);
         productContext = '⚠️ 產品搜尋失敗，請只回覆「很抱歉，目前無法搜尋產品資料庫，請稍後再試。」';
@@ -127,485 +155,10 @@ async function processWithRAG(message, conversationHistory = [], productContext 
 }
 
 
-/**
- * 內部產品搜尋（從 Wix 取得產品並格式化）
- * v2.1: 增加多欄位搜尋、智能關鍵字擴展
- */
-async function searchProductsInternal(message, intent, aiAnalysis) {
-    const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
-    const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
-
-    try {
-        // 從 Wix 取得產品列表（帶重試機制）
-        console.log('[RAG] Fetching products from Wix API...');
-
-        const fetchWithRetry = async (url, retries = 2) => {
-            for (let i = 0; i <= retries; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 8000); // 8秒超時
-
-                    const response = await fetch(url, { signal: controller.signal });
-                    clearTimeout(timeout);
-
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return await response.json();
-                } catch (e) {
-                    console.warn(`[RAG] Wix API attempt ${i + 1} failed:`, e.message);
-                    if (i === retries) throw e;
-                    await new Promise(r => setTimeout(r, 500)); // 等待 500ms 後重試
-                }
-            }
-        };
-
-        const data = await fetchWithRetry(`${WIX_API_URL}/products`);
-
-        if (!data.success || !data.products || data.products.length === 0) {
-            console.warn('[RAG] No products from Wix API');
-            return '⚠️ 目前沒有產品資料，請只回覆「很抱歉，產品資料庫暫時無法存取。」';
-        }
-
-        const products = data.products;
-        console.log(`[RAG] Fetched ${products.length} products from Wix`);
-
-
-        const productCategory = intent?.productCategory || '機油';
-        const vehicleType = intent?.vehicleType;
-        const wixQueries = aiAnalysis?.wixQueries || [];
-        const searchKeywords = aiAnalysis?.searchKeywords || [];
-
-        let allResults = [];
-        const seenIds = new Set();
-
-        // === 智能關鍵字擴展 ===
-        // 從用戶訊息和 AI 分析中提取關鍵字
-        const userKeywords = extractKeywordsFromMessage(message);
-        console.log('[RAG] User keywords:', userKeywords);
-        console.log('[RAG] AI searchKeywords:', searchKeywords);
-
-        // === 階段 1: 執行 AI 生成的 wixQueries ===
-        if (wixQueries.length > 0) {
-            console.log('[RAG] Phase 1: Executing wixQueries...');
-            for (const task of wixQueries) {
-                const matched = searchInField(products, task.field, task.value, task.method);
-                addToResults(matched, allResults, seenIds, task.limit || 20);
-
-                // === 關鍵字拆分搜尋 ===
-                // 如果完整關鍵字找不到結果，嘗試拆分關鍵字
-                if (matched.length === 0 && task.value.length > 2) {
-                    const subKeywords = splitChineseKeywords(task.value);
-                    console.log(`[RAG] Splitting keyword "${task.value}" into:`, subKeywords);
-                    for (const subKw of subKeywords) {
-                        const subMatched = searchInField(products, task.field, subKw, 'contains');
-                        addToResults(subMatched, allResults, seenIds, 10);
-                    }
-                }
-            }
-            console.log(`[RAG] Phase 1 results: ${allResults.length} products`);
-        }
-
-        // === 階段 2: 多欄位關鍵字搜尋 ===
-        if (allResults.length < 5) {
-            console.log('[RAG] Phase 2: Multi-field keyword search...');
-
-            // 合併所有關鍵字並拆分
-            const allKeywords = [...new Set([...userKeywords, ...searchKeywords])];
-            const expandedKeywords = [];
-            for (const kw of allKeywords) {
-                expandedKeywords.push(kw);
-                // 對較長的中文關鍵字進行拆分
-                if (kw.length > 3 && /[\u4e00-\u9fff]/.test(kw)) {
-                    expandedKeywords.push(...splitChineseKeywords(kw));
-                }
-            }
-            const uniqueKeywords = [...new Set(expandedKeywords)];
-            console.log('[RAG] Expanded keywords:', uniqueKeywords);
-
-            for (const keyword of uniqueKeywords) {
-                // 搜尋多個欄位
-                const fields = ['title', 'content', 'word1', 'word2', 'sort'];
-                for (const field of fields) {
-                    const matched = searchInField(products, field, keyword, 'contains');
-                    addToResults(matched, allResults, seenIds, 10);
-                }
-            }
-            console.log(`[RAG] Phase 2 results: ${allResults.length} products`);
-        }
-
-
-        // === 階段 3: 產品類別 + 車型 Fallback ===
-        if (allResults.length === 0) {
-            console.log('[RAG] Phase 3: Category fallback search...');
-
-            // 根據類別搜尋 sort 欄位（使用 JSON 資料）
-            const categoryToSort = searchRef.categoryToSort || {};
-            let sortKeyword = productCategory;
-
-            // 機油和添加劑需要根據車型分類
-            if (productCategory === '機油') {
-                sortKeyword = vehicleType === '摩托車'
-                    ? categoryToSort['機油_摩托車'] || '【摩托車】機油'
-                    : categoryToSort['機油_汽車'] || '【汽車】機油';
-            } else if (productCategory === '添加劑') {
-                sortKeyword = vehicleType === '摩托車'
-                    ? categoryToSort['添加劑_摩托車'] || '【摩托車】添加劑'
-                    : categoryToSort['添加劑_汽車'] || '【汽車】添加劑';
-            } else {
-                sortKeyword = categoryToSort[productCategory] || productCategory;
-            }
-
-            const matched = products.filter(p =>
-                (p.sort || '').toLowerCase().includes(sortKeyword.toLowerCase())
-            );
-            addToResults(matched, allResults, seenIds, 20);
-            console.log(`[RAG] Phase 3 results: ${allResults.length} products`);
-        }
-
-        // === 產品排序：車型專用產品優先 + 認證 + 合成度 ===
-        if (vehicleType && allResults.length > 0) {
-            console.log(`[RAG] Sorting products for vehicle type: ${vehicleType}`);
-            allResults = sortProductsByVehicleType(allResults, vehicleType, aiAnalysis);
-
-            // 調試：顯示排序後前3個產品
-            const top3 = allResults.slice(0, 3).map(p => ({
-                sku: p.partno || p.partNo,
-                title: (p.title || '').substring(0, 40)
-            }));
-            console.log(`[RAG] Top 3 products after sorting:`, JSON.stringify(top3));
-        }
-
-        // 格式化產品為 prompt context
-        if (allResults.length === 0) {
-            return `⚠️ 沒有找到符合「${productCategory}」的產品。請告訴用戶「目前資料庫未顯示符合條件的產品」，不要編造任何產品！`;
-        }
-
-        // 格式化結果（傳入車型資訊以增加優先級提示）
-        return formatProductContext(allResults, productCategory, PRODUCT_BASE_URL, vehicleType, aiAnalysis?.additiveSubtype, aiAnalysis);
-
-    } catch (e) {
-
-        console.error('[RAG] searchProductsInternal error:', e);
-        throw e;
-    }
-}
-
-/**
- * 拆分中文關鍵字為子關鍵字
- * 例如: "電子接點噴劑" → ["電子接點", "電子", "接點", "噴劑"]
- */
-function splitChineseKeywords(keyword) {
-    const subKeywords = [];
-
-    // 移除常見的通用詞彙後綴
-    const suffixes = ['噴劑', '清潔劑', '添加劑', '保護劑', '潤滑劑', '修復劑', '清洗劑'];
-    let cleaned = keyword;
-    for (const suffix of suffixes) {
-        if (keyword.endsWith(suffix)) {
-            cleaned = keyword.slice(0, -suffix.length);
-            if (cleaned.length >= 2) {
-                subKeywords.push(cleaned);
-            }
-            break;
-        }
-    }
-
-    // 拆分為前半和後半（適用於較長的關鍵字）
-    if (keyword.length >= 4) {
-        const mid = Math.floor(keyword.length / 2);
-        const firstHalf = keyword.slice(0, mid + 1);
-        const secondHalf = keyword.slice(mid);
-        if (firstHalf.length >= 2) subKeywords.push(firstHalf);
-        if (secondHalf.length >= 2) subKeywords.push(secondHalf);
-    }
-
-    // 嘗試常見的產品關鍵字模式
-    const patterns = [
-        /^(.{2,3})(?:噴劑|清潔|保護|添加)/,
-        /^(電子|引擎|冷卻|煞車|變速)(.{2,})/
-    ];
-
-    for (const pattern of patterns) {
-        const match = keyword.match(pattern);
-        if (match && match[1] && match[1].length >= 2) {
-            subKeywords.push(match[1]);
-        }
-    }
-
-    // 去重並過濾太短的
-    return [...new Set(subKeywords)].filter(k => k.length >= 2);
-}
-
-/**
- * 從用戶訊息提取關鍵字
- */
-function extractKeywordsFromMessage(message) {
-    const keywords = [];
-    const lowerMsg = message.toLowerCase();
-
-    // 產品關鍵字對照表（使用 JSON 資料）
-    const keywordMap = searchRef.keywordMapping || {};
-
-
-    for (const [key, values] of Object.entries(keywordMap)) {
-        if (lowerMsg.includes(key)) {
-            keywords.push(...values);
-        }
-    }
-
-    return [...new Set(keywords)];
-}
-
-/**
- * 在指定欄位搜尋
- */
-function searchInField(products, field, searchValue, method) {
-    return products.filter(p => {
-        const fieldValue = p[field];
-        if (!fieldValue) return false;
-
-        const value = String(fieldValue).toLowerCase();
-        const search = String(searchValue).toLowerCase();
-
-        if (method === 'contains') {
-            return value.includes(search);
-        } else if (method === 'eq') {
-            return value === search;
-        }
-        return false;
-    });
-}
-
-/**
- * 加入搜尋結果（去重）
- */
-function addToResults(matched, allResults, seenIds, limit) {
-    for (const p of matched.slice(0, limit)) {
-        if (p.id && !seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            allResults.push(p);
-        }
-    }
-}
-
-/**
- * 按照車型、認證、合成度排序產品
- * 權重優先級：
- * 1. 用戶指定的產品編號（最高）
- * 2. 車型子類型匹配（速克達 → Scooter）
- * 3. 認證匹配 + 合成度匹配
- * 4. 車型關鍵字匹配
- */
-function sortProductsByVehicleType(products, vehicleType, aiAnalysis = null) {
-    // 使用 JSON 資料
-    const vehicleKeywordsMap = searchRef.vehicleKeywords || {};
-    const keywords = vehicleKeywordsMap[vehicleType] || [];
-
-    // 從 AI 分析結果中提取資訊
-    const certifications = aiAnalysis?.certifications || aiAnalysis?.matchedVehicle?.certification || [];
-    const recommendSynthetic = aiAnalysis?.recommendSynthetic || 'any';
-    const matchedVehicleSKU = aiAnalysis?.matchedVehicle?.recommendedSKU;
-
-    // 取得車輛子類型（速克達、檔車等）
-    const vehicleSubType = aiAnalysis?.vehicles?.[0]?.vehicleSubType ||
-        aiAnalysis?.matchedVehicle?.type || '';
-    const isScooter = vehicleSubType.includes('速克達') || vehicleSubType.toLowerCase().includes('scooter');
-
-    console.log(`[RAG] Sorting with certifications: ${certifications}, synthetic: ${recommendSynthetic}, subType: ${vehicleSubType}, isScooter: ${isScooter}`);
-
-    return products.sort((a, b) => {
-        const titleA = (a.title || '').toLowerCase();
-        const titleB = (b.title || '').toLowerCase();
-        const sortA = (a.sort || '').toLowerCase();
-        const sortB = (b.sort || '').toLowerCase();
-        const certA = (a.cert || '').toLowerCase();
-        const certB = (b.cert || '').toLowerCase();
-        const word1A = (a.word1 || '').toLowerCase();
-        const word1B = (b.word1 || '').toLowerCase();
-        const partnoA = (a.partno || a.partNo || '').toUpperCase();
-        const partnoB = (b.partno || b.partNo || '').toUpperCase();
-
-        let scoreA = 0;
-        let scoreB = 0;
-
-        // === 權重 1：車型推薦 SKU（最高優先級 +200）===
-        if (matchedVehicleSKU) {
-            if (partnoA === matchedVehicleSKU.toUpperCase()) scoreA += 200;
-            if (partnoB === matchedVehicleSKU.toUpperCase()) scoreB += 200;
-        }
-
-        // === 權重 2：車輛子類型匹配（+100）===
-        // 速克達 → Scooter 產品優先
-        if (isScooter) {
-            if (titleA.includes('scooter')) scoreA += 100;
-            if (titleB.includes('scooter')) scoreB += 100;
-            // 降低 Street Race 類型產品的分數（這是給檔車用的）
-            if (titleA.includes('street') && !titleA.includes('scooter')) scoreA -= 50;
-            if (titleB.includes('street') && !titleB.includes('scooter')) scoreB -= 50;
-        }
-
-        // === 權重 3：認證精確匹配（+80）===
-        for (const cert of certifications) {
-            // 精確匹配 JASO MB（用空格分隔確保不會匹配到 MA）
-            if (cert.toUpperCase() === 'JASO MB') {
-                // 檢查產品 cert 欄位是否有 MB（不是 MA 或 MA2）
-                if (certA.includes('mb') && !certA.includes('ma2') && !certA.match(/\bma\b/)) scoreA += 80;
-                if (certB.includes('mb') && !certB.includes('ma2') && !certB.match(/\bma\b/)) scoreB += 80;
-            } else {
-                const certLower = cert.toLowerCase().replace(/\s+/g, '');
-                if (certA.includes(certLower)) scoreA += 60;
-                if (certB.includes(certLower)) scoreB += 60;
-            }
-        }
-
-        // === 權重 4：合成度匹配（+50）===
-        if (recommendSynthetic === 'full') {
-            if (titleA.includes('synth') || word1A.includes('全合成')) scoreA += 50;
-            if (titleB.includes('synth') || word1B.includes('全合成')) scoreB += 50;
-        }
-
-        // === 權重 5：車型關鍵字匹配（+20）===
-        for (const kw of keywords) {
-            if (titleA.includes(kw) || sortA.includes(kw)) scoreA += 20;
-            if (titleB.includes(kw) || sortB.includes(kw)) scoreB += 20;
-        }
-
-        // === 權重 6：sort 欄位包含對應車型分類（+10）===
-        if (sortA.includes(vehicleType.toLowerCase())) scoreA += 10;
-        if (sortB.includes(vehicleType.toLowerCase())) scoreB += 10;
-
-        return scoreB - scoreA; // 分數高的在前
-    });
-}
-
-
-/**
- * 格式化產品資料為 prompt context
- * @param {Array} products - 產品清單
- * @param {string} category - 產品類別
- * @param {string} baseUrl - 產品連結基礎 URL
- * @param {string} vehicleType - 車型（可選）
- * @param {string} additiveSubtype - 添加劑子類型（可選）
- */
-function formatProductContext(products, category, baseUrl, vehicleType = null, additiveSubtype = null, aiAnalysis = null) {
-    // 車型專用提示
-    let vehicleHint = '';
-
-    // 判斷是否為速克達
-    const vehicleSubType = aiAnalysis?.vehicles?.[0]?.vehicleSubType ||
-        aiAnalysis?.matchedVehicle?.type || '';
-    const isScooter = vehicleSubType.includes('速克達') || vehicleSubType.toLowerCase().includes('scooter');
-
-    if (vehicleType === '摩托車') {
-        vehicleHint = `
-## 🏍️ 重要：摩托車產品優先規則
-
-**用戶的車型是摩托車，請優先推薦以下標記的摩托車專用產品！**
-
-- 產品名稱包含 "Motorbike" 或 "摩托車" 的是**摩托車專用**產品
-- **禁止推薦汽車專用產品給摩托車用戶**
-- 如果用戶問的是機油添加劑，優先推薦 "Motorbike MoS2 Shooter (LM3444)"
-- 如果用戶問的是燃油添加劑，優先推薦 "Motorbike 4T Shooter (LM7822)" 或 "Motorbike Speed Shooter (LM7820)"
-
-`;
-        // 速克達專用規則
-        if (isScooter) {
-            vehicleHint += `
-## ⭐⚠️ 速克達專用規則（超重要！）
-
-**用戶的車型是速克達（無濕式離合器），必須使用 JASO MB 認證機油！**
-
-- ⭐ **優先推薦產品名稱包含 "Scooter" 的速克達專用機油**
-- ⛔ **絕對禁止推薦 "Street Race" 或 "Street" 系列**（這是給檔車用的，認證不符！）
-- 速克達專用產品已標記 ⭐ [速克達專用]，請**嚴格按照產品編號順序**從這些產品中推薦
-- 如果清單中有 Scooter 產品，必須優先推薦，不可跳過！
-
-`;
-        }
-    } else if (vehicleType === '汽車') {
-        vehicleHint = `
-## 🚗 重要：汽車產品優先規則
-
-**用戶的車型是汽車，請優先推薦通用或汽車專用產品。**
-
-- 避免推薦 "Motorbike" 開頭的摩托車專用產品
-
-`;
-    }
-
-    // 添加劑子類型提示
-    let subtypeHint = '';
-    if (additiveSubtype === '機油添加劑') {
-        subtypeHint = `
-## 📍 用戶詢問的是：機油添加劑
-
-請**只推薦機油添加劑**，不要推薦燃油添加劑（如 Shooter、Speed 等燃油系統清潔劑）。
-摩托車專用機油添加劑：Motorbike MoS2 Shooter (LM3444)
-汽車專用機油添加劑：Oil Additive (LM2500)、Cera Tec (LM3721)
-
-`;
-    } else if (additiveSubtype === '汽油添加劑' || additiveSubtype === '燃油添加劑') {
-        subtypeHint = `
-## 📍 用戶詢問的是：燃油添加劑/汽油精
-
-請**只推薦燃油添加劑**，不要推薦機油添加劑。
-
-`;
-    }
-
-    let context = `## ⚠️⚠️⚠️ 重要警告 ⚠️⚠️⚠️
-
-**以下是唯一可以推薦的產品。禁止使用任何不在此列表中的產品編號！**
-
-${vehicleHint}${subtypeHint}
-## 📋 重要：請按照以下順序推薦產品（排名越前越優先）
-
----
-
-## 可用${category}產品清單（共 ${products.length} 項）
-
-`;
-
-    // 標記車型專用產品
-    products.slice(0, 30).forEach((p, i) => {
-        const pid = p.partno || p.partNo || p.sku;
-        const url = pid ? `${baseUrl}${pid.toLowerCase()}` : baseUrl;
-        const title = p.title || '未命名產品';
-
-        // 標記是否為摩托車專用
-        const isMotorbike = title.toLowerCase().includes('motorbike') || (p.sort || '').includes('摩托車');
-        const marker = isMotorbike ? '🏍️ [摩托車專用]' : '';
-
-        // 標記 Scooter 產品的優先級
-        const isScooterProduct = title.toLowerCase().includes('scooter');
-        const priorityMark = isScooterProduct ? '⭐ [速克達專用]' : '';
-
-        // 內部優先級標記（不要在回覆中顯示給用戶！）
-        const internalPriority = (isMotorbike ? '[MOTORBIKE]' : '') + (isScooterProduct ? '[SCOOTER-PRIORITY]' : '');
-
-        context += `### ${i + 1}. ${title}
-- 產品編號: **${pid || 'N/A'}**
-- 產品連結: ${url}
-- 容量: ${p.size || 'N/A'}
-- 分類: ${p.sort || 'N/A'}
-- 🔒 內部標記: ${internalPriority || '無'}
-
-`;
-    });
-
-    context += `---
-
-## ⛔ 禁止編造產品！
-只能從上方列表中推薦產品。優先推薦帶有 [SCOOTER-PRIORITY] 或 [MOTORBIKE] 標記的產品。
-
-## ⚠️ 回覆格式規則（超重要！）
-- **禁止在回覆中顯示 [MOTORBIKE]、[SCOOTER-PRIORITY] 等內部標記！**
-- **禁止在產品名稱後加上任何方括號標記！**
-- 只需顯示產品名稱、編號、連結即可
-`;
-
-    return context;
-}
-
+// ============================================
+// 以下搜尋相關函式已移至 search.js 統一處理
+// rag-pipeline 現在透過 /api/search 端點呼叫
+// ============================================
 
 module.exports = {
     processWithRAG,
