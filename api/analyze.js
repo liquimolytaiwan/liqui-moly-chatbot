@@ -196,11 +196,16 @@ ${otherProblems.join('\n')}
 
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
-⚠️ **重要規則：禁止預設車型！**
-- 如果用戶**只問認證**（如「有 GF-6A 機油嗎」）→ vehicleType = null，直接搜尋認證
-- 如果用戶**只問黏度**（如「有 5W-30 嗎」）→ vehicleType = null，直接搜尋黏度
-- 如果用戶**只問產品編號**（如「LM2500」）→ vehicleType = null，直接搜尋產品
-- **只有當用戶明確提到車型時**（如「Toyota」「我的機車」），才填入 vehicleType
+⚠️ **重要規則：禁止預設！**
+- **vehicleType**：用戶沒提車型 → null
+- **fuelType**：用戶沒說汽油/柴油 → null
+- **usageScenario**：用戶沒說用途（跑山/下賽道/長途等）→ null（**禁止預設為「一般通勤」！**）
+- **只有用戶明確提到時才填入對應值**
+
+**直接回答不追問的情況：**
+- 只問認證（如「有 GF-6A 機油嗎」）→ 直接搜尋認證
+- 只問黏度（如「有 5W-30 嗎」）→ 直接搜尋黏度
+- 只問產品編號（如「LM2500」）→ 直接搜尋產品
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${quickRefPrompt}
