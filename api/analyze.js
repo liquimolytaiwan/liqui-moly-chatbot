@@ -175,26 +175,32 @@ ${otherProblems.join('\n')}
         : `{
     "isMultiVehicleQuery": false,
     "vehicles": [{
-        "vehicleName": "完整車型名稱",
-        "vehicleType": "汽車/摩托車/船舶/自行車",
-        "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
-        "fuelType": "汽油/柴油/油電/純電/2T混合油",
-        "strokeType": "4T/2T/電動",
+        "vehicleName": null,
+        "vehicleType": null,
+        "vehicleSubType": null,
+        "fuelType": null,
+        "strokeType": null,
         "isElectricVehicle": false,
-        "certifications": ["認證代碼"],
-        "viscosity": "建議黏度",
+        "certifications": ["用戶指定的認證"],
+        "viscosity": "用戶指定的黏度",
         "searchKeywords": ["搜尋關鍵字"]
     }],
     "productCategory": "機油/添加劑/變速箱油/煞車系統/冷卻系統/空調系統/化學品/美容/香氛/自行車/船舶/商用車/PRO-LINE/其他",
-    "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
-    "recommendSynthetic": "full/semi/mineral/any",
+    "usageScenario": null,
+    "recommendSynthetic": "any",
     "symptomMatched": null,
-    "symptomSeverity": "mild/moderate/severe/none",
+    "symptomSeverity": "none",
     "isGeneralProduct": false,
     "needsProductRecommendation": true
 }`;
 
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
+
+⚠️ **重要規則：禁止預設車型！**
+- 如果用戶**只問認證**（如「有 GF-6A 機油嗎」）→ vehicleType = null，直接搜尋認證
+- 如果用戶**只問黏度**（如「有 5W-30 嗎」）→ vehicleType = null，直接搜尋黏度
+- 如果用戶**只問產品編號**（如「LM2500」）→ vehicleType = null，直接搜尋產品
+- **只有當用戶明確提到車型時**（如「Toyota」「我的機車」），才填入 vehicleType
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${quickRefPrompt}
