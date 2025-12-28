@@ -109,20 +109,29 @@ export async function post_chat(request) {
         }
 
         // Step 2: 呼叫 Vercel API 搜尋產品（統一搜尋邏輯）
-        let productContext = "目前沒有產品資料";
-        try {
-            const searchResponse = await fetch(`${VERCEL_API_URL}/api/search`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: body.message, searchInfo })
-            });
-            const searchData = await searchResponse.json();
-            if (searchData.success && searchData.productContext) {
-                productContext = searchData.productContext;
+        // ⚡ 由 AI 分析決定是否需要搜尋（預設為 true，只有明確 false 才跳過）
+        let productContext = "";
+
+        const canSearch = searchInfo?.needsProductRecommendation !== false;
+
+        if (!canSearch) {
+            console.log('[Wix Chat] Skipping search - AI decided no product search needed');
+        } else {
+            try {
+                const searchResponse = await fetch(`${VERCEL_API_URL}/api/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: body.message, searchInfo })
+                });
+                const searchData = await searchResponse.json();
+                if (searchData.success && searchData.productContext) {
+                    productContext = searchData.productContext;
+                }
+            } catch (e) {
+                console.error('Vercel search API failed:', e);
             }
-        } catch (e) {
-            console.error('Vercel search API failed:', e);
         }
+
 
         // Step 3: 呼叫 Vercel API 進行聊天
         const chatResponse = await fetch(`${VERCEL_API_URL}/api/chat`, {
