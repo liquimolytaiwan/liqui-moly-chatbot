@@ -39,7 +39,7 @@ function convertAIResultToIntent(aiResult) {
     // 建構 intent 物件
     const intent = {
         type: intentType,
-        vehicleType: vehicle.vehicleType || '汽車',
+        vehicleType: vehicle.vehicleType || null,  // 不預設，讓 AI 判斷是否追問
         vehicleModel: vehicle.vehicleName || null,
         vehicleBrand: extractBrandFromVehicleName(vehicle.vehicleName),
         productCategory: productCategory,
@@ -92,7 +92,7 @@ function convertAIResultToIntent(aiResult) {
     }
 
     // 處理使用場景
-    intent.usageScenario = aiResult.usageScenario || '一般通勤';
+    intent.usageScenario = aiResult.usageScenario || null;  // 不預設
 
     // 處理全合成推薦等級
     intent.recommendSynthetic = aiResult.recommendSynthetic || 'any';

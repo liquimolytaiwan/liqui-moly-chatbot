@@ -862,9 +862,14 @@ function formatProducts(products, searchInfo = null) {
         context += `
 ### 📋 機油推薦依據
 **回覆要求：**
-1. 說明推薦的黏度依據（如 5W-30 適合日韓系車）
-2. 說明認證依據（如符合 API SP）
+1. 說明推薦的黏度依據
+2. 說明認證依據
 3. 列出推薦產品
+
+⚠️ **認證準確性要求**：
+- 回覆時必須使用產品「認證/規格」欄位中顯示的**確切內容**
+- 例如：產品顯示 "API SQ, ILSAC GF-7A" 則說 "API SQ, ILSAC GF-7A"
+- **禁止**用其他認證名稱替代（如把 SQ 說成 SP）
 
 `;
     } else if (productCategory === '變速箱油') {
