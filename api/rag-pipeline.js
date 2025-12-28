@@ -104,41 +104,46 @@ async function processWithRAG(message, conversationHistory = [], productContext 
     console.log('[RAG] Knowledge retrieved');
 
     // === Step 3.5: 產品搜尋（呼叫統一的 /api/search 端點）===
-    // 統一使用 search.js 的搜尋邏輯，確保認證升級等功能在所有平台生效
+    // ⚡ 優化：如果 productContext 已由呼叫端傳入（如 Wix 端），跳過重複搜尋
     console.log('[RAG] === Step 3.5: Product Search ===');
-    console.log('[RAG] Calling unified /api/search endpoint...');
-    try {
-        // 判斷是在 Vercel 內部還是外部呼叫
-        const searchUrl = process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}/api/search`
-            : 'https://liqui-moly-chatbot.vercel.app/api/search';
 
-        const searchResponse = await fetch(searchUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message,
-                searchInfo: {
-                    ...intent,
-                    ...aiAnalysis,
-                    vehicles: aiAnalysis?.vehicles || [],
-                    wixQueries: aiAnalysis?.wixQueries || [],
-                    certificationSearch: aiAnalysis?.certificationSearch || null
-                }
-            })
-        });
+    if (productContext && productContext.length > 100) {
+        console.log(`[RAG] ⚡ Skipping search - productContext already provided (${productContext.length} chars)`);
+    } else {
+        console.log('[RAG] Calling unified /api/search endpoint...');
+        try {
+            // 判斷是在 Vercel 內部還是外部呼叫
+            const searchUrl = process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}/api/search`
+                : 'https://liqui-moly-chatbot.vercel.app/api/search';
 
-        const searchData = await searchResponse.json();
-        if (searchData.success && searchData.productContext) {
-            productContext = searchData.productContext;
-            console.log(`[RAG] Product search completed via API, context length: ${productContext.length}`);
-        } else {
-            console.warn('[RAG] Search API returned no context, using fallback');
-            productContext = '⚠️ 產品搜尋無結果，請告訴用戶目前無符合條件的產品。';
+            const searchResponse = await fetch(searchUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message,
+                    searchInfo: {
+                        ...intent,
+                        ...aiAnalysis,
+                        vehicles: aiAnalysis?.vehicles || [],
+                        wixQueries: aiAnalysis?.wixQueries || [],
+                        certificationSearch: aiAnalysis?.certificationSearch || null
+                    }
+                })
+            });
+
+            const searchData = await searchResponse.json();
+            if (searchData.success && searchData.productContext) {
+                productContext = searchData.productContext;
+                console.log(`[RAG] Product search completed via API, context length: ${productContext.length}`);
+            } else {
+                console.warn('[RAG] Search API returned no context, using fallback');
+                productContext = '⚠️ 產品搜尋無結果，請告訴用戶目前無符合條件的產品。';
+            }
+        } catch (e) {
+            console.error('[RAG] Product search failed:', e.message);
+            productContext = '⚠️ 產品搜尋失敗，請只回覆「很抱歉，目前無法搜尋產品資料庫，請稍後再試。」';
         }
-    } catch (e) {
-        console.error('[RAG] Product search failed:', e.message);
-        productContext = '⚠️ 產品搜尋失敗，請只回覆「很抱歉，目前無法搜尋產品資料庫，請稍後再試。」';
     }
 
     // === Step 4: 動態建構 Prompt ===

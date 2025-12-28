@@ -719,9 +719,9 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             console.log(`[Search] Final fallback: ${allResults.length} products`);
         }
 
-        // 9. 一般格式化輸出
+        // 9. 一般格式化輸出（限制 15 個產品，節省 Token）
         if (allResults.length > 0) {
-            return formatProducts(allResults.slice(0, 30), searchInfo);
+            return formatProducts(allResults.slice(0, 15), searchInfo);
         }
 
         return '目前沒有匹配的產品資料';

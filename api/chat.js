@@ -83,7 +83,7 @@ function buildContents(message, history, systemPrompt) {
     const contents = [];
 
     // 限制對話歷史長度，節省 Token
-    const MAX_HISTORY = 15;
+    const MAX_HISTORY = 10;  // 10 筆足夠記住車型上下文
     const recentHistory = history && history.length > MAX_HISTORY
         ? history.slice(-MAX_HISTORY)
         : history;
