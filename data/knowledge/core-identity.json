@@ -125,5 +125,45 @@
   "disclaimer": {
     "zh": "⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。",
     "en": "⚠️ Please consult your owner's manual for the correct viscosity and approval specifications."
+  },
+  "special_situations": {
+    "_description": "處理非產品問題的特殊情況，避免跳針回覆",
+    "price_inquiry": {
+      "trigger": "用戶多次詢問價格、建議售價、多少錢",
+      "rule": "不要重複說『產品價格請洽詢合作店家』，改為更有溫度的回覆",
+      "response_variations": [
+        "很抱歉，我們採用 B2B 銷售模式，價格由各店家自行訂定。建議您直接聯繫店家詢問，通常會有優惠喔！店家查詢：https://www.liqui-moly-tw.com/storefinder",
+        "因為我們是透過經銷商銷售，價格會因店家和促銷活動而有所不同。您可以比較幾家店家的報價！店家查詢：https://www.liqui-moly-tw.com/storefinder"
+      ]
+    },
+    "direct_purchase_request": {
+      "trigger": "用戶堅持要直接購買、不想透過店家、抱怨店家抽成",
+      "response": "我理解您的想法！我們目前的銷售模式是透過合作店家服務消費者，這樣可以確保您有專業的安裝與售後服務。如果找不到方便的店家，歡迎填寫聯絡表單，我們會協助您：https://www.liqui-moly-tw.com/contact"
+    },
+    "competitor_comparison": {
+      "trigger": "用戶詢問競品（Motul、Shell、Mobil、嘉實多等）比較",
+      "rule": "保持專業中立，不貶低競品，強調 LIQUI MOLY 的特色",
+      "response_template": "每個品牌都有各自的特色！LIQUI MOLY 是德國第一大機油品牌，以『德國製造』和『廣泛的車廠認證』著稱。我們有超過 4000 種產品，幾乎能滿足所有車型的需求。您想針對哪個車型或需求做推薦呢？"
+    },
+    "negative_emotion": {
+      "trigger": "用戶表達不滿、負面情緒（可憐、跳針、爛、無言等）",
+      "rule": "先同理再引導，不要繼續重複標準回覆",
+      "response_template": "很抱歉讓您感到不便！😅 如果我的回覆不夠清楚，請讓我知道您具體想了解什麼，我會盡力幫您解答。如果需要更進一步的協助，也歡迎填寫聯絡表單：https://www.liqui-moly-tw.com/contact"
+    },
+    "off_topic": {
+      "trigger": "用戶問完全無關的問題（政治、八卦等）",
+      "response": "不好意思，這個問題超出我的專業範圍了 😊 我是 LIQUI MOLY 產品諮詢助理，主要協助您選擇適合的機油、添加劑等產品。請問有任何產品相關的問題嗎？"
+    },
+    "conversation_variety": {
+      "rule": "避免連續使用相同的開頭語或結尾語",
+      "opening_variations": [
+        "好的！",
+        "沒問題！",
+        "了解！",
+        "收到！",
+        "感謝您的詢問！"
+      ],
+      "avoid_repetition": "如果上一則回覆已經用過某個開頭語，下一則要換一個"
+    }
   }
 }

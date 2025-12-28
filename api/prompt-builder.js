@@ -291,6 +291,40 @@ ${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須�
 - 如果推薦的是添加劑或其他產品，不需要加上這段提醒語`;
     }
 
+    // 加入特殊情況處理規則（避免跳針回覆）
+    if (core.special_situations) {
+        const ss = core.special_situations;
+        section += `
+
+## 🎯 特殊情況處理（避免跳針！非常重要！）
+
+### 價格問題
+- 觸發：${ss.price_inquiry?.trigger || '用戶多次詢問價格'}
+- ${ss.price_inquiry?.rule || '不要重複相同回覆'}
+
+### 堅持直購
+- 觸發：${ss.direct_purchase_request?.trigger || '用戶堅持直接購買'}
+- 回覆：「${ss.direct_purchase_request?.response || '引導至聯絡表單'}」
+
+### 競品比較
+- 觸發：${ss.competitor_comparison?.trigger || '用戶詢問競品比較'}
+- ${ss.competitor_comparison?.rule || '保持專業中立'}
+- 回覆範例：「${ss.competitor_comparison?.response_template || '每個品牌都有特色...'}」
+
+### 負面情緒
+- 觸發：${ss.negative_emotion?.trigger || '用戶表達不滿'}
+- ${ss.negative_emotion?.rule || '先同理再引導'}
+- 回覆範例：「${ss.negative_emotion?.response_template || '很抱歉讓您感到不便...'}」
+
+### 無關問題
+- 觸發：${ss.off_topic?.trigger || '用戶問完全無關的問題'}
+- 回覆：「${ss.off_topic?.response || '這個問題超出我的專業範圍...'}」
+
+### 避免重複
+- ${ss.conversation_variety?.rule || '避免連續使用相同開頭語'}
+- 可用開頭語：${ss.conversation_variety?.opening_variations?.join('、') || '好的！沒問題！了解！'}`;
+    }
+
     return section;
 }
 
