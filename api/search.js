@@ -583,6 +583,48 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         const fuelTypeForAdditive = searchInfo?.fuelType || searchInfo?.vehicles?.[0]?.fuelType;
         const usageScenario = searchInfo?.usageScenario;
 
+        // ⭐ 優先處理：如果 additiveGuideMatch 有指定解決方案產品，將這些產品提到最前面
+        const additiveGuideMatch = searchInfo?.additiveGuideMatch;
+        if (additiveGuideMatch?.matched && additiveGuideMatch?.items?.length > 0) {
+            const solutionSkus = [];
+            for (const item of additiveGuideMatch.items) {
+                if (item.solutions && Array.isArray(item.solutions)) {
+                    solutionSkus.push(...item.solutions);
+                }
+            }
+            if (solutionSkus.length > 0) {
+                console.log('[Search] AdditiveGuideMatch solution SKUs:', solutionSkus);
+
+                // 將解決方案產品提到最前面
+                const solutionProducts = [];
+                const otherProducts = [];
+
+                for (const p of allResults) {
+                    const partno = (p.partno || '').toUpperCase();
+                    if (solutionSkus.some(sku => sku.toUpperCase() === partno)) {
+                        solutionProducts.push(p);
+                    } else {
+                        otherProducts.push(p);
+                    }
+                }
+
+                // 如果解決方案產品不在 allResults 中，嘗試從全產品列表搜尋
+                if (solutionProducts.length < solutionSkus.length) {
+                    for (const sku of solutionSkus) {
+                        const found = products.find(p => (p.partno || '').toUpperCase() === sku.toUpperCase());
+                        if (found && !solutionProducts.some(sp => sp.id === found.id)) {
+                            solutionProducts.push(found);
+                        }
+                    }
+                }
+
+                console.log('[Search] Solution products found:', solutionProducts.map(p => p.partno));
+
+                // 重組結果：解決方案產品在前
+                allResults = [...solutionProducts, ...otherProducts];
+            }
+        }
+
         if ((productCategory === '添加劑' || productCategory === '化學品') && allResults.length > 2) {
             console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
             allResults.sort((a, b) => {
