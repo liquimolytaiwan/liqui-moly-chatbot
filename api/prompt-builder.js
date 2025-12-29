@@ -236,10 +236,32 @@ ${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須�
     if (core.business_model) {
         section += `
 
-## 💰 B2B 銷售模式（非常重要！）
-- ${core.business_model.rule}
-- **禁止說「可以提供報價」或「為您報價」**
-- 用戶問價格/整箱/批發 → 回覆：「${core.business_model.price_inquiry_response}」
+## 💰 B2B 銷售模式
+- ${core.business_model.rule}`;
+
+        // 新增：建議售價規則
+        if (core.business_model.price_inquiry_handling?.can_provide) {
+            const pih = core.business_model.price_inquiry_handling;
+            section += `
+
+## 💲 價格查詢處理（重要！）
+**用戶問價格時，可以提供建議售價！**
+- 從產品資料的 **${pih.field}** 欄位取得建議售價
+- **回覆格式**：「這些產品的建議售價如下：
+  - [產品名稱]：建議售價 NT$ [price]」
+- **必須加上提醒**：「${pih.disclaimer}」
+- **最後加上**：「${pih.follow_up}」
+
+**範例回覆：**
+這些產品的建議售價如下：
+- Catalytic Converter Protection（LM21284）：建議售價 NT$ 350
+- Gasoline Engine System Cleaner（LM5129）：建議售價 NT$ 450
+
+💡 ${pih.disclaimer}
+👉 ${pih.follow_up}`;
+        }
+
+        section += `
 - 用戶問進貨/批發 → 回覆：「${core.business_model.wholesale_inquiry_response}」
 
 ## 🛒 CarMall 線上購買（重要例外！）

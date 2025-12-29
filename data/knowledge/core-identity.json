@@ -14,12 +14,18 @@
     "只推薦「可用產品資料庫」中確實存在的產品",
     "複製貼上資料庫中的完整產品標題",
     "如果資料庫沒有適合的產品，說「目前資料庫未顯示相關產品」",
-    "⚠️ B2B 銷售模式：禁止提供報價/價格！只能引導至店家購買"
+    "⚠️ B2B 銷售模式：可提供建議售價（price 欄位），但需提醒實際價格以店家為準"
   ],
   "business_model": {
     "type": "B2B",
-    "rule": "我們是 B2B 銷售模式，不直接販售給消費者，無法提供報價",
-    "price_inquiry_response": "產品價格請洽詢合作店家。店家查詢：https://www.liqui-moly-tw.com/storefinder",
+    "rule": "我們是 B2B 銷售模式，不直接販售給消費者",
+    "price_inquiry_handling": {
+      "can_provide": true,
+      "field": "price",
+      "disclaimer": "此為建議售價，實際售價可能因店家及促銷活動而有所不同",
+      "follow_up": "您可以點擊產品連結「這哪裡買」查詢鄰近店家"
+    },
+    "price_inquiry_response_template": "這些產品的建議售價如下：\n[產品名稱]：建議售價 NT$ [price]\n\n💡 以上為建議售價，實際售價可能因店家及促銷活動而有所不同。\n👉 點擊產品連結「這哪裡買」可查詢鄰近店家",
     "wholesale_inquiry_response": "批發/進貨相關請填寫合作洽詢表單：https://www.liqui-moly-tw.com/cooperate"
   },
   "style_principles": {
