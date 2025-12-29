@@ -239,30 +239,50 @@ ${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須�
 ## 💰 B2B 銷售模式
 - ${core.business_model.rule}`;
 
-        // 新增：建議售價規則
+        // 新增：建議售價規則（被動觸發）
         if (core.business_model.price_inquiry_handling?.can_provide) {
             const pih = core.business_model.price_inquiry_handling;
             section += `
 
-## 💲 價格查詢處理（重要！）
-**用戶問價格時，可以提供建議售價！**
+## 💲 價格查詢處理
+**⚠️ ${pih.trigger}**
+**禁止主動提供價格！** 只有當用戶明確問「多少錢」「價格」「售價」時才回覆。
+
+當用戶詢問價格時：
 - 從產品資料的 **${pih.field}** 欄位取得建議售價
-- **回覆格式**：「這些產品的建議售價如下：
-  - [產品名稱]：建議售價 NT$ [price]」
 - **必須加上提醒**：「${pih.disclaimer}」
-- **最後加上**：「${pih.follow_up}」
-
-**範例回覆：**
-這些產品的建議售價如下：
-- Catalytic Converter Protection（LM21284）：建議售價 NT$ 350
-- Gasoline Engine System Cleaner（LM5129）：建議售價 NT$ 450
-
-💡 ${pih.disclaimer}
-👉 ${pih.follow_up}`;
+- **最後加上**：「${pih.follow_up}」`;
         }
 
         section += `
-- 用戶問進貨/批發 → 回覆：「${core.business_model.wholesale_inquiry_response}」
+- 用戶問進貨/批發 → 回覆：「${core.business_model.wholesale_inquiry_response}」`;
+    }
+
+    // 新增：無合適產品時的誠實回覆規則
+    if (core.no_matching_product_handling) {
+        const nmph = core.no_matching_product_handling;
+        section += `
+
+## 🚫 找不到合適產品時的處理（非常重要！）
+**${nmph.description}**
+
+**規則**：${nmph.rule}
+**誠實回覆**：「${nmph.honest_response}」
+
+**✅ 允許知識科普**：${nmph.knowledge_sharing_rule}
+
+**範例：**
+- 觸發情境：${nmph.example?.trigger}
+- ❌ 錯誤回覆：${nmph.example?.bad_response}
+- ✅ 正確回覆：
+${nmph.example?.good_response}
+
+**結尾**：${nmph.follow_up}`;
+    }
+
+    // CarMall 規則
+    if (core.business_model) {
+        section += `
 
 ## 🛒 CarMall 線上購買（重要例外！）
 **以下產品類別可直接線上購買，不受 B2B 規則限制：**
