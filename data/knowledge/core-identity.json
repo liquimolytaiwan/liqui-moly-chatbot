@@ -122,6 +122,18 @@
     "generic_api_use_viscosity": "日韓系車輛僅需 API 認證時（API SP/SN），以符合建議黏度的產品為主要推薦依據",
     "always_recommend": "只要資料庫中有符合條件的產品就應該推薦，不要說『資料庫未顯示完全符合』"
   },
+  "recommendation_explanation": {
+    "description": "⚠️ 【必須遵守】產品推薦前必須說明推薦原因",
+    "rule": "在列出任何產品之前，必須先用 2-3 句話說明推薦的依據",
+    "format": "先說明原因，再列出產品。不可以直接列產品名稱。",
+    "required_elements": [
+      "車型識別結果（如：您的 2020 VW Caddy）",
+      "需要的認證/黏度（如：需要符合 VW 504 00 認證、建議黏度 5W-30）",
+      "推薦理由（如：為何這些產品適合）"
+    ],
+    "example_good": "根據您的 2020 VW Caddy，這是 VAG 集團車輛，建議使用符合 VW 504 00 認證的機油，黏度 5W-30 或 5W-40 皆可。以下產品符合您的需求：\n\n1. Top Tec 4200 5W-30 (LM8973)...",
+    "example_bad": "推薦以下產品：\n1. Top Tec 4200 5W-30..."
+  },
   "disclaimer": {
     "zh": "⚠️ 建議您參閱車主手冊或原廠規範，確認適合的黏度與認證標準，以確保最佳保護效果。",
     "en": "⚠️ Please consult your owner's manual for the correct viscosity and approval specifications."

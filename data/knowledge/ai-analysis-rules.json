@@ -1,5 +1,5 @@
 {
-    "_description": "AI 分析用規則 - 從 analyze.js 提取的硬編碼內容",
+    "_description": "AI 分析行為規則 - 控制 AI 如何處理用戶查詢",
     "conversation_memory_rules": {
         "description": "對話記憶規則",
         "rules": [
@@ -8,36 +8,29 @@
             "上文有車型 → 直接使用，不重複詢問"
         ],
         "priority_hierarchy": {
-            "description": "⚠️ 繼承優先級規則（最高到最低）",
-            "level_1_highest": "用戶當前訊息明確指定的產品類別（如：機油添加劑、MoS2、汽油精）",
-            "level_2": "用戶當前訊息明確指定的產品子類別（如：機油添加劑 vs 汽油添加劑）",
-            "level_3": "從對話歷史繼承的車型（如：速克達、摩托車、汽車）",
-            "level_4_lowest": "從對話歷史繼承的使用場景（如：跑山、長途）",
-            "critical_rule": "⚠️ 低優先級規則不可覆蓋高優先級！場景(level_4)絕不可覆蓋用戶明確指定的產品(level_1/2)"
+            "level_1_highest": "用戶當前訊息明確指定的產品類別",
+            "level_2": "用戶當前訊息明確指定的產品子類別",
+            "level_3": "從對話歷史繼承的車型",
+            "level_4_lowest": "從對話歷史繼承的使用場景",
+            "critical_rule": "⚠️ 低優先級規則不可覆蓋高優先級"
         },
         "additive_inheritance": {
-            "description": "添加劑查詢繼承規則",
-            "vehicle_inheritance": "用戶問「那有汽油精嗎」「有添加劑推薦嗎」時，必須從上下文繼承車型（摩托車/汽車/速克達）",
-            "no_repeat_question": "禁止重新詢問「是汽車還是機車」，直接使用已知車型推薦對應的添加劑",
-            "motorcycle_additive": "摩托車用戶推薦 Motorbike 系列添加劑"
+            "vehicle_inheritance": "用戶問添加劑時，必須從上下文繼承車型",
+            "no_repeat_question": "禁止重新詢問車型，直接使用已知資訊"
         },
         "additive_subtype_rules": {
-            "description": "⚠️ 添加劑子類別識別規則（非常重要！）",
+            "description": "添加劑子類別識別",
             "oil_additive_keywords": [
                 "機油添加劑",
                 "機油精",
                 "Oil Additive",
                 "MoS2",
-                "二硫化鉬",
-                "抗磨",
-                "抗摩"
+                "抗磨"
             ],
             "fuel_additive_keywords": [
                 "汽油精",
                 "汽油添加劑",
                 "燃油添加劑",
-                "Fuel Additive",
-                "Speed Shooter",
                 "Shooter",
                 "清積碳"
             ],
@@ -78,274 +71,6 @@
                     ]
                 }
             }
-        },
-        "scenario_inheritance": {
-            "description": "使用場景繼承規則（按產品類別區分）",
-            "rule": "場景繼承規則只適用於對應的產品類別，不可跨類別套用",
-            "priority_rule": "⚠️ 用戶明確詢問「添加劑」「汽油精」「機油精」時，productCategory 必須是「添加劑」，不受之前場景影響！",
-            "oil_scenarios": {
-                "description": "機油推薦時的場景對應（僅適用於 productCategory = 機油）",
-                "跑山/激烈操駕": "優先推薦全合成高性能機油（如 Race Tech/Street Race 系列）",
-                "長途/高里程": "優先推薦耐久性高的全合成機油"
-            },
-            "additive_scenarios": {
-                "description": "添加劑推薦時的場景對應（僅適用於 productCategory = 添加劑）",
-                "跑山/激烈操駕": "優先推薦性能提升類 Motorbike 添加劑（如 Speed Shooter、Motorbike Oil Additive）",
-                "長途/高里程": "優先推薦清潔保養類添加劑（如 Shooter、Engine Flush）"
-            },
-            "deprecated_mapping": {
-                "_comment": "舊規則已廢棄，僅供參考",
-                "跑山/激烈操駕": "（舊）LM7820 Speed Shooter - 這是機油不是添加劑！",
-                "長途/高里程": "（舊）LM7822 Shooter"
-            }
-        }
-    },
-    "product_category_rules": {
-        "description": "產品分類規則 - 完整定義所有產品類別",
-        "priority_note": "⚠️ 用戶明確指定的產品類別優先於場景推薦",
-        "categories": {
-            "機油": {
-                "keywords": [
-                    "機油",
-                    "引擎油",
-                    "潤滑油",
-                    "motor oil",
-                    "engine oil"
-                ],
-                "sort_values": [
-                    "【汽車】機油",
-                    "【摩托車】機油"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型、使用場景"
-            },
-            "添加劑": {
-                "keywords": [
-                    "添加劑",
-                    "汽油精",
-                    "機油精",
-                    "燃油添加劑",
-                    "機油添加劑",
-                    "engine flush",
-                    "shooter",
-                    "oil additive"
-                ],
-                "sort_values": [
-                    "【汽車】添加劑",
-                    "【摩托車】添加劑"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型",
-                "subcategories": {
-                    "機油添加劑": [
-                        "機油精",
-                        "機油添加劑",
-                        "MoS2",
-                        "oil additive",
-                        "抗磨"
-                    ],
-                    "汽油添加劑": [
-                        "汽油精",
-                        "燃油添加劑",
-                        "shooter",
-                        "清積碳"
-                    ]
-                }
-            },
-            "變速箱油": {
-                "keywords": [
-                    "變速箱油",
-                    "ATF",
-                    "齒輪油",
-                    "手排油",
-                    "自排油",
-                    "CVT油",
-                    "DSG",
-                    "transmission",
-                    "gear oil",
-                    "波箱油"
-                ],
-                "sort_values": [
-                    "【汽車】變速箱"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型",
-                "llm_knowledge_required": "⚠️ 需透過 LLM 知識判斷車型對應的變速箱認證規範"
-            },
-            "煞車系統": {
-                "keywords": [
-                    "煞車油",
-                    "DOT",
-                    "brake fluid",
-                    "煞車"
-                ],
-                "sort_values": [
-                    "煞車系統"
-                ],
-                "word1_values": [
-                    "煞車油"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型"
-            },
-            "冷卻系統": {
-                "keywords": [
-                    "水箱精",
-                    "冷卻液",
-                    "防凍液",
-                    "coolant",
-                    "antifreeze",
-                    "冷卻系統",
-                    "水箱"
-                ],
-                "sort_values": [
-                    "冷卻系統"
-                ],
-                "word1_values": [
-                    "水箱精",
-                    "冷卻系統添加劑"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型"
-            },
-            "空調系統": {
-                "keywords": [
-                    "冷媒",
-                    "空調",
-                    "冷氣",
-                    "A/C",
-                    "空調系統"
-                ],
-                "sort_values": [
-                    "【汽車】空調系統"
-                ],
-                "requires_vehicle_info": false
-            },
-            "化學品": {
-                "keywords": [
-                    "雨刷水",
-                    "雨刷精",
-                    "玻璃水",
-                    "化學品"
-                ],
-                "sort_values": [
-                    "化學品系列"
-                ],
-                "requires_vehicle_info": false
-            },
-            "美容": {
-                "keywords": [
-                    "洗車",
-                    "蠟",
-                    "鍍膜",
-                    "美容",
-                    "清潔",
-                    "打蠟",
-                    "拋光"
-                ],
-                "sort_values": [
-                    "車輛美容系列"
-                ],
-                "requires_vehicle_info": false,
-                "direct_recommend": true,
-                "carmall_available": true
-            },
-            "香氛": {
-                "keywords": [
-                    "香氛",
-                    "香氛磚",
-                    "芳香",
-                    "除臭",
-                    "車用香氛"
-                ],
-                "sort_values": [
-                    "車輛美容系列"
-                ],
-                "requires_vehicle_info": false,
-                "direct_recommend": true,
-                "carmall_available": true
-            },
-            "自行車": {
-                "keywords": [
-                    "自行車",
-                    "腳踏車",
-                    "單車",
-                    "bike",
-                    "bicycle",
-                    "鏈條油",
-                    "鏈條清潔"
-                ],
-                "sort_values": [
-                    "自行車系列"
-                ],
-                "requires_vehicle_info": false,
-                "direct_recommend": true,
-                "carmall_available": true
-            },
-            "船舶": {
-                "keywords": [
-                    "船",
-                    "船外機",
-                    "船舶",
-                    "marine",
-                    "outboard"
-                ],
-                "sort_values": [
-                    "船舶系列"
-                ],
-                "requires_vehicle_info": false
-            },
-            "商用車": {
-                "keywords": [
-                    "商用車",
-                    "卡車",
-                    "貨車",
-                    "大型車",
-                    "柴油車"
-                ],
-                "sort_values": [
-                    "商用車系列"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型"
-            },
-            "PRO-LINE": {
-                "keywords": [
-                    "pro-line",
-                    "proline",
-                    "專業",
-                    "濃縮"
-                ],
-                "sort_values": [
-                    "PRO-LINE 專業系列"
-                ],
-                "requires_vehicle_info": false,
-                "note": "專業維修廠使用的濃縮產品"
-            },
-            "其他油品_摩托車": {
-                "keywords": [
-                    "前叉油",
-                    "齒輪油"
-                ],
-                "sort_values": [
-                    "【摩托車】其他油品"
-                ],
-                "requires_vehicle_info": true,
-                "inheritance": "車型"
-            },
-            "人車養護_摩托車": {
-                "keywords": [
-                    "鏈條油",
-                    "鏈條清潔",
-                    "安全帽",
-                    "皮革"
-                ],
-                "sort_values": [
-                    "【摩托車】人車養護"
-                ],
-                "requires_vehicle_info": false,
-                "direct_recommend": true
-            }
         }
     },
     "scooter_identification": {
@@ -361,20 +86,9 @@
             "Tigra",
             "KRV",
             "Many",
-            "FORCE",
-            "JET S",
-            "JET SL",
-            "勁豪",
-            "Force2.0",
-            "六代勁戰",
-            "五代勁戰",
-            "Cygnus",
-            "CUXI",
             "GPR",
             "Racing",
-            "彪虎",
-            "Tigra 200",
-            "Tigra 250"
+            "彪虎"
         ],
         "brands": [
             "SYM",
@@ -386,7 +100,7 @@
         "characteristics": {
             "vehicleSubType": "速克達",
             "strokeType": "4T",
-            "transmission": "CVT 變速箱",
+            "transmission": "CVT",
             "clutch": "無濕式離合器"
         }
     },
@@ -448,48 +162,127 @@
             ]
         }
     },
-    "fuel_keywords": {
-        "diesel": [
-            "TDI",
-            "CDI",
-            "dCi",
-            "diesel",
-            "柴油",
-            "Diesel"
-        ],
-        "hybrid": [
-            "Hybrid",
-            "PHEV",
-            "油電",
-            "hybrid"
-        ],
-        "electric": [
-            "EV",
-            "純電",
-            "電動",
-            "BEV"
-        ]
+    "product_category_rules": {
+        "description": "產品分類規則",
+        "priority_note": "⚠️ 用戶明確指定的產品類別優先於場景推薦",
+        "categories": {
+            "機油": {
+                "keywords": [
+                    "機油",
+                    "引擎油",
+                    "motor oil",
+                    "engine oil"
+                ],
+                "sort_values": [
+                    "【汽車】機油",
+                    "【摩托車】機油"
+                ],
+                "requires_vehicle_info": true
+            },
+            "添加劑": {
+                "keywords": [
+                    "添加劑",
+                    "汽油精",
+                    "機油精",
+                    "shooter",
+                    "oil additive"
+                ],
+                "sort_values": [
+                    "【汽車】添加劑",
+                    "【摩托車】添加劑"
+                ],
+                "requires_vehicle_info": true
+            },
+            "變速箱油": {
+                "keywords": [
+                    "變速箱油",
+                    "ATF",
+                    "齒輪油",
+                    "DSG",
+                    "CVT"
+                ],
+                "sort_values": [
+                    "【汽車】變速箱"
+                ],
+                "requires_vehicle_info": true
+            },
+            "煞車系統": {
+                "keywords": [
+                    "煞車油",
+                    "DOT",
+                    "brake fluid"
+                ],
+                "sort_values": [
+                    "煞車系統"
+                ],
+                "requires_vehicle_info": false
+            },
+            "冷卻系統": {
+                "keywords": [
+                    "水箱精",
+                    "冷卻液",
+                    "coolant"
+                ],
+                "sort_values": [
+                    "冷卻系統"
+                ],
+                "requires_vehicle_info": false
+            },
+            "美容": {
+                "keywords": [
+                    "洗車",
+                    "蠟",
+                    "鍍膜",
+                    "美容",
+                    "清潔"
+                ],
+                "sort_values": [
+                    "車輛美容系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true
+            },
+            "香氛": {
+                "keywords": [
+                    "香氛",
+                    "香氛磚",
+                    "芳香"
+                ],
+                "sort_values": [
+                    "車輛美容系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true
+            },
+            "自行車": {
+                "keywords": [
+                    "自行車",
+                    "腳踏車",
+                    "bike",
+                    "鏈條油"
+                ],
+                "sort_values": [
+                    "自行車系列"
+                ],
+                "requires_vehicle_info": false,
+                "direct_recommend": true
+            }
+        }
     },
     "usage_scenario_mapping": {
         "跑山": {
             "keywords": [
                 "跑山",
-                "油門到底",
-                "重踩油門",
                 "激烈操駕",
-                "山路",
-                "跑彎"
+                "山路"
             ],
             "recommendSynthetic": "full"
         },
         "下賽道": {
             "keywords": [
                 "賽道",
-                "下賽道",
                 "track day",
-                "練車",
-                "track",
-                "circuit"
+                "練車"
             ],
             "recommendSynthetic": "full"
         },
@@ -497,10 +290,7 @@
             "keywords": [
                 "長途",
                 "旅行",
-                "長時間高速",
-                "環島",
-                "旅遊",
-                "長程"
+                "環島"
             ],
             "recommendSynthetic": "full"
         },
@@ -509,6 +299,26 @@
             "default": true,
             "recommendSynthetic": "any"
         }
+    },
+    "fuel_keywords": {
+        "diesel": [
+            "TDI",
+            "CDI",
+            "dCi",
+            "diesel",
+            "柴油"
+        ],
+        "hybrid": [
+            "Hybrid",
+            "PHEV",
+            "油電"
+        ],
+        "electric": [
+            "EV",
+            "純電",
+            "電動",
+            "BEV"
+        ]
     },
     "symptom_severity": {
         "mild": {
@@ -533,8 +343,7 @@
                 "吃機油",
                 "冒藍煙",
                 "嚴重漏油",
-                "引擎過熱",
-                "嚴重積碳"
+                "引擎過熱"
             ],
             "description": "嚴重症狀",
             "recommendKeyword": "Pro-Line"
@@ -584,60 +393,29 @@
             "manual_additional": [
                 "JASO MA2"
             ]
-        },
-        "examples": [
-            {
-                "scenario": "曼巴跑山推薦機油",
-                "keywords": [
-                    "Motorbike",
-                    "10W-40",
-                    "Synth",
-                    "Race"
-                ]
-            },
-            {
-                "scenario": "勁戰日常通勤",
-                "keywords": [
-                    "Motorbike",
-                    "Scooter",
-                    "10W-40"
-                ]
-            },
-            {
-                "scenario": "速克達機油",
-                "keywords": [
-                    "Motorbike",
-                    "Scooter",
-                    "4T"
-                ]
-            }
-        ]
+        }
     },
     "json_response_format": {
         "isMultiVehicleQuery": false,
         "vehicles": [
             {
-                "vehicleName": "完整車型名稱",
-                "vehicleType": "汽車/摩托車/船舶/自行車",
-                "vehicleSubType": "速克達/檔車/重機/仿賽/街車/巡航/未知",
-                "fuelType": "汽油/柴油/油電/純電/2T混合油",
-                "strokeType": "4T/2T/電動",
+                "vehicleName": "車型全名",
+                "vehicleType": "汽車/摩托車",
+                "vehicleSubType": "速克達/檔車/重機",
+                "fuelType": "汽油/柴油",
                 "isElectricVehicle": false,
                 "certifications": [
-                    "認證代碼"
+                    "根據車廠推論"
                 ],
-                "viscosity": "建議黏度",
+                "viscosity": "根據車廠推論",
                 "searchKeywords": [
                     "搜尋關鍵字"
                 ]
             }
         ],
-        "productCategory": "機油/添加劑/美容/化學品/變速箱/鏈條",
-        "usageScenario": "一般通勤/跑山/下賽道/長途旅行/重載",
-        "recommendSynthetic": "full/semi/mineral/any",
-        "symptomMatched": null,
-        "symptomSeverity": "mild/moderate/severe/none",
-        "isGeneralProduct": false,
-        "needsProductRecommendation": true
+        "productCategory": "機油/添加劑/...",
+        "usageScenario": null,
+        "needsProductRecommendation": true,
+        "needsMoreInfo": []
     }
 }

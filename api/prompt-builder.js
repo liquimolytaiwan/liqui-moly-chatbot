@@ -282,6 +282,26 @@ ${core.link_format_rules?.rule || '禁止使用 Markdown 連結格式，必須�
 - **有產品就推薦**：${rp.always_recommend}`;
     }
 
+    // 加入推薦說明規則（超重要！）
+    if (core.recommendation_explanation) {
+        const re = core.recommendation_explanation;
+        section += `
+
+## 📝 產品推薦說明格式（必須遵守！）
+**${re.description}**
+
+**規則**：${re.rule}
+
+**推薦前必須包含**：
+${re.required_elements?.map(e => `- ${e}`).join('\n') || ''}
+
+**✅ 正確範例**：
+${re.example_good || ''}
+
+**❌ 錯誤範例**：
+${re.example_bad || ''}`;
+    }
+
     // 加入強制提醒語 (Disclaimer)
     if (core.disclaimer) {
         section += `

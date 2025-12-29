@@ -1,5 +1,5 @@
 {
-    "_description": "精簡參照表 - 供 AI prompt 使用，避免膨脹",
+    "_description": "搜尋優化對照表 - 產品搜尋與欄位映射",
     "certification_compatibility": {
         "_description": "認證向後兼容對照表 - 新一代認證可滿足舊一代需求",
         "ILSAC": {
@@ -40,72 +40,8 @@
             ]
         }
     },
-    "viscosity_by_vehicle": {
-        "日系車(Toyota/Lexus/Honda/Mazda/Nissan)": "0W-20",
-        "韓系車(Hyundai/Kia)": "0W-20 或 5W-30",
-        "Ford EcoBoost": "5W-20",
-        "Ford 一般引擎": "5W-30",
-        "BMW/Mercedes-Benz(汽油)": "5W-30 或 5W-40",
-        "VW/Audi/Skoda/Seat(汽油)": "5W-30 或 5W-40",
-        "VW/Audi/Skoda/Seat(柴油)": "5W-30",
-        "Porsche": "5W-40",
-        "Volvo": "0W-20",
-        "速克達": "10W-40",
-        "檔車/重機": "10W-40 或 10W-50",
-        "Harley-Davidson": "20W-50"
-    },
-    "cert_by_vehicle": {
-        "日系車 2019+": [
-            "API SP",
-            "ILSAC GF-6A"
-        ],
-        "日系車 2014-2018": [
-            "API SN"
-        ],
-        "Ford EcoBoost": [
-            "WSS-M2C948-B"
-        ],
-        "Ford 一般": [
-            "WSS-M2C913-D"
-        ],
-        "BMW 汽油": [
-            "LL-01"
-        ],
-        "BMW 柴油": [
-            "LL-04"
-        ],
-        "Mercedes 汽油": [
-            "MB 229.5"
-        ],
-        "Mercedes 柴油": [
-            "MB 229.51"
-        ],
-        "VW/Audi/Skoda/Seat 汽油 (2005+)": [
-            "VW 504 00",
-            "VW 502 00"
-        ],
-        "VW/Audi/Skoda/Seat 柴油 (DPF)": [
-            "VW 507 00",
-            "VW 505 01"
-        ],
-        "VW/Audi/Skoda/Seat 柴油 (無DPF)": [
-            "VW 505 00"
-        ],
-        "Porsche Cayenne/Panamera": [
-            "Porsche C30"
-        ],
-        "Volvo": [
-            "VCC RBS0-2AE"
-        ],
-        "速克達(無濕式離合器)": [
-            "JASO MB"
-        ],
-        "檔車/重機(有濕式離合器)": [
-            "JASO MA2",
-            "JASO MA"
-        ]
-    },
     "symptom_to_sku": {
+        "_description": "症狀 → 推薦產品 SKU（供 AI 添加劑匹配）",
         "吃機油/燒機油": [
             "LM1019",
             "LM2501",
@@ -149,15 +85,15 @@
         ]
     },
     "field_mapping": {
-        "_description": "關鍵字 → 對應的 WIX CMS 欄位",
+        "_description": "搜尋關鍵字 → Wix CMS 欄位對照",
         "SKU(LMxxxx)": "partno (精確匹配 eq)",
         "黏度(0W-20等)": "word2 或 title (包含 contains)",
         "認證(API SP等)": "cert (包含 contains)",
         "產品系列(Top Tec等)": "title (包含 contains)",
-        "產品類別(機油/添加劑)": "sort (包含 contains)",
-        "車型關鍵字": "title 或 content (包含 contains)"
+        "產品類別(機油/添加劑)": "sort (包含 contains)"
     },
     "product_series": {
+        "_description": "產品系列名稱（用於關鍵字搜尋）",
         "機油": [
             "Top Tec",
             "Special Tec",
@@ -196,53 +132,29 @@
             "Antifreeze",
             "KFS",
             "Radiator"
-        ],
-        "美容": [
-            "Wash",
-            "Wax",
-            "Clean",
-            "Polish"
-        ],
-        "自行車": [
-            "Bike",
-            "Chain",
-            "Lube"
         ]
     },
-    "wix_field_priority": {
-        "_description": "搜尋時的欄位優先順序",
-        "SKU搜尋": [
-            "partno"
-        ],
-        "黏度搜尋": [
-            "word2",
-            "title"
-        ],
-        "認證搜尋": [
-            "cert",
-            "title"
-        ],
-        "產品名稱搜尋": [
-            "title"
-        ],
-        "類別搜尋": [
-            "sort"
-        ],
-        "全文搜尋": [
-            "title",
-            "content",
-            "word1",
-            "word2",
-            "sort"
-        ]
+    "categoryToSort": {
+        "_description": "產品類別 → Wix sort 欄位值",
+        "機油_摩托車": "【摩托車】機油",
+        "機油_汽車": "【汽車】機油",
+        "添加劑_摩托車": "【摩托車】添加劑",
+        "添加劑_汽車": "【汽車】添加劑",
+        "變速箱油": "變速箱",
+        "煞車油": "煞車系統",
+        "冷卻系統": "冷卻系統",
+        "美容": "車輛美容",
+        "香氛": "車輛美容",
+        "自行車": "自行車系列",
+        "船舶": "船舶系列"
     },
     "keywordMapping": {
-        "_description": "用戶訊息關鍵字 → 搜尋關鍵字對照",
+        "_description": "用戶關鍵字 → 搜尋關鍵字對照",
         "mos2": [
             "MoS2",
             "Shooter"
         ],
-        "oil additiv": [
+        "oil additive": [
             "Oil Additive",
             "Shooter",
             "添加劑"
@@ -287,17 +199,6 @@
             "香氛磚",
             "車輛美容"
         ],
-        "香氛磚": [
-            "Air Freshener",
-            "香氛磚"
-        ],
-        "清香": [
-            "Air Freshener"
-        ],
-        "air freshener": [
-            "Air Freshener",
-            "香氛磚"
-        ],
         "美容": [
             "車輛美容",
             "Car Care",
@@ -307,44 +208,6 @@
             "Car Wash",
             "Wash",
             "Wax"
-        ],
-        "蠟": [
-            "Wax",
-            "Polish"
-        ],
-        "清潔": [
-            "Cleaner",
-            "Clean"
-        ]
-    },
-    "categoryToSort": {
-        "_description": "產品類別 → Wix sort 欄位值",
-        "機油_摩托車": "【摩托車】機油",
-        "機油_汽車": "【汽車】機油",
-        "添加劑_摩托車": "【摩托車】添加劑",
-        "添加劑_汽車": "【汽車】添加劑",
-        "變速箱油": "變速箱",
-        "煞車油": "煞車系統",
-        "冷卻系統": "冷卻系統",
-        "美容": "車輛美容",
-        "香氛": "車輛美容",
-        "自行車": "自行車系列",
-        "船舶": "船舶系列"
-    },
-    "vehicleKeywords": {
-        "_description": "車型 → 產品名稱關鍵字",
-        "摩托車": [
-            "motorbike",
-            "motorcycle",
-            "摩托車",
-            "機車",
-            "4t",
-            "2t"
-        ],
-        "汽車": [
-            "car",
-            "auto",
-            "汽車"
         ]
     }
 }

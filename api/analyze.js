@@ -132,13 +132,10 @@ ${otherProblems.join('\n')}
 `;
     }
 
-    // === 生成精簡參照表 prompt ===
-    const quickRefPrompt = searchReference.viscosity_by_vehicle ? `
-【⭐ LLM 內建知識優先 - 請用你的專業知識判斷！】
-你必須根據汽車專業知識推論認證和黏度，以下僅供參考：
-- 黏度參考: ${JSON.stringify(searchReference.viscosity_by_vehicle)}
-- 認證參考: ${JSON.stringify(searchReference.cert_by_vehicle)}
-- 症狀對應 SKU: ${JSON.stringify(searchReference.symptom_to_sku)}
+    // === 症狀對應 SKU 參考（供添加劑匹配使用）===
+    const symptomRefPrompt = searchReference.symptom_to_sku ? `
+【症狀對應產品 SKU - 快速參考】
+${JSON.stringify(searchReference.symptom_to_sku)}
 ` : '';
 
     // === AI 主導分析提示詞（從知識庫動態生成） ===
@@ -199,7 +196,7 @@ ${otherProblems.join('\n')}
 - 只問產品編號（如「LM2500」）→ 直接搜尋產品
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
-${quickRefPrompt}
+${symptomRefPrompt}
 ${symptomGuide}
 返回格式：
 ${responseFormat}
