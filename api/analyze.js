@@ -148,32 +148,50 @@ ${otherProblems.join('\n')}
         : `{
     "isMultiVehicleQuery": false,
     "vehicles": [{
-        "vehicleName": null,
-        "vehicleType": null,
+        "vehicleName": "車型全名（如 2020 VW Caddy）",
+        "vehicleType": "汽車/摩托車/null",
         "vehicleSubType": null,
-        "fuelType": null,
+        "fuelType": "汽油/柴油/null（需推論或追問）",
         "strokeType": null,
         "isElectricVehicle": false,
-        "certifications": ["用戶指定的認證"],
-        "viscosity": "用戶指定的黏度",
+        "certifications": ["根據車廠推論的認證，如 VW 504 00"],
+        "viscosity": "根據車廠推論的黏度，如 5W-30",
         "searchKeywords": ["搜尋關鍵字"]
     }],
-    "productCategory": "機油/添加劑/變速箱油/煞車系統/冷卻系統/空調系統/化學品/美容/香氛/自行車/船舶/商用車/PRO-LINE/其他",
+    "productCategory": "機油/添加劑/...",
     "usageScenario": null,
     "recommendSynthetic": "any",
     "symptomMatched": null,
     "symptomSeverity": "none",
     "isGeneralProduct": false,
-    "needsProductRecommendation": true
+    "needsProductRecommendation": true,
+    "needsMoreInfo": ["需要追問的資訊，如 fuelType"]
 }`;
 
-    const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
+    const analysisPrompt = `你是汽機車專家，擁有完整的車廠機油規格知識。分析用戶問題並返回 JSON。
 
-⚠️ **重要規則：禁止預設！**
+⚠️ **最重要規則：主動推論車廠認證！**
+當用戶提供車型時，你必須根據你的專業知識推論該車需要的認證和黏度：
+
+**歐洲車廠認證（必須推論！）：**
+- VW/Audi/Skoda/Seat/Porsche → 汽油車用 VW 504 00，柴油車用 VW 507 00
+- BMW → 汽油車用 LL-01，柴油車用 LL-04
+- Mercedes-Benz → 汽油車用 MB 229.5，柴油車用 MB 229.51
+- Volvo → VCC RBS0-2AE
+
+**日系/韓系車認證：**
+- Toyota/Honda/Mazda/Nissan/Subaru 2019+ → API SP, ILSAC GF-6A
+- Hyundai/Kia → API SP 或 API SN
+
+**美系車認證：**
+- Ford EcoBoost → WSS-M2C948-B
+- Ford 一般引擎 → WSS-M2C913-D
+
+**如果無法確定汽油/柴油，填入 needsMoreInfo: ["fuelType"]，並在 certifications 填入該車廠的汽油版認證作為預設。**
+
+⚠️ **禁止預設的欄位：**
 - **vehicleType**：用戶沒提車型 → null
-- **fuelType**：用戶沒說汽油/柴油 → null
-- **usageScenario**：用戶沒說用途（跑山/下賽道/長途等）→ null（**禁止預設為「一般通勤」！**）
-- **只有用戶明確提到時才填入對應值**
+- **usageScenario**：用戶沒說用途（跑山/下賽道/長途等）→ null
 
 **直接回答不追問的情況：**
 - 只問認證（如「有 GF-6A 機油嗎」）→ 直接搜尋認證
