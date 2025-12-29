@@ -1,33 +1,12 @@
 /**
  * LIQUI MOLY Chatbot - RAG 知識檢索器
  * 根據意圖動態載入相關知識
+ * 
+ * P1 優化：使用統一的 knowledge-cache 模組
  */
 
-const fs = require('fs');
-const path = require('path');
+const { loadJSON } = require('./knowledge-cache');
 
-// 知識庫快取
-const knowledgeCache = {};
-
-/**
- * 載入 JSON 檔案
- */
-function loadJSON(filename) {
-    const cacheKey = filename;
-    if (knowledgeCache[cacheKey]) {
-        return knowledgeCache[cacheKey];
-    }
-
-    try {
-        const filePath = path.join(process.cwd(), 'data', 'knowledge', filename);
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-        knowledgeCache[cacheKey] = data;
-        return data;
-    } catch (e) {
-        console.warn(`[KnowledgeRetriever] Failed to load ${filename}:`, e.message);
-        return null;
-    }
-}
 
 /**
  * 根據意圖檢索知識

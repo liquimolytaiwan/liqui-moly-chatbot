@@ -32,22 +32,86 @@
 
 ```
 liqui-moly-chatbot/
-├── index.html              # 聊天介面（含用戶表單、評分 UI）
+├── index.html                       # 主聊天介面（含用戶表單、評分 UI）
+├── vercel.json                      # Vercel 部署配置
 ├── css/
-│   └── style.css           # 樣式檔案
+│   └── style.css                    # 樣式檔案
 ├── js/
-│   ├── config.js           # 配置檔案
-│   └── chat.js             # 聊天功能（含 Session 管理）
+│   ├── config.js                    # 前端配置（API 端點）
+│   └── chat.js                      # 前端聊天功能（LiquiMolyChatbot 類別）
 ├── assets/
-│   ├── liqui-moly-logo.jpg # Logo
-│   └── bot-avatar.jpg      # 機器人頭像
-├── wix-backend/            # Wix Velo 後端程式碼
-│   ├── http-functions.js   # HTTP API 端點（核心邏輯）
-│   ├── chatbot.jsw         # 聊天邏輯模組
-│   ├── cleanupSessions.jsw # Session 清理模組
-│   └── jobs.config         # 定時任務設定
-└── README.md
+│   ├── liqui-moly-logo.jpg          # Logo
+│   ├── liqui-moly-logo.svg
+│   ├── bot-avatar.jpg               # 機器人頭像
+│   └── bot-avatar.svg
+├── api/                             # Vercel Serverless Functions
+│   ├── chat.js                      # 主要聊天 API 入口
+│   ├── analyze.js                   # AI 分析用戶問題
+│   ├── search.js                    # 產品搜尋邏輯
+│   ├── rag-pipeline.js              # RAG 處理管線入口
+│   ├── intent-classifier.js         # 規則型意圖分類器
+│   ├── intent-converter.js          # AI 結果轉換為 Intent 格式
+│   ├── knowledge-retriever.js       # 知識庫檢索器
+│   ├── knowledge-cache.js           # 統一知識庫快取模組
+│   ├── prompt-builder.js            # 動態 System Prompt 建構器
+│   ├── meta-webhook.js              # Meta（FB/IG）Webhook 處理
+│   └── setup-messenger.js           # Messenger Profile 設定工具
+├── data/knowledge/                  # RAG 知識庫
+│   ├── core-identity.json           # 品牌身份與回覆規範
+│   ├── vehicle-specs.json           # 車型規格資料庫
+│   ├── additive-guide.json          # 添加劑症狀對照指南
+│   ├── ai-analysis-rules.json       # AI 分析規則與繼承邏輯
+│   ├── response-templates.json      # 回覆範本
+│   ├── search-reference.json        # 搜尋關鍵字對照表
+│   └── urls.json                    # 統一 URL 配置
+└── wix-backend/                     # Wix Velo 後端程式碼（參考用）
+    ├── http-functions.js            # HTTP API 端點
+    └── cleanupSessions.jsw          # Session 清理定時任務
 ```
+
+## 技術架構
+
+### 前端
+- 純 HTML/CSS/JS，可獨立運行或嵌入 Wix 網站
+- 使用 Noto Sans TC 字體
+
+### Vercel Serverless API
+- **RAG（Retrieval-Augmented Generation）架構**
+- AI 優先、規則備援的混合意圖分析
+- 動態載入知識庫，減少 Token 消耗
+- P0 優化：直接函式呼叫取代 HTTP 內部請求
+- P1 優化：統一 Knowledge 快取模組
+
+### Wix Velo 後端
+- CMS 整合（產品資料、對話記錄）
+- Session 管理（建立、更新、清理）
+- API 代理層（轉發至 Vercel API）
+
+### Meta 整合
+- Facebook Messenger 和 Instagram DM 支援
+- 自動切換真人客服（圖片/附件觸發）
+- Persistent Menu 和 Quick Replies
+
+## 環境變數
+
+| 變數名稱 | 說明 |
+|----------|------|
+| `GEMINI_API_KEY` | Google Gemini API Key |
+| `META_PAGE_ACCESS_TOKEN` | Facebook Page Access Token |
+| `META_VERIFY_TOKEN` | Webhook 驗證 Token |
+| `WIX_API_KEY` | Wix API Key（用於 CMS 操作）|
+
+## 部署
+
+### Vercel 部署
+```bash
+vercel --prod
+```
+
+### Wix 部署
+1. 將 `wix-backend/http-functions.js` 複製到 Wix 後端
+2. 將 `wix-backend/cleanupSessions.jsw` 複製到 Wix 後端
+3. 設定 Scheduled Jobs 呼叫 `cleanupIdleSessions`
 
 ---
 

@@ -6,11 +6,12 @@
  * - 移除所有硬編碼關鍵字
  * - Gemini 負責識別車型、判斷類型、推論規格
  * - 從 data/*.json 動態載入知識補充 AI 判斷
+ * 
+ * P1 優化：使用統一的 knowledge-cache 模組
  */
 
-const fs = require('fs');
-const path = require('path');
 const { findVehicleByMessage } = require('./knowledge-retriever');
+const { loadJSON } = require('./knowledge-cache');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -23,44 +24,16 @@ const corsHeaders = {
 };
 
 // ============================================
-// 載入外部知識庫（用於增強 AI 結果）
+// 載入外部知識庫（使用統一快取模組）
 // ============================================
-let vehicleSpecs = {};
-let additiveGuide = [];
-let searchReference = {};
-let aiAnalysisRules = {};
+const vehicleSpecs = loadJSON('vehicle-specs.json') || {};
+const additiveGuide = loadJSON('additive-guide.json') || [];
+const searchReference = loadJSON('search-reference.json') || {};
+const aiAnalysisRules = loadJSON('ai-analysis-rules.json') || {};
 
-try {
-    const basePath = path.join(process.cwd(), 'data', 'knowledge');
-    vehicleSpecs = JSON.parse(fs.readFileSync(path.join(basePath, 'vehicle-specs.json'), 'utf-8'));
-    console.log('[Analyze] Vehicle specs loaded');
-} catch (e) {
-    console.warn('[Analyze] Failed to load vehicle specs:', e.message);
-}
+console.log('[Analyze] Knowledge loaded via unified cache');
+console.log(`[Additive Guide] Loaded ${Array.isArray(additiveGuide) ? additiveGuide.length : 0} items`);
 
-try {
-    const guidePath = path.join(process.cwd(), 'data', 'knowledge', 'additive-guide.json');
-    additiveGuide = JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
-    console.log(`[Additive Guide] Loaded ${additiveGuide.length} items`);
-} catch (e) {
-    console.warn('[Additive Guide] Failed to load:', e.message);
-}
-
-try {
-    const refPath = path.join(process.cwd(), 'data', 'knowledge', 'search-reference.json');
-    searchReference = JSON.parse(fs.readFileSync(refPath, 'utf-8'));
-    console.log('[Analyze] Search reference loaded');
-} catch (e) {
-    console.warn('[Analyze] Failed to load search reference:', e.message);
-}
-
-try {
-    const rulesPath = path.join(process.cwd(), 'data', 'knowledge', 'ai-analysis-rules.json');
-    aiAnalysisRules = JSON.parse(fs.readFileSync(rulesPath, 'utf-8'));
-    console.log('[Analyze] AI analysis rules loaded');
-} catch (e) {
-    console.warn('[Analyze] Failed to load AI analysis rules:', e.message);
-}
 
 
 export default async function handler(req, res) {

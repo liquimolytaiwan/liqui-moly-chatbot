@@ -1,25 +1,25 @@
 /**
  * LIQUI MOLY Chatbot - RAG 意圖分類器
  * 快速判斷用戶問題類型，決定需要載入哪些知識
+ * 
+ * P1 優化：使用統一的 knowledge-cache 模組
  */
 
-const fs = require('fs');
-const path = require('path');
+const { loadJSON } = require('./knowledge-cache');
 
-// 載入分類規則
+// 載入分類規則（使用統一快取）
 let classificationRules = {};
 let specialScenarios = {};
 
 try {
-    const specsPath = path.join(process.cwd(), 'data', 'knowledge', 'vehicle-specs.json');
-    const vehicleSpecs = JSON.parse(fs.readFileSync(specsPath, 'utf-8'));
+    const vehicleSpecs = loadJSON('vehicle-specs.json');
 
-    if (vehicleSpecs._metadata) {
+    if (vehicleSpecs && vehicleSpecs._metadata) {
         classificationRules = vehicleSpecs._metadata;
         specialScenarios = vehicleSpecs._metadata.special_scenarios || {};
     }
 
-    console.log('[IntentClassifier] Rules loaded from vehicle-specs.json');
+    console.log('[IntentClassifier] Rules loaded from vehicle-specs.json (via cache)');
 } catch (e) {
     console.warn('[IntentClassifier] Failed to load rules:', e.message);
 }

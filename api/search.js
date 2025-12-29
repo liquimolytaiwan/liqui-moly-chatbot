@@ -1061,3 +1061,8 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
 
     return context;
 }
+
+// ============================================
+// 匯出函式供直接呼叫（P0 優化：避免 HTTP 開銷）
+// ============================================
+export { searchProducts, getProducts };

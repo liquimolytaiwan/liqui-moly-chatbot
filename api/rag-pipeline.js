@@ -5,17 +5,24 @@
  * 架構：AI 優先、規則備援
  * - 優先使用 Gemini AI 分析用戶意圖
  * - AI 失敗時 fallback 到規則分類
+ * 
+ * P0 優化：直接呼叫 search.js 函式，避免 HTTP 開銷
  */
 
 const { classifyIntent } = require('./intent-classifier');
-const { retrieveKnowledge, loadJSON } = require('./knowledge-retriever');
+const { retrieveKnowledge } = require('./knowledge-retriever');
 const { buildPrompt } = require('./prompt-builder');
 const { convertAIResultToIntent, isValidAIResult } = require('./intent-converter');
+const { loadJSON } = require('./knowledge-cache');
 
-// 載入 search-reference.json 取得關鍵字對照表和認證兼容表
+// 載入 search-reference.json 取得關鍵字對照表和認證兼容表（使用統一快取）
 const searchRef = loadJSON('search-reference.json') || {};
 const certCompatibility = searchRef.certification_compatibility || null;
 console.log('[RAG] Certification compatibility table loaded:', certCompatibility ? 'YES' : 'NO');
+
+// 動態載入 search.js（ESM 模組）
+let searchModuleFn = null;
+
 
 
 // AI 分析模組（動態載入避免循環依賴）
@@ -103,42 +110,40 @@ async function processWithRAG(message, conversationHistory = [], productContext 
     const knowledge = await retrieveKnowledge(intent);
     console.log('[RAG] Knowledge retrieved');
 
-    // === Step 3.5: 產品搜尋（呼叫統一的 /api/search 端點）===
+    // === Step 3.5: 產品搜尋（P0 優化：直接函式呼叫）===
     // ⚡ 優化：如果 productContext 已由呼叫端傳入（如 Wix 端），跳過重複搜尋
-    console.log('[RAG] === Step 3.5: Product Search ===');
+    console.log('[RAG] === Step 3.5: Product Search (Direct Call) ===');
 
     if (productContext && productContext.length > 100) {
         console.log(`[RAG] ⚡ Skipping search - productContext already provided (${productContext.length} chars)`);
     } else {
-        console.log('[RAG] Calling unified /api/search endpoint...');
+        console.log('[RAG] Calling searchProducts directly (P0 optimized)...');
         try {
-            // 判斷是在 Vercel 內部還是外部呼叫
-            const searchUrl = process.env.VERCEL_URL
-                ? `https://${process.env.VERCEL_URL}/api/search`
-                : 'https://liqui-moly-chatbot.vercel.app/api/search';
+            // 動態載入 search.js ESM 模組
+            if (!searchModuleFn) {
+                const searchModule = await import('./search.js');
+                searchModuleFn = searchModule;
+                console.log('[RAG] search.js module loaded');
+            }
 
-            const searchResponse = await fetch(searchUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message,
-                    searchInfo: {
-                        ...intent,
-                        ...aiAnalysis,
-                        vehicles: aiAnalysis?.vehicles || [],
-                        wixQueries: aiAnalysis?.wixQueries || [],
-                        certificationSearch: aiAnalysis?.certificationSearch || null
-                    }
-                })
-            });
-
-            const searchData = await searchResponse.json();
-            if (searchData.success && searchData.productContext) {
-                productContext = searchData.productContext;
-                console.log(`[RAG] Product search completed via API, context length: ${productContext.length}`);
+            // 取得產品列表
+            const products = await searchModuleFn.getProducts();
+            if (!products || products.length === 0) {
+                console.warn('[RAG] No products available');
+                productContext = '⚠️ 產品資料庫暫時無法存取，請稍後再試。';
             } else {
-                console.warn('[RAG] Search API returned no context, using fallback');
-                productContext = '⚠️ 產品搜尋無結果，請告訴用戶目前無符合條件的產品。';
+                // 建構搜尋資訊
+                const searchInfo = {
+                    ...intent,
+                    ...aiAnalysis,
+                    vehicles: aiAnalysis?.vehicles || [],
+                    wixQueries: aiAnalysis?.wixQueries || [],
+                    certificationSearch: aiAnalysis?.certificationSearch || null
+                };
+
+                // 直接呼叫 searchProducts 函式
+                productContext = searchModuleFn.searchProducts(products, message, searchInfo);
+                console.log(`[RAG] Product search completed (direct call), context length: ${productContext.length}`);
             }
         } catch (e) {
             console.error('[RAG] Product search failed:', e.message);
