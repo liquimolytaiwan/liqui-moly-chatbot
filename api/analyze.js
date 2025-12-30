@@ -182,9 +182,21 @@ ${Object.entries(types).map(([type, data]) =>
 `;
     }
 
+    // === 從知識庫生成使用場景與產品推薦規則 ===
+    let scenarioRules = '';
+    if (aiAnalysisRules?.usage_scenario_mapping) {
+        scenarioRules = '\n【使用場景推薦規（動態載入）】';
+        for (const [scenario, config] of Object.entries(aiAnalysisRules.usage_scenario_mapping)) {
+            if (config.recommendSynthetic === 'full') {
+                scenarioRules += `\n- ${scenario} (${config.keywords.join('/')}) → recommendSynthetic="full"`;
+            }
+        }
+    }
+
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${intentTypeRules}
+${scenarioRules}
 
 【車廠認證推論】根據車型推論認證和黏度：
 歐系：VW/Audi/Skoda/Porsche→VW 504 00(汽)/507 00(柴)｜BMW→LL-01(汽)/LL-04(柴)｜Benz→MB 229.5(汽)/229.51(柴)｜Volvo→VCC RBS0-2AE
@@ -193,8 +205,6 @@ ${intentTypeRules}
 注意：Ford 車型若不確定引擎（如只說 Focus），請勿盲目推論，應將 fuelType 設為 null 以觸發追問！
 
 【品牌專用產品】Harley/哈雷→會自動匹配專用產品
-
-【車型定位推薦】運動/仿賽/高性能(Ninja,CBR,R1,GTI,M3等)→recommendSynthetic="full"｜通勤/家用→"any"
 
 【純電動車識別 - 重要！】
 純電動車品牌：Gogoro/Ionex/eMOVING/eReady (電動機車)｜Tesla/BYD/Porsche Taycan (電動汽車)

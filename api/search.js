@@ -567,15 +567,21 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 7. 全合成優先排序（根據使用場景）
+        // 7. 全合成優先排序與強制過濾 (Updated Logic)
         const recommendSynthetic = searchInfo?.recommendSynthetic;
-        if (recommendSynthetic === 'full' && allResults.length > 1) {
-            console.log('[Search] Applying synthetic priority sorting (full synthetic first)');
-            allResults.sort((a, b) => {
-                const aScore = getSyntheticScore(a.title);
-                const bScore = getSyntheticScore(b.title);
-                return bScore - aScore; // 降冪排序
-            });
+        if (recommendSynthetic === 'full') {
+            const fullSyntheticProducts = allResults.filter(p => getSyntheticScore(p.title) === 3);
+
+            if (fullSyntheticProducts.length > 0) {
+                console.log(`[Search] Strict filter applied: Only showing fully synthetic products (${fullSyntheticProducts.length} items)`);
+                // 強制只顯示全合成產品，並按分數排序 (雖然都是 3 分，但保留排序邏輯以防未來擴充)
+                fullSyntheticProducts.sort((a, b) => getSyntheticScore(b.title) - getSyntheticScore(a.title));
+                return formatProducts(fullSyntheticProducts.slice(0, 20), searchInfo);
+            } else {
+                console.log('[Search] Strict filter returned 0 items, fallback to sorting only (Full Synthetic priority)');
+                // 若找不到全合成，則退回原列表但優先排序
+                allResults.sort((a, b) => getSyntheticScore(b.title) - getSyntheticScore(a.title));
+            }
         }
 
         // 7.5 添加劑優先排序（根據症狀嚴重度、燃料類型和使用場景）
@@ -739,13 +745,22 @@ function getSyntheticScore(title) {
     if (!title) return 0;
     const titleLower = title.toLowerCase();
 
-    // 全合成關鍵字（最高優先）
-    if (titleLower.includes('synth') ||
+    // 嚴格全合成（3分）：僅限 Synthoil, Race, Fully Synthetic
+    if (titleLower.includes('synthoil') ||
         titleLower.includes('race') ||
-        titleLower.includes('全合成') ||
-        titleLower.includes('top tec') ||
-        titleLower.includes('special tec')) {
+        titleLower.includes('fully synthetic') ||
+        titleLower.includes('fully-synthetic') ||
+        titleLower.includes('全合成')) {
         return 3;
+    }
+
+    // 合成技術/半合成（2分）：Top Tec, Special Tec, Leichtlauf
+    if (titleLower.includes('top tec') ||
+        titleLower.includes('special tec') ||
+        titleLower.includes('leichtlauf') ||
+        titleLower.includes('synthetic technology') ||
+        titleLower.includes('合成')) {
+        return 2;
     }
 
     // 合成技術/半合成（次優先）
