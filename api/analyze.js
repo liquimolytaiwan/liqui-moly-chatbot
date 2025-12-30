@@ -210,6 +210,7 @@ ${intentTypeRules}
 - 用戶沒說用途→usageScenario=null  
 - 無法確定油種→needsMoreInfo:["fuelType"]
 - 只問認證/黏度/SKU→直接搜尋不追問
+- 用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ intentType="general_inquiry", needsProductRecommendation=false
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${symptomRefPrompt}
