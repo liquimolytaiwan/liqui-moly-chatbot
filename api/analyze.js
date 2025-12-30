@@ -276,6 +276,13 @@ ${dynamicRules}
                     }
                 }
 
+                // === 強制全合成覆寫 (Rule-Based Override) ===
+                // 補救措施：若 AI 漏看全合成需求，用正則強制修正
+                if (/全合成|fully\s*synthetic|synthoil|race|賽道|跑山/i.test(message)) {
+                    console.log('[Analyze] ⚡ Force-enabling strict synthetic filter (Detected keywords)');
+                    result.recommendSynthetic = 'full';
+                }
+
                 // === 使用知識庫增強 AI 結果 ===
                 enhanceWithKnowledgeBase(result, message, conversationHistory);
 
