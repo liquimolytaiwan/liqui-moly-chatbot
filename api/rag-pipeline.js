@@ -118,6 +118,36 @@ async function processWithRAG(message, conversationHistory = [], productContext 
 
     if (productContext && productContext.length > 100) {
         console.log(`[RAG] ⚡ Skipping search - productContext already provided (${productContext.length} chars)`);
+
+        // ⭐ 但如果有 recommendedSKU（品牌專用產品），仍需額外搜尋並補充
+        const recommendedSKU = aiAnalysis?.matchedVehicle?.recommendedSKU;
+        if (recommendedSKU && recommendedSKU.length > 0) {
+            console.log(`[RAG] 🎯 Found recommendedSKU: ${JSON.stringify(recommendedSKU)}, searching for brand-specific products...`);
+            try {
+                if (!searchModuleFn) {
+                    const searchModule = await import('./search.js');
+                    searchModuleFn = searchModule;
+                }
+                const products = await searchModuleFn.getProducts();
+                if (products && products.length > 0) {
+                    // 根據 SKU 精確搜尋專用產品
+                    const skuList = Array.isArray(recommendedSKU) ? recommendedSKU : [recommendedSKU];
+                    const brandProducts = products.filter(p =>
+                        skuList.some(sku => p.partno && p.partno.toUpperCase() === sku.toUpperCase())
+                    );
+                    if (brandProducts.length > 0) {
+                        const brandContext = brandProducts.map(p =>
+                            `🎯 品牌專用產品：${p.title} (${p.partno})\n產品連結：${p.productPageUrl || ''}\n${p.description || ''}`
+                        ).join('\n\n');
+                        // 將專用產品放在最前面
+                        productContext = `⭐ 此品牌有專用產品，應優先推薦：\n\n${brandContext}\n\n---\n其他符合規格的產品：\n${productContext}`;
+                        console.log(`[RAG] ✓ Added ${brandProducts.length} brand-specific products to context`);
+                    }
+                }
+            } catch (e) {
+                console.error('[RAG] Brand-specific product search failed:', e.message);
+            }
+        }
     } else {
         console.log('[RAG] Calling searchProducts directly (P0 optimized)...');
         try {
