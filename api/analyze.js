@@ -918,6 +918,10 @@ ${memRules.rules.map(r => `- ${r}`).join('\n')}`;
     if (rules.additive_recommendation_rules) {
         promptRules += `
 【添加劑推薦規則】
+⚠️ **重要：只有在用戶明確詢問添加劑或描述車輛症狀時才套用此規則！**
+⚠️ **如果用戶只是問機油推薦（如「跑山推薦哪款機油」），禁止主動提及添加劑！**
+
+當用戶確實需要添加劑時：
 - 柴油車 → 優先推薦 Diesel 系列添加劑
 - 激烈操駕/跑山/賽道 → 推薦 Engine Flush 清積碳、MoS2 抗磨損
 - 長途旅行 → 推薦 Oil Additive 機油添加劑保護引擎
