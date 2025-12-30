@@ -195,6 +195,13 @@ ${intentTypeRules}
 
 【車型定位推薦】運動/仿賽/高性能(Ninja,CBR,R1,GTI,M3等)→recommendSynthetic="full"｜通勤/家用→"any"
 
+【純電動車識別 - 重要！】
+純電動車品牌：Gogoro/Ionex/eMOVING/eReady (電動機車)｜Tesla/BYD/Porsche Taycan (電動汽車)
+⚠️ 純電動車 isElectricVehicle=true，**不需要傳統機油**！
+→ 產品類別設為「其他油品」或「煞車系統」
+→ 推薦：齒輪油(Gear Oil)、煞車油(Brake Fluid DOT 4/5.1)
+→ searchKeywords 加入 "Gear Oil" 或 "Brake Fluid"
+
 【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
 
 【規則】
