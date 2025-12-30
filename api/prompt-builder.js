@@ -409,10 +409,12 @@ function buildVehicleSpec(spec) {
         // 精確匹配到車型
         section += `
 ### ${spec.brand} ${spec.model}
-${spec.specs.map(s => `- 年份：${s.years}，燃油：${s.fuel}
-  認證：${s.certification.join(', ')}
-  黏度：${s.viscosity}${s.recommendedSKU ? `\n  推薦產品：${s.recommendedSKU}` : ''}${s.note ? `\n  注意：${s.note}` : ''}`).join('\n')
-            } `;
+${spec.specs.map(s => {
+            const certStr = s.certification?.join?.(', ') || s.certification || 'N/A';
+            return `- 年份：${s.years}，燃油：${s.fuel}
+  認證：${certStr}
+  黏度：${s.viscosity}${s.recommendedSKU ? `\n  推薦產品：${s.recommendedSKU}` : ''}${s.note ? `\n  注意：${s.note}` : ''}`;
+        }).join('\n')} `;
     } else if (spec.allModels) {
         // 品牌下所有車型
         section += `\n### ${spec.brand} 車型對照`;
