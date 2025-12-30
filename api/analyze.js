@@ -415,6 +415,18 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             result.searchKeywords.unshift(...spec.searchKeywords);
         }
 
+        // ⭐ 優先加入 recommendedSKU（品牌專用產品應優先搜尋）
+        if (spec.recommendedSKU) {
+            if (!result.searchKeywords) result.searchKeywords = [];
+            const skus = Array.isArray(spec.recommendedSKU) ? spec.recommendedSKU : [spec.recommendedSKU];
+            for (const sku of skus) {
+                if (!result.searchKeywords.includes(sku)) {
+                    result.searchKeywords.unshift(sku); // 放在最前面優先搜尋
+                }
+            }
+            console.log(`[Knowledge Base] Added recommended SKU: ${skus.join(', ')}`);
+        }
+
         // ⚠️ 關鍵修復：如果 AI 沒有識別出車型，但對話歷史中有，創建車型物件
         if (!result.vehicles || result.vehicles.length === 0) {
             console.log(`[Knowledge Base] Creating vehicle from history: ${vehicleMatch.brand} ${vehicleMatch.model}`);

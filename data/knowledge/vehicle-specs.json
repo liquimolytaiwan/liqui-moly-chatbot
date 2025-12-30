@@ -324,6 +324,10 @@
                     "JASO MA"
                 ],
                 "viscosity": "20W-50",
+                "recommendedSKU": [
+                    "LM3816",
+                    "LM1572"
+                ],
                 "aliases": [
                     "harley",
                     "sportster",
@@ -331,7 +335,7 @@
                     "forty-eight",
                     "哈雷"
                 ],
-                "note": "Harley 需要 20W-50"
+                "note": "Harley 專用機油：LM3816（合成）、LM1572（街道型）"
             }
         ],
         "Softail": [
@@ -341,12 +345,16 @@
                     "JASO MA"
                 ],
                 "viscosity": "20W-50",
+                "recommendedSKU": [
+                    "LM3816",
+                    "LM1572"
+                ],
                 "aliases": [
                     "softail",
                     "fat boy",
                     "breakout"
                 ],
-                "note": "Harley 需要 20W-50"
+                "note": "Harley 專用機油：LM3816（合成）、LM1572（街道型）"
             }
         ],
         "Touring": [
@@ -356,12 +364,16 @@
                     "JASO MA"
                 ],
                 "viscosity": "20W-50",
+                "recommendedSKU": [
+                    "LM3816",
+                    "LM1572"
+                ],
                 "aliases": [
                     "street glide",
                     "road king",
                     "touring"
                 ],
-                "note": "Harley 需要 20W-50"
+                "note": "Harley 專用機油：LM3816（合成）、LM1572（街道型）"
             }
         ]
     }
