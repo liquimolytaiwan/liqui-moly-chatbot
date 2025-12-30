@@ -12,7 +12,7 @@
 const { classifyIntent } = require('./intent-classifier');
 const { retrieveKnowledge } = require('./knowledge-retriever');
 const { buildPrompt } = require('./prompt-builder');
-const { convertAIResultToIntent, isValidAIResult } = require('./intent-converter');
+const { convertAIResultToIntent, isValidAIResult, enhanceIntentWithRules } = require('./intent-converter');
 const { loadJSON } = require('./knowledge-cache');
 
 // 載入 search-reference.json 取得關鍵字對照表和認證兼容表（使用統一快取）
@@ -84,8 +84,10 @@ async function processWithRAG(message, conversationHistory = [], productContext 
 
                 if (isValidAIResult(aiAnalysis)) {
                     intent = convertAIResultToIntent(aiAnalysis);
+                    // 用規則補強 AI 分析結果（識別 authentication、price_inquiry 等意圖）
+                    intent = enhanceIntentWithRules(intent, message);
                     usedAI = true;
-                    console.log('[RAG] ✓ Using AI analysis result');
+                    console.log('[RAG] ✓ Using AI analysis result (enhanced with rules)');
                 } else {
                     console.log('[RAG] AI result invalid, falling back to rules');
                 }

@@ -174,8 +174,67 @@ function isValidAIResult(aiResult) {
     return true;
 }
 
+/**
+ * 用規則增強 AI 分析結果（補充 AI 無法識別的意圖類型）
+ * @param {Object} intent - 已轉換的 intent 物件
+ * @param {string} message - 用戶原始訊息
+ * @returns {Object} - 增強後的 intent
+ */
+function enhanceIntentWithRules(intent, message) {
+    if (!intent || !message) return intent;
+
+    const lowerMessage = message.toLowerCase();
+
+    // === 防偽驗證 ===
+    const authKeywords = ['真假', '正品', '假貨', '仿冒', '驗證', '防偽', '真的', '假的', '真品', '辨別真偽', '水貨', '公司貨', '平行輸入', '原廠貨'];
+    for (const kw of authKeywords) {
+        if (lowerMessage.includes(kw)) {
+            intent.type = 'authentication';
+            intent.needsTemplates = ['authentication'];
+            console.log('[IntentConverter] Enhanced: authentication detected via keyword:', kw);
+            return intent;
+        }
+    }
+
+    // === 價格查詢 ===
+    const priceKeywords = ['多少錢', '價格', '售價', '價位', '報價'];
+    for (const kw of priceKeywords) {
+        if (lowerMessage.includes(kw)) {
+            intent.type = 'price_inquiry';
+            intent.needsTemplates = ['price_inquiry'];
+            console.log('[IntentConverter] Enhanced: price_inquiry detected via keyword:', kw);
+            return intent;
+        }
+    }
+
+    // === 購買查詢 ===
+    const purchaseKeywords = ['哪裡買', '店家', '經銷商', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
+    for (const kw of purchaseKeywords) {
+        if (lowerMessage.includes(kw)) {
+            intent.type = 'purchase_inquiry';
+            intent.needsTemplates = ['purchase_inquiry'];
+            console.log('[IntentConverter] Enhanced: purchase_inquiry detected via keyword:', kw);
+            return intent;
+        }
+    }
+
+    // === 合作洽詢 ===
+    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'kol', '網紅'];
+    for (const kw of cooperationKeywords) {
+        if (lowerMessage.includes(kw)) {
+            intent.type = 'cooperation_inquiry';
+            intent.needsTemplates = ['cooperation_inquiry'];
+            console.log('[IntentConverter] Enhanced: cooperation_inquiry detected via keyword:', kw);
+            return intent;
+        }
+    }
+
+    return intent;
+}
+
 module.exports = {
     convertAIResultToIntent,
     extractBrandFromVehicleName,
-    isValidAIResult
+    isValidAIResult,
+    enhanceIntentWithRules
 };
