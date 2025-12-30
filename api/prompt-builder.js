@@ -475,8 +475,24 @@ function buildSpecialScenario(data, scenario) {
     let section = `## 特殊情境處理`;
 
     if (scenario === 'pure_ev_motorcycle' || scenario === 'pure_ev_car') {
-        section += `\n### 電動車
-${data.response} `;
+        section += `\n### ⚠️⚠️⚠️ 純電動車 - 最重要規則 ⚠️⚠️⚠️
+
+**此用戶的車輛是純電動車（如 Gogoro、Tesla 等），沒有傳統引擎！**
+
+🚫 **絕對禁止**：
+- 禁止提及任何「機油」、「JASO MB」、「JASO MA」等認證
+- 禁止說「建議使用符合 XX 規範的機油」
+- 電動車沒有引擎，完全不需要機油！
+
+✅ **應該推薦的產品**：
+1. **齒輪油** (Gear Oil) - 電動機車齒輪箱保養
+2. **煞車油** (Brake Fluid DOT 4/5.1) - 煞車系統保養
+
+📝 **回覆範例**：
+「Gogoro 是純電動機車，不需要傳統引擎機油。但仍需要定期保養：
+1. 齒輪油 - 建議每 1-2 萬公里更換
+2. 煞車油 - 建議每 2 年更換」
+`;
     } else if (scenario === 'hybrid') {
         section += `\n### 油電混合車
 ${data.note} `;
