@@ -136,9 +136,11 @@ async function processWithRAG(message, conversationHistory = [], productContext 
                         skuList.some(sku => p.partno && p.partno.toUpperCase() === sku.toUpperCase())
                     );
                     if (brandProducts.length > 0) {
-                        const brandContext = brandProducts.map(p =>
-                            `🎯 品牌專用產品：${p.title} (${p.partno})\n產品連結：${p.productPageUrl || ''}\n${p.description || ''}`
-                        ).join('\n\n');
+                        const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
+                        const brandContext = brandProducts.map(p => {
+                            const url = p.partno ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}` : (p.productPageUrl || '');
+                            return `🎯 品牌專用產品：${p.title} (${p.partno})\n產品連結：${url}\n${p.content || p.description || ''}`;
+                        }).join('\n\n');
                         // 將專用產品放在最前面
                         productContext = `⭐ 此品牌有專用產品，應優先推薦：\n\n${brandContext}\n\n---\n其他符合規格的產品：\n${productContext}`;
                         console.log(`[RAG] ✓ Added ${brandProducts.length} brand-specific products to context`);
@@ -171,13 +173,15 @@ async function processWithRAG(message, conversationHistory = [], productContext 
                             solutionSkus.some(sku => p.partno && p.partno.toUpperCase() === sku.toUpperCase())
                         );
                         if (additiveProducts.length > 0) {
+                            const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
                             // 組合症狀說明和產品資訊
                             let symptomInfo = additiveGuideMatch.items.map(item =>
                                 `症狀：${item.problem}\n說明：${item.explanation}\n推薦產品：${item.solutions.join(', ')}`
                             ).join('\n\n');
-                            const additiveContext = additiveProducts.map(p =>
-                                `🎯 症狀解決方案：${p.title} (${p.partno})\n產品連結：${p.productPageUrl || ''}\n${p.content || ''}`
-                            ).join('\n\n');
+                            const additiveContext = additiveProducts.map(p => {
+                                const url = p.partno ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}` : (p.productPageUrl || '');
+                                return `🎯 症狀解決方案：${p.title} (${p.partno})\n產品連結：${url}\n${p.content || ''}`;
+                            }).join('\n\n');
                             // 將症狀解決方案放在最前面
                             productContext = `⭐ 根據用戶描述的症狀，知識庫推薦以下解決方案：\n\n${symptomInfo}\n\n---\n\n${additiveContext}\n\n---\n其他產品：\n${productContext}`;
                             console.log(`[RAG] ✓ Added ${additiveProducts.length} additive solution products to context`);
