@@ -143,6 +143,7 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
     const responseFormat = aiAnalysisRules?.json_response_format
         ? JSON.stringify(aiAnalysisRules.json_response_format, null, 4)
         : `{
+    "intentType": "product_recommendation",
     "isMultiVehicleQuery": false,
     "vehicles": [{
         "vehicleName": "車型全名（如 2020 VW Caddy）",
@@ -165,7 +166,25 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
     "needsMoreInfo": ["需要追問的資訊，如 fuelType"]
 }`;
 
+    // === 從知識庫生成意圖類型規則 ===
+    let intentTypeRules = '';
+    if (aiAnalysisRules?.intent_type_rules?.types) {
+        const types = aiAnalysisRules.intent_type_rules.types;
+        intentTypeRules = `
+【⚠️ 意圖類型識別 - 必須判斷！】
+根據用戶問題選擇正確的 intentType（預設為 product_recommendation）：
+
+${Object.entries(types).map(([type, data]) =>
+            `- **${type}**：${data.description}\n  範例：${data.examples.join('、')}`
+        ).join('\n')}
+
+⚠️ 非產品推薦的意圖（authentication/price_inquiry/purchase_inquiry/cooperation_inquiry），needsProductRecommendation 必須設為 false！
+`;
+    }
+
     const analysisPrompt = `你是汽機車專家，擁有完整的車廠機油規格知識。分析用戶問題並返回 JSON。
+
+${intentTypeRules}
 
 ⚠️ **最重要規則：主動推論車廠認證！**
 當用戶提供車型時，你必須根據你的專業知識推論該車需要的認證和黏度：

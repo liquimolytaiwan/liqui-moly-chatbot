@@ -19,11 +19,26 @@ function convertAIResultToIntent(aiResult) {
     const productCategory = aiResult.productCategory || '機油';
     const isMotorcycle = vehicle.vehicleType === '摩托車';
 
-    // 判斷意圖類型
-    let intentType = 'product_recommendation';
-    if (!aiResult.needsProductRecommendation) {
-        intentType = 'general_inquiry';
+    // 判斷意圖類型（優先使用 AI 返回的 intentType）
+    let intentType = aiResult.intentType || 'product_recommendation';
+
+    // 如果 AI 沒有設定 intentType，根據 needsProductRecommendation 判斷
+    if (!aiResult.intentType) {
+        if (!aiResult.needsProductRecommendation) {
+            intentType = 'general_inquiry';
+        }
     }
+
+    // 根據 intentType 設定 needsTemplates
+    const intentToTemplate = {
+        'authentication': ['authentication'],
+        'price_inquiry': ['price_inquiry'],
+        'purchase_inquiry': ['purchase_inquiry'],
+        'cooperation_inquiry': ['cooperation_inquiry'],
+        'product_recommendation': ['product_recommendation'],
+        'general_inquiry': ['product_recommendation']
+    };
+    const needsTemplates = intentToTemplate[intentType] || ['product_recommendation'];
 
     // 判斷特殊情境
     let specialScenario = null;
@@ -48,7 +63,7 @@ function convertAIResultToIntent(aiResult) {
         isMultiVehicle: aiResult.isMultiVehicleQuery || false,
         needsSpecs: productCategory === '機油' && !isMotorcycle,
         needsSymptoms: productCategory === '添加劑',
-        needsTemplates: ['product_recommendation'],
+        needsTemplates: needsTemplates,
         specialScenario: specialScenario,
         detectedKeywords: aiResult.searchKeywords || [],
 

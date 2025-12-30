@@ -396,6 +396,7 @@
         }
     },
     "json_response_format": {
+        "intentType": "product_recommendation",
         "isMultiVehicleQuery": false,
         "vehicles": [
             {
@@ -417,5 +418,79 @@
         "usageScenario": null,
         "needsProductRecommendation": true,
         "needsMoreInfo": []
+    },
+    "intent_type_rules": {
+        "description": "意圖類型判斷規則 - AI 必須根據用戶問題選擇正確的 intentType",
+        "types": {
+            "authentication": {
+                "description": "用戶詢問產品真偽、防偽驗證",
+                "examples": [
+                    "這是真的嗎",
+                    "如何辨別真假",
+                    "這是公司貨嗎",
+                    "會有假貨嗎",
+                    "怎麼驗證正品",
+                    "水貨",
+                    "山寨",
+                    "仿冒"
+                ],
+                "needsProductRecommendation": false
+            },
+            "price_inquiry": {
+                "description": "用戶詢問產品價格",
+                "examples": [
+                    "多少錢",
+                    "價格",
+                    "售價",
+                    "報價",
+                    "價位"
+                ],
+                "needsProductRecommendation": false
+            },
+            "purchase_inquiry": {
+                "description": "用戶詢問購買管道",
+                "examples": [
+                    "哪裡買",
+                    "店家",
+                    "經銷商",
+                    "門市",
+                    "實體店",
+                    "怎麼買"
+                ],
+                "needsProductRecommendation": false
+            },
+            "cooperation_inquiry": {
+                "description": "用戶詢問商業合作",
+                "examples": [
+                    "合作",
+                    "經銷",
+                    "代理",
+                    "進貨",
+                    "批發",
+                    "贊助",
+                    "KOL",
+                    "網紅"
+                ],
+                "needsProductRecommendation": false
+            },
+            "product_recommendation": {
+                "description": "用戶需要產品推薦（預設）",
+                "examples": [
+                    "推薦機油",
+                    "什麼機油適合",
+                    "有什麼添加劑"
+                ],
+                "needsProductRecommendation": true
+            },
+            "general_inquiry": {
+                "description": "一般諮詢，不需要產品推薦",
+                "examples": [
+                    "你是誰",
+                    "你能做什麼",
+                    "品牌介紹"
+                ],
+                "needsProductRecommendation": false
+            }
+        }
     }
 }
