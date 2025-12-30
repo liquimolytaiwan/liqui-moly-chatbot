@@ -277,10 +277,25 @@ ${dynamicRules}
                 }
 
                 // === 強制全合成覆寫 (Rule-Based Override) ===
-                // 補救措施：若 AI 漏看全合成需求，用正則強制修正
+                // 1. 當前訊息檢查
                 if (/全合成|fully\s*synthetic|synthoil|race|賽道|跑山/i.test(message)) {
-                    console.log('[Analyze] ⚡ Force-enabling strict synthetic filter (Detected keywords)');
+                    console.log('[Analyze] ⚡ Force-enabling strict synthetic filter (Detected keywords in current message)');
                     result.recommendSynthetic = 'full';
+                }
+                // 2. 歷史訊息繼承 (若當前未設為 full，檢查前 3 則訊息)
+                else if (result.recommendSynthetic !== 'full' && Array.isArray(conversationHistory)) {
+                    const recentUserMessages = conversationHistory
+                        .filter(msg => msg.role === 'user')
+                        .slice(-3); // 檢查最近 3 則
+
+                    const hasPastPreference = recentUserMessages.some(msg =>
+                        /全合成|fully\s*synthetic|synthoil|race|賽道|跑山/i.test(msg.content || msg.text || '')
+                    );
+
+                    if (hasPastPreference) {
+                        console.log('[Analyze] ⚡ Inheriting "full" synthetic preference from history');
+                        result.recommendSynthetic = 'full';
+                    }
                 }
 
                 // === 使用知識庫增強 AI 結果 ===
