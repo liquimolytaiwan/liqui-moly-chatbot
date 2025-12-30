@@ -182,78 +182,26 @@ ${Object.entries(types).map(([type, data]) =>
 `;
     }
 
-    const analysisPrompt = `你是汽機車專家，擁有完整的車廠機油規格知識。分析用戶問題並返回 JSON。
+    const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
 ${intentTypeRules}
 
-⚠️ **最重要規則：主動推論車廠認證！**
-當用戶提供車型時，你必須根據你的專業知識推論該車需要的認證和黏度：
+【車廠認證推論】根據車型推論認證和黏度：
+歐系：VW/Audi/Skoda/Porsche→VW 504 00(汽)/507 00(柴)｜BMW→LL-01(汽)/LL-04(柴)｜Benz→MB 229.5(汽)/229.51(柴)｜Volvo→VCC RBS0-2AE
+日韓系(2019+)：Toyota/Honda/Mazda/Nissan/Subaru→API SP, GF-6A｜Hyundai/Kia→API SP/SN
+美系：Ford EcoBoost→WSS-M2C948-B｜Ford 一般→WSS-M2C913-D
 
-**歐洲車廠認證（必須推論！）：**
-- VW/Audi/Skoda/Seat/Porsche → 汽油車用 VW 504 00，柴油車用 VW 507 00
-- BMW → 汽油車用 LL-01，柴油車用 LL-04
-- Mercedes-Benz → 汽油車用 MB 229.5，柴油車用 MB 229.51
-- Volvo → VCC RBS0-2AE
+【品牌專用產品】Harley/BMW機車/KTM/Ducati→searchKeywords加入品牌名
 
-**日系/韓系車認證：**
-- Toyota/Honda/Mazda/Nissan/Subaru 2019+ → API SP, ILSAC GF-6A
-- Hyundai/Kia → API SP 或 API SN
+【車型定位推薦】運動/仿賽/高性能(Ninja,CBR,R1,GTI,M3等)→recommendSynthetic="full"｜通勤/家用→"any"
 
-**美系車認證：**
-- Ford EcoBoost → WSS-M2C948-B
-- Ford 一般引擎 → WSS-M2C913-D
+【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
 
-**🏍️ 品牌專用產品優先推薦規則：**
-LIQUI MOLY 有針對特定品牌開發的專用產品，當用戶詢問這些品牌的車型時，請在 searchKeywords 中加入品牌名稱以優先搜尋專用產品：
-- Harley-Davidson 重機 → searchKeywords 加入 "Harley" 或 "HD"（有專用機油產品）
-- BMW 機車 → searchKeywords 加入 "BMW"（可能有專用產品）
-- 其他特殊品牌（如 KTM、Ducati 等）→ 也請加入品牌名稱以便搜尋專用產品
-
-**🎯 車型定位智能推薦規則（根據你的汽機車專業知識判斷！）：**
-根據車型的定位和目標客群，智能推論使用者可能的使用場景，並據此設定 recommendSynthetic：
-
-**運動/性能取向車型 → recommendSynthetic = "full"（全合成優先）：**
-- 仿賽車型（如 Ninja、CBR、R1、R6、Panigale 等）→ 通常用於激進騎乘/賽道
-- 高性能運動車（如 BMW S1000RR、Ducati 系列）→ 高轉速/高溫負荷
-- 運動房車（如 Golf GTI、Type R、WRX、M3/M4 等）→ 性能需求高
-
-**休閒/通勤取向車型 → recommendSynthetic = "any"：**
-- 通勤速克達（如勁戰、曼巴等）→ 一般使用
-- 家庭轎車/休旅車（如 RAV4、CR-V、Camry 等）→ 日常代步
-- 經典重機/巡航車（如 Harley 巡航系列）→ 舒適巡航為主
-
-⚠️ 這些判斷請根據你對車型的專業知識自行推論，不要死板套用！用戶的明確需求優先於車型定位推論。
-
-**如果無法確定汽油/柴油，填入 needsMoreInfo: ["fuelType"]，並在 certifications 填入該車廠的汽油版認證作為預設。**
-
-⚠️ **禁止預設的欄位：**
-- **vehicleType**：用戶沒提車型 → null
-- **usageScenario**：用戶沒說用途（跑山/下賽道/長途等）→ null
-
-**直接回答不追問的情況：**
-- 只問認證（如「有 GF-6A 機油嗎」）→ 直接搜尋認證
-- 只問黏度（如「有 5W-30 嗎」）→ 直接搜尋黏度
-- 只問產品編號（如「LM2500」）→ 直接搜尋產品
-
-**🔍 產品系列智能識別（重要！）**
-當用戶提到產品系列名稱時，即使打錯字或使用中文別名，你必須根據語意識別並在 searchKeywords 中加入正確的英文產品名稱：
-
-常見的 LIQUI MOLY 產品系列：
-**機油系列：**
-- 魔護/摩護/磨護/魔力/molygen → 搜尋「Molygen」
-- 頂技/頂級/top tec → 搜尋「Top Tec」
-- 特級/特技/special tec → 搜尋「Special Tec」
-
-**添加劑系列：**
-- 油路清/油道清/引擎清洗 → 搜尋「Engine Flush」
-- 機油添加劑/機油精/MoS2 → 搜尋「Oil Additive」
-- 汽油精/汽油添加劑 → 搜尋「Fuel Additive」或「Injection Cleaner」
-
-**其他油品：**
-- 變速箱油/波箱油/ATF → 搜尋「ATF」或「Gear Oil」
-- 煞車油/DOT → 搜尋「Brake Fluid」
-
-⚠️ 即使用戶輸入不完整或有錯字，你也要根據語意猜測最可能的產品系列，並在 searchKeywords 中加入正確的英文名稱！
+【規則】
+- 用戶沒提車型→vehicleType=null
+- 用戶沒說用途→usageScenario=null  
+- 無法確定油種→needsMoreInfo:["fuelType"]
+- 只問認證/黏度/SKU→直接搜尋不追問
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${symptomRefPrompt}
@@ -261,7 +209,7 @@ ${symptomGuide}
 返回格式：
 ${responseFormat}
 ${dynamicRules}
-只返回 JSON，不要其他文字。`;
+只返回 JSON。`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
