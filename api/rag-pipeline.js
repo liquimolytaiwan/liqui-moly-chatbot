@@ -141,8 +141,17 @@ async function processWithRAG(message, conversationHistory = [], productContext 
                             const url = p.partno ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}` : (p.productPageUrl || '');
                             return `🎯 品牌專用產品：${p.title} (${p.partno})\n產品連結：${url}\n${p.content || p.description || ''}`;
                         }).join('\n\n');
-                        // 將專用產品放在最前面
-                        productContext = `⭐ 此品牌有專用產品，應優先推薦：\n\n${brandContext}\n\n---\n其他符合規格的產品：\n${productContext}`;
+                        // 將專用產品放在最前面，使用更強烈的指示
+                        productContext = `## ⚠️⚠️⚠️ 最重要：此品牌有專用產品！⚠️⚠️⚠️
+
+**你必須將以下品牌專用產品放在推薦的第 1、2 位！**
+**禁止將其他產品排在專用產品前面！**
+
+${brandContext}
+
+---
+以下是其他符合規格的產品（只能作為補充選項，排在專用產品之後）：
+${productContext}`;
                         console.log(`[RAG] ✓ Added ${brandProducts.length} brand-specific products to context`);
                     }
                 }
