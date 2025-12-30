@@ -128,7 +128,7 @@ ${otherProblems.join('\n')}
 **判斷規則：**
 - 如果用戶問的是「引擎相關症狀」（如：吃機油、過熱、啟動困難、異音、積碳），productCategory = 添加劑，不需要問變速箱
 - 如果用戶問的是「變速箱相關症狀」（如：換檔頓挫、換檔不順），才需要問變速箱類型
-- 如果對話中已經提供了車型資訊，不要重複詢問！直接從上下文獲取
+- **繼承規則**：如果對話中已經提供了車型、使用場景或**偏好**（如全合成），且用戶只是在補充或切換車型（如「那機車呢」），請盡可能保留相關偏好！
 `;
     }
 
@@ -214,6 +214,10 @@ ${scenarioRules}
 → searchKeywords 加入 "Gear Oil" 或 "Brake Fluid"
 
 【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
+
+【全合成識別】
+- 若用戶明確提到「全合成」、「Fully Synthetic」、「Synthoil」、「Race」、「賽道」或「跑山」，必須設定 **recommendSynthetic="full"**。
+- 這將觸發嚴格篩選，只顯示真正的全合成產品。
 
 【規則】
 - 用戶沒提車型→vehicleType=null
