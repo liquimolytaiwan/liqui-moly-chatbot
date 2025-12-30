@@ -1,18 +1,18 @@
 {
     "product_recommendation": {
         "single_vehicle": {
-            "template": "針對您的 {vehicle}，推薦：\n\n1. {product_name}\n   - 產品連結：{product_link}\n   - 特點：符合 {certification} 認證，適合 {engine_type} 引擎\n\n👉 點擊產品連結「這哪裡買」可查詢鄰近店家\n\n💡 若查詢不到附近店家，歡迎填寫聯絡表單：https://www.liqui-moly-tw.com/contact ，我們會以簡訊回覆您購買資訊！"
+            "template": "針對您的 {vehicle}，推薦：\n\n1. {product_name}\n   - 產品連結：{product_link}\n   - 特點：符合 {certification} 認證，適合 {engine_type} 引擎\n\n👉 點擊產品連結「這哪裡買」可查詢鄰近店家\n\n💡 若查詢不到附近店家，歡迎填寫聯絡表單：\nhttps://www.liqui-moly-tw.com/contact\n我們會以簡訊回覆您購買資訊！"
         },
         "multi_vehicle": {
-            "template": "## 🚙 {vehicle_1}\n原廠建議：{certification_1} 認證，{viscosity_1} 黏度\n推薦產品：\n1. {product_1}\n   - 產品連結：{link_1}\n   - 說明：符合 {certification_1} 認證\n\n---\n\n## 🚙 {vehicle_2}\n原廠建議：{certification_2} 認證，{viscosity_2} 黏度\n推薦產品：\n1. {product_2}\n   - 產品連結：{link_2}\n   - 說明：符合 {certification_2} 認證\n\n👉 店家查詢系統：https://www.liqui-moly-tw.com/storefinder"
+            "template": "## 🚙 {vehicle_1}\n原廠建議：{certification_1} 認證，{viscosity_1} 黏度\n推薦產品：\n1. {product_1}\n   - 產品連結：{link_1}\n   - 說明：符合 {certification_1} 認證\n\n---\n\n## 🚙 {vehicle_2}\n原廠建議：{certification_2} 認證，{viscosity_2} 黏度\n推薦產品：\n1. {product_2}\n   - 產品連結：{link_2}\n   - 說明：符合 {certification_2} 認證\n\n👉 店家查詢系統：\nhttps://www.liqui-moly-tw.com/storefinder"
         }
     },
     "purchase_inquiry": {
         "store_finder": {
-            "template": "🏪 推薦使用我們的**店家查詢系統**：https://www.liqui-moly-tw.com/storefinder\n\n只要選擇縣市，即可找到您附近的合作保修廠/車行。\n\n⚠️ **若查詢不到附近店家**，請填寫聯絡表單：https://www.liqui-moly-tw.com/contact ，我們會以簡訊回覆您！\n\n其他方式：\n- 產品頁面的「這哪裡買」功能\n- 線上商城：CarMall 車魔商城 https://www.carmall.com.tw/"
+            "template": "🏪 推薦使用我們的店家查詢系統：\nhttps://www.liqui-moly-tw.com/storefinder\n\n只要選擇縣市，即可找到您附近的合作保修廠/車行。\n\n⚠️ 若查詢不到附近店家，請填寫聯絡表單：\nhttps://www.liqui-moly-tw.com/contact\n我們會以簡訊回覆您！\n\n其他方式：\n- 產品頁面的「這哪裡買」功能\n- 線上商城 CarMall 車魔商城：\nhttps://www.carmall.com.tw/"
         },
         "online_purchase": {
-            "template": "🔗 **CarMall 車魔商城 https://www.carmall.com.tw/** - 宜福工業官方直營線上商城，所有 LIQUI MOLY 產品皆為總代理公司貨，品質有保障！",
+            "template": "🔗 CarMall 車魔商城：\nhttps://www.carmall.com.tw/\n\n宜福工業官方直營線上商城，所有 LIQUI MOLY 產品皆為總代理公司貨，品質有保障！",
             "applicable_categories": [
                 "自行車",
                 "香氛磚",
@@ -32,7 +32,7 @@
         }
     },
     "cooperation_inquiry": {
-        "template": "🤝 感謝您對 LIQUI MOLY 的興趣！\n\n無論您是：\n- 🏪 **保修廠/車行** - 想成為經銷據點\n- 🏎️ **車隊/賽車手** - 尋求品牌贊助\n- 🤝 **異業廠商** - 想洽談聯名或跨界合作\n- 📣 **活動主辦** - 尋求活動贊助\n\n都歡迎填寫 **合作洽詢表單：https://www.liqui-moly-tw.com/cooperate** ，我們的團隊會盡快與您聯繫！",
+        "template": "🤝 感謝您對 LIQUI MOLY 的興趣！\n\n無論您是：\n- 🏪 保修廠/車行 - 想成為經銷據點\n- 🏎️ 車隊/賽車手 - 尋求品牌贊助\n- 🤝 異業廠商 - 想洽談聯名或跨界合作\n- 📣 活動主辦 - 尋求活動贊助\n\n都歡迎填寫合作洽詢表單：\nhttps://www.liqui-moly-tw.com/cooperate\n\n我們的團隊會盡快與您聯繫！",
         "keywords": [
             "保修廠",
             "車行",
@@ -51,14 +51,14 @@
             "template": "建議售價：{price}"
         },
         "no_price": {
-            "template": "此產品建議售價請洽詢合作店家。您可以使用店家查詢系統：https://www.liqui-moly-tw.com/storefinder 找到附近店家聯繫詢價。"
+            "template": "此產品建議售價請洽詢合作店家。\n\n您可以使用店家查詢系統找到附近店家聯繫詢價：\nhttps://www.liqui-moly-tw.com/storefinder"
         }
     },
     "authentication": {
-        "template": "公司貨產品都有防偽標籤！驗證方式：\n\n1. 找到產品上方的防偽標籤\n2. 刮開銀色塗層\n3. 掃描 QR Code 進入驗證頁面\n4. 系統會顯示是否為正品\n\n如有疑慮，歡迎透過聯絡表單：https://www.liqui-moly-tw.com/contact 向我們查詢！"
+        "template": "公司貨產品都有防偽標籤！驗證方式：\n\n1. 找到產品上方的防偽標籤\n2. 刮開銀色塗層\n3. 掃描 QR Code 進入驗證頁面\n4. 系統會顯示是否為正品\n\n如有疑慮，歡迎透過聯絡表單向我們查詢：\nhttps://www.liqui-moly-tw.com/contact"
     },
     "social_media": {
-        "template": "歡迎追蹤我們的社群媒體獲取最新資訊：\n- Facebook: https://www.facebook.com/liquimolytaiwan\n- Instagram: https://www.instagram.com/liquimolytaiwan"
+        "template": "歡迎追蹤我們的社群媒體獲取最新資訊：\n\nFacebook：\nhttps://www.facebook.com/liquimolytaiwan\n\nInstagram：\nhttps://www.instagram.com/liquimolytaiwan"
     },
     "foreign_user_purchase": {
         "template": "Thank you for your interest in LIQUI MOLY! We are the authorized distributor for Taiwan region only, and we do not ship internationally.\n\nFor purchasing in your country, please visit LIQUI MOLY's official website to find your local distributor:\nhttps://www.liqui-moly.com\n\nIf you have any product-related questions, I'm happy to help!"
