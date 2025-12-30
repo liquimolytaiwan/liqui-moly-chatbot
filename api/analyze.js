@@ -189,7 +189,8 @@ ${intentTypeRules}
 【車廠認證推論】根據車型推論認證和黏度：
 歐系：VW/Audi/Skoda/Porsche→VW 504 00(汽)/507 00(柴)｜BMW→LL-01(汽)/LL-04(柴)｜Benz→MB 229.5(汽)/229.51(柴)｜Volvo→VCC RBS0-2AE
 日韓系(2019+)：Toyota/Honda/Mazda/Nissan/Subaru→API SP, GF-6A｜Hyundai/Kia→API SP/SN
-美系：Ford EcoBoost→WSS-M2C948-B｜Ford 一般→WSS-M2C913-D
+美系：Ford EcoBoost→WSS-M2C948-B｜Ford 柴油(TDCi/EcoBlue)→WSS-M2C950-A｜其他舊款→WSS-M2C913-D
+注意：Ford 車型若不確定引擎（如只說 Focus），請勿盲目推論，應將 fuelType 設為 null 以觸發追問！
 
 【品牌專用產品】Harley/哈雷→會自動匹配專用產品
 

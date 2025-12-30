@@ -68,7 +68,6 @@
         }
     },
     "Ford": {
-        "_note": "Ford 有特殊認證，必須精確匹配",
         "Focus MK4": [
             {
                 "years": "2019+",
@@ -90,6 +89,20 @@
                     "ecoboost"
                 ],
                 "note": "EcoBoost 引擎必須使用 WSS-M2C948-B"
+            },
+            {
+                "years": "2019+",
+                "fuel": "2.0 EcoBlue (柴油)",
+                "certification": [
+                    "Ford WSS-M2C950-A"
+                ],
+                "viscosity": "0W-30",
+                "aliases": [
+                    "focus diesel",
+                    "focus ecoblue",
+                    "focus 柴油"
+                ],
+                "note": "柴油 EcoBlue 引擎需使用 950-A 標準"
             }
         ],
         "Focus MK3.5": [
@@ -120,6 +133,19 @@
                     "focus 2.0"
                 ],
                 "note": "自然進氣使用 WSS-M2C913-D"
+            },
+            {
+                "years": "2015-2018",
+                "fuel": "2.0 TDCi (柴油)",
+                "certification": [
+                    "Ford WSS-M2C950-A"
+                ],
+                "viscosity": "0W-30",
+                "aliases": [
+                    "focus tdci",
+                    "focus 柴油"
+                ],
+                "note": "柴油 TDCi 引擎需符合 950-A"
             }
         ],
         "Kuga MK3": [
@@ -140,6 +166,19 @@
                     "kuga 2024"
                 ],
                 "note": "EcoBoost 引擎必須使用 WSS-M2C948-B"
+            },
+            {
+                "years": "2020+",
+                "fuel": "2.0 EcoBlue (柴油)",
+                "certification": [
+                    "Ford WSS-M2C950-A"
+                ],
+                "viscosity": "0W-30",
+                "aliases": [
+                    "kuga diesel",
+                    "kuga 柴油"
+                ],
+                "note": "柴油版本需符合 950-A"
             }
         ],
         "Kuga MK2": [
