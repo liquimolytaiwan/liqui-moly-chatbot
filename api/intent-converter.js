@@ -36,7 +36,7 @@ function convertAIResultToIntent(aiResult) {
         'purchase_inquiry': ['purchase_inquiry'],
         'cooperation_inquiry': ['cooperation_inquiry'],
         'product_recommendation': ['product_recommendation'],
-        'general_inquiry': ['product_recommendation']
+        'general_inquiry': []
     };
     const needsTemplates = intentToTemplate[intentType] || ['product_recommendation'];
 

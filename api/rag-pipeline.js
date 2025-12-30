@@ -116,7 +116,10 @@ async function processWithRAG(message, conversationHistory = [], productContext 
     // ⚡ 優化：如果 productContext 已由呼叫端傳入（如 Wix 端），跳過重複搜尋
     console.log('[RAG] === Step 3.5: Product Search (Direct Call) ===');
 
-    if (productContext && productContext.length > 100) {
+    // ⚡ 優化：若意圖不需要推薦產品（如一般詢問），直接跳過搜尋
+    if (!intent.needsProductRecommendation && (!intent.needsTemplates || !intent.needsTemplates.includes('product_recommendation'))) {
+        console.log('[RAG] ⚡ Skipping search - needsProductRecommendation is false');
+    } else if (productContext && productContext.length > 100) {
         console.log(`[RAG] ⚡ Skipping search - productContext already provided (${productContext.length} chars)`);
 
         // ⭐ 但如果有 recommendedSKU（品牌專用產品），仍需額外搜尋並補充
