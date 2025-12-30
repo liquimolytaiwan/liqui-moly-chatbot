@@ -203,6 +203,27 @@ ${intentTypeRules}
 - Ford EcoBoost → WSS-M2C948-B
 - Ford 一般引擎 → WSS-M2C913-D
 
+**🏍️ 品牌專用產品優先推薦規則：**
+LIQUI MOLY 有針對特定品牌開發的專用產品，當用戶詢問這些品牌的車型時，請在 searchKeywords 中加入品牌名稱以優先搜尋專用產品：
+- Harley-Davidson 重機 → searchKeywords 加入 "Harley" 或 "HD"（有專用機油產品）
+- BMW 機車 → searchKeywords 加入 "BMW"（可能有專用產品）
+- 其他特殊品牌（如 KTM、Ducati 等）→ 也請加入品牌名稱以便搜尋專用產品
+
+**🎯 車型定位智能推薦規則（根據你的汽機車專業知識判斷！）：**
+根據車型的定位和目標客群，智能推論使用者可能的使用場景，並據此設定 recommendSynthetic：
+
+**運動/性能取向車型 → recommendSynthetic = "full"（全合成優先）：**
+- 仿賽車型（如 Ninja、CBR、R1、R6、Panigale 等）→ 通常用於激進騎乘/賽道
+- 高性能運動車（如 BMW S1000RR、Ducati 系列）→ 高轉速/高溫負荷
+- 運動房車（如 Golf GTI、Type R、WRX、M3/M4 等）→ 性能需求高
+
+**休閒/通勤取向車型 → recommendSynthetic = "any"：**
+- 通勤速克達（如勁戰、曼巴等）→ 一般使用
+- 家庭轎車/休旅車（如 RAV4、CR-V、Camry 等）→ 日常代步
+- 經典重機/巡航車（如 Harley 巡航系列）→ 舒適巡航為主
+
+⚠️ 這些判斷請根據你對車型的專業知識自行推論，不要死板套用！用戶的明確需求優先於車型定位推論。
+
 **如果無法確定汽油/柴油，填入 needsMoreInfo: ["fuelType"]，並在 certifications 填入該車廠的汽油版認證作為預設。**
 
 ⚠️ **禁止預設的欄位：**
