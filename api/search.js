@@ -567,22 +567,52 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 7. 全合成優先排序與強制過濾 (Updated Logic)
+        // 7. 全合成優先排序與強制過濾
         const recommendSynthetic = searchInfo?.recommendSynthetic;
         if (recommendSynthetic === 'full') {
             const fullSyntheticProducts = allResults.filter(p => getSyntheticScore(p.title) === 3);
 
             if (fullSyntheticProducts.length > 0) {
                 console.log(`[Search] Strict filter applied: Only showing fully synthetic products (${fullSyntheticProducts.length} items)`);
-                // 強制只顯示全合成產品，並按分數排序 (雖然都是 3 分，但保留排序邏輯以防未來擴充)
-                fullSyntheticProducts.sort((a, b) => getSyntheticScore(b.title) - getSyntheticScore(a.title));
-                return formatProducts(fullSyntheticProducts.slice(0, 20), searchInfo);
+                // 強制只顯示全合成產品
+                allResults = fullSyntheticProducts;
             } else {
-                console.log('[Search] Strict filter returned 0 items, fallback to sorting only (Full Synthetic priority)');
-                // 若找不到全合成，則退回原列表但優先排序
-                allResults.sort((a, b) => getSyntheticScore(b.title) - getSyntheticScore(a.title));
+                console.log('[Search] Strict filter returned 0 items, fallback to sorting only');
+                // 無法強制過濾，但保留變數供後續排序使用
             }
         }
+
+        // 8. 綜合排序 (認證優先 + 容量優先 + 全合成優先)
+        const isScooterSearch = vehicleType === '摩托車' && (searchInfo?.vehicles?.[0]?.vehicleSubType === '速克達' || searchInfo?.vehicles?.[0]?.certifications?.includes('JASO MB'));
+        const preferLargePack = query.includes('4l') || query.includes('4公升') || query.includes('大瓶') || query.includes('大包裝');
+
+        if (allResults.length > 0) {
+            allResults.sort((a, b) => {
+                // A. 全合成優先 (若有開啟，且未被強制過濾掉的情況)
+                if (recommendSynthetic === 'full') {
+                    const scoreA = getSyntheticScore(a.title);
+                    const scoreB = getSyntheticScore(b.title);
+                    if (scoreA !== scoreB) return scoreB - scoreA;
+                }
+
+                // B. 速克達認證優先 (MB > MA/MA2)
+                if (isScooterSearch) {
+                    const scoreA = getScooterCertScore(a.cert);
+                    const scoreB = getScooterCertScore(b.cert);
+                    if (scoreA !== scoreB) return scoreB - scoreA;
+                }
+
+                // C. 容量優先 (1L > 4L)
+                const sizeScoreA = getSizeScore(a.title, a.size, preferLargePack);
+                const sizeScoreB = getSizeScore(b.title, b.size, preferLargePack);
+                if (sizeScoreA !== sizeScoreB) return sizeScoreB - sizeScoreA;
+
+                return 0;
+            });
+        }
+
+        // 9. 最終截斷與格式化
+        const finalResults = allResults.slice(0, 20); // 取前 20 個
 
         // 7.5 添加劑優先排序（根據症狀嚴重度、燃料類型和使用場景）
         const symptomSeverity = searchInfo?.symptomSeverity;
@@ -1075,6 +1105,41 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
 `;
 
     return context;
+}
+
+// ============================================
+// 速克達認證評分 (MB > MA/MA2)
+// ============================================
+function getScooterCertScore(cert) {
+    if (!cert) return 5; // 無認證資訊，中等分數
+    const c = cert.toUpperCase().replace(/[-\s]/g, '');
+
+    // JASO MB 最優先 (10分)
+    if (c.includes('JASOMB') || c.includes('MB')) return 10;
+
+    // JASO MA/MA2 較低優先 (1分)，但若無 MB 選項時仍可顯示
+    if (c.includes('JASOMA')) return 1;
+
+    return 5; // 其他認證
+}
+
+// ============================================
+// 容量評分 (預設 1L > 大包裝)
+// ============================================
+function getSizeScore(title, size, preferLarge) {
+    const text = ((title || '') + ' ' + (size || '')).toLowerCase();
+
+    // 識別大包裝關鍵字
+    const isLarge = text.includes('4l') || text.includes('5l') || text.includes('20l') || text.includes('60l') || text.includes('205l');
+
+    if (preferLarge) {
+        // 用戶想找大包裝：大包裝(10分) > 小包裝(1分)
+        return isLarge ? 10 : 1;
+    } else {
+        // 預設情況：小包裝/1L(10分) > 大包裝(1分)
+        // 假設未標示大包裝即為標準包裝(通常1L)
+        return isLarge ? 1 : 10;
+    }
 }
 
 // ============================================
