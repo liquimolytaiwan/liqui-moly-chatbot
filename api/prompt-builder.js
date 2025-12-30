@@ -52,10 +52,33 @@ function buildPrompt(knowledge, intent, productContext = '') {
     // === 8. 最終提醒（約 100 tokens）===
     sections.push(buildFinalReminder());
 
+    // === 9. 意圖導向指令（最高優先級）===
+    sections.push(buildIntentInstructions(intent));
+
     const finalPrompt = sections.filter(s => s).join('\n\n');
     console.log(`[PromptBuilder] Built prompt with ${sections.filter(s => s).length} sections, ~${Math.round(finalPrompt.length / 4)} tokens`);
 
     return finalPrompt;
+}
+
+/**
+ * 建構意圖導向指令
+ */
+function buildIntentInstructions(intent) {
+    // 針對一般詢問（只提供車型，無具體需求）
+    if (intent.type === 'general_inquiry' && !intent.needsProductRecommendation) {
+        return `## 🛑 互動指導 (General Inquiry)
+用戶目前僅提供了車型資訊，尚未提出具體需求（機油/添加劑/保養等）。
+
+**請嚴格執行以下動作：**
+1. **確認車型**：禮貌地確認您已識別出車型（例如："好的，關於您的 2017 Ford Focus..."）。
+2. **⛔ 禁止推薦產品**：即使您知道適合的機油規格，也**絕對不要列出任何產品**。
+3. **追問需求**：詢問用戶希望找機油、添加劑，還是有其他車輛保養問題。
+
+**範例回覆：**
+"您好！收到，您的愛車是 2017 Ford Focus。請問您今天想找引擎機油、添加劑，還是有相關保養問題想諮詢呢？"`;
+    }
+    return '';
 }
 
 /**
