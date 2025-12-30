@@ -419,7 +419,8 @@ ${spec.specs.map(s => `- 年份：${s.years}，燃油：${s.fuel}
         for (const [model, specs] of Object.entries(spec.allModels)) {
             section += `\n ** ${model}**：`;
             for (const s of specs) {
-                section += `${s.years} ${s.fuel} → ${s.certification.join('/')} ${s.viscosity} `;
+                const certStr = s.certification?.join?.('/') || s.certification || 'N/A';
+                section += `${s.years || ''} ${s.fuel || ''} → ${certStr} ${s.viscosity || ''} `;
             }
         }
     }
