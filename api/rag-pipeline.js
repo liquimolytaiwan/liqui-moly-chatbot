@@ -148,6 +148,46 @@ async function processWithRAG(message, conversationHistory = [], productContext 
                 console.error('[RAG] Brand-specific product search failed:', e.message);
             }
         }
+
+        // ⭐ 如果有 additiveGuideMatch（症狀匹配解決方案），也額外搜尋並補充
+        const additiveGuideMatch = aiAnalysis?.additiveGuideMatch;
+        if (additiveGuideMatch?.matched && additiveGuideMatch?.items?.length > 0) {
+            const solutionSkus = [];
+            for (const item of additiveGuideMatch.items) {
+                if (item.solutions && Array.isArray(item.solutions)) {
+                    solutionSkus.push(...item.solutions);
+                }
+            }
+            if (solutionSkus.length > 0) {
+                console.log(`[RAG] 🎯 Found additiveGuideMatch solutions: ${JSON.stringify(solutionSkus)}, searching for additive products...`);
+                try {
+                    if (!searchModuleFn) {
+                        const searchModule = await import('./search.js');
+                        searchModuleFn = searchModule;
+                    }
+                    const products = await searchModuleFn.getProducts();
+                    if (products && products.length > 0) {
+                        const additiveProducts = products.filter(p =>
+                            solutionSkus.some(sku => p.partno && p.partno.toUpperCase() === sku.toUpperCase())
+                        );
+                        if (additiveProducts.length > 0) {
+                            // 組合症狀說明和產品資訊
+                            let symptomInfo = additiveGuideMatch.items.map(item =>
+                                `症狀：${item.problem}\n說明：${item.explanation}\n推薦產品：${item.solutions.join(', ')}`
+                            ).join('\n\n');
+                            const additiveContext = additiveProducts.map(p =>
+                                `🎯 症狀解決方案：${p.title} (${p.partno})\n產品連結：${p.productPageUrl || ''}\n${p.content || ''}`
+                            ).join('\n\n');
+                            // 將症狀解決方案放在最前面
+                            productContext = `⭐ 根據用戶描述的症狀，知識庫推薦以下解決方案：\n\n${symptomInfo}\n\n---\n\n${additiveContext}\n\n---\n其他產品：\n${productContext}`;
+                            console.log(`[RAG] ✓ Added ${additiveProducts.length} additive solution products to context`);
+                        }
+                    }
+                } catch (e) {
+                    console.error('[RAG] Additive solution search failed:', e.message);
+                }
+            }
+        }
     } else {
         console.log('[RAG] Calling searchProducts directly (P0 optimized)...');
         try {
