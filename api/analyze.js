@@ -218,13 +218,21 @@ ${intentTypeRules}
 當用戶提到產品系列名稱時，即使打錯字或使用中文別名，你必須根據語意識別並在 searchKeywords 中加入正確的英文產品名稱：
 
 常見的 LIQUI MOLY 產品系列：
+**機油系列：**
 - 魔護/摩護/磨護/魔力/molygen → 搜尋「Molygen」
+- 雷神/雷神油/街車機油/街道型 → 搜尋「Street」或「Motorbike 4T」
 - 頂技/頂級/top tec → 搜尋「Top Tec」
 - 特級/特技/special tec → 搜尋「Special Tec」
-- 雷神/速戰神/speed shooter → 搜尋「Speed Shooter」
-- 油路清/油道清 → 搜尋「Oil Additive」或「Engine Flush」
-- 汽油精/汽油添加劑 → 搜尋「Fuel Additive」或「Shooter」
+
+**添加劑系列：**
+- 速戰神/speed shooter → 搜尋「Speed Shooter」
+- 油路清/油道清/引擎清洗 → 搜尋「Engine Flush」
+- 機油添加劑/機油精/MoS2 → 搜尋「Oil Additive」
+- 汽油精/汽油添加劑 → 搜尋「Fuel Additive」或「Injection Cleaner」
+
+**其他油品：**
 - 變速箱油/波箱油/ATF → 搜尋「ATF」或「Gear Oil」
+- 煞車油/DOT → 搜尋「Brake Fluid」
 
 ⚠️ 即使用戶輸入不完整或有錯字，你也要根據語意猜測最可能的產品系列，並在 searchKeywords 中加入正確的英文名稱！
 
