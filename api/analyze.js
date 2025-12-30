@@ -191,7 +191,7 @@ ${intentTypeRules}
 日韓系(2019+)：Toyota/Honda/Mazda/Nissan/Subaru→API SP, GF-6A｜Hyundai/Kia→API SP/SN
 美系：Ford EcoBoost→WSS-M2C948-B｜Ford 一般→WSS-M2C913-D
 
-【品牌專用產品】Harley/BMW機車/KTM/Ducati→searchKeywords加入品牌名
+【品牌專用產品】Harley/哈雷→會自動匹配專用產品
 
 【車型定位推薦】運動/仿賽/高性能(Ninja,CBR,R1,GTI,M3等)→recommendSynthetic="full"｜通勤/家用→"any"
 
