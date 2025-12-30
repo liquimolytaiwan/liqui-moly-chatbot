@@ -252,7 +252,7 @@ function detectIntentType(text, intent) {
     }
 
     // 防偽驗證
-    const authKeywords = ['真假', '正品', '假貨', '仿冒', '驗證', '防偽'];
+    const authKeywords = ['真假', '正品', '假貨', '仿冒', '驗證', '防偽', '真的', '假的', '真品', '辨別真偽', '水貨', '公司貨', '平行輸入', '原廠貨'];
     for (const kw of authKeywords) {
         if (text.includes(kw)) {
             intent.type = 'authentication';
