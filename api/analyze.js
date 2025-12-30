@@ -214,6 +214,20 @@ ${intentTypeRules}
 - 只問黏度（如「有 5W-30 嗎」）→ 直接搜尋黏度
 - 只問產品編號（如「LM2500」）→ 直接搜尋產品
 
+**🔍 產品系列智能識別（重要！）**
+當用戶提到產品系列名稱時，即使打錯字或使用中文別名，你必須根據語意識別並在 searchKeywords 中加入正確的英文產品名稱：
+
+常見的 LIQUI MOLY 產品系列：
+- 魔護/摩護/磨護/魔力/molygen → 搜尋「Molygen」
+- 頂技/頂級/top tec → 搜尋「Top Tec」
+- 特級/特技/special tec → 搜尋「Special Tec」
+- 雷神/速戰神/speed shooter → 搜尋「Speed Shooter」
+- 油路清/油道清 → 搜尋「Oil Additive」或「Engine Flush」
+- 汽油精/汽油添加劑 → 搜尋「Fuel Additive」或「Shooter」
+- 變速箱油/波箱油/ATF → 搜尋「ATF」或「Gear Oil」
+
+⚠️ 即使用戶輸入不完整或有錯字，你也要根據語意猜測最可能的產品系列，並在 searchKeywords 中加入正確的英文名稱！
+
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${symptomRefPrompt}
 ${symptomGuide}
