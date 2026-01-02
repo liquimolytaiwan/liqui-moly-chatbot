@@ -1,0 +1,108 @@
+{
+    "description": "意圖分類關鍵字 - 統一管理所有意圖偵測規則",
+    "version": "1.0.0",
+    "intent_keywords": {
+        "authentication": {
+            "description": "防偽驗證相關查詢",
+            "keywords": [
+                "真假",
+                "正品",
+                "假貨",
+                "仿冒",
+                "驗證",
+                "防偽",
+                "真的",
+                "假的",
+                "真品",
+                "辨別真偽",
+                "水貨",
+                "公司貨",
+                "平行輸入",
+                "原廠貨"
+            ],
+            "template": "authentication"
+        },
+        "price_inquiry": {
+            "description": "價格查詢相關",
+            "keywords": [
+                "多少錢",
+                "價格",
+                "售價",
+                "價位",
+                "報價"
+            ],
+            "template": "price_inquiry"
+        },
+        "purchase_inquiry": {
+            "description": "購買地點查詢",
+            "keywords": [
+                "哪裡買",
+                "店家",
+                "門市",
+                "實體店",
+                "購買",
+                "想買",
+                "怎麼買",
+                "附近"
+            ],
+            "template": "purchase_inquiry"
+        },
+        "cooperation_inquiry": {
+            "description": "合作洽詢",
+            "keywords": [
+                "合作",
+                "經銷",
+                "代理",
+                "進貨",
+                "批發",
+                "贊助",
+                "KOL",
+                "kol",
+                "網紅",
+                "業務",
+                "經銷商"
+            ],
+            "template": "cooperation_inquiry"
+        }
+    },
+    "vehicle_brands": {
+        "description": "車輛品牌對照表（用於從車名提取品牌）",
+        "mappings": {
+            "ford": "Ford",
+            "toyota": "Toyota",
+            "honda": "Honda",
+            "mazda": "Mazda",
+            "nissan": "Nissan",
+            "subaru": "Subaru",
+            "hyundai": "Hyundai",
+            "kia": "Kia",
+            "bmw": "BMW",
+            "mercedes": "Mercedes-Benz",
+            "benz": "Mercedes-Benz",
+            "audi": "Audi",
+            "volkswagen": "VW",
+            "vw": "VW",
+            "volvo": "Volvo",
+            "lexus": "Lexus",
+            "mitsubishi": "Mitsubishi",
+            "suzuki": "Suzuki",
+            "yamaha": "Yamaha",
+            "kawasaki": "Kawasaki",
+            "ducati": "Ducati",
+            "harley": "Harley-Davidson",
+            "ktm": "KTM",
+            "triumph": "Triumph",
+            "sym": "SYM",
+            "kymco": "KYMCO",
+            "光陽": "KYMCO",
+            "三陽": "SYM",
+            "gogoro": "Gogoro",
+            "porsche": "Porsche",
+            "tesla": "Tesla",
+            "特斯拉": "Tesla",
+            "ferrari": "Ferrari",
+            "lamborghini": "Lamborghini",
+            "mclaren": "McLaren"
+        }
+    }
+}

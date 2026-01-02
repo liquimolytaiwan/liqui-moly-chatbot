@@ -219,49 +219,30 @@ function detectProductCategory(text, intent) {
 
 /**
  * 偵測意圖類型
+ * 從 intent-keywords.json 動態載入關鍵字
  */
 function detectIntentType(text, intent) {
-    // 購買相關
-    const purchaseKeywords = ['哪裡買', '店家', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
-    for (const kw of purchaseKeywords) {
-        if (text.includes(kw)) {
-            intent.type = 'purchase_inquiry';
-            intent.needsTemplates.push('purchase_inquiry');
-            return;
+    // 從知識庫載入意圖關鍵字
+    const intentKeywordsData = loadJSON('intent-keywords.json');
+    const intentKeywords = intentKeywordsData?.intent_keywords || {};
+
+    // 依優先順序檢查各類意圖
+    const intentOrder = ['purchase_inquiry', 'cooperation_inquiry', 'price_inquiry', 'authentication'];
+
+    for (const intentType of intentOrder) {
+        const config = intentKeywords[intentType];
+        if (!config || !config.keywords) continue;
+
+        for (const kw of config.keywords) {
+            if (text.includes(kw.toLowerCase())) {
+                intent.type = intentType;
+                intent.needsTemplates.push(config.template || intentType);
+                return;
+            }
         }
     }
 
-    // 合作洽詢
-    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'KOL', '網紅', '業務', '經銷商'];
-    for (const kw of cooperationKeywords) {
-        if (text.includes(kw)) {
-            intent.type = 'cooperation_inquiry';
-            intent.needsTemplates.push('cooperation_inquiry');
-            return;
-        }
-    }
-
-    // 價格查詢
-    const priceKeywords = ['多少錢', '價格', '售價', '價位'];
-    for (const kw of priceKeywords) {
-        if (text.includes(kw)) {
-            intent.type = 'price_inquiry';
-            intent.needsTemplates.push('price_inquiry');
-            return;
-        }
-    }
-
-    // 防偽驗證
-    const authKeywords = ['真假', '正品', '假貨', '仿冒', '驗證', '防偽', '真的', '假的', '真品', '辨別真偽', '水貨', '公司貨', '平行輸入', '原廠貨'];
-    for (const kw of authKeywords) {
-        if (text.includes(kw)) {
-            intent.type = 'authentication';
-            intent.needsTemplates.push('authentication');
-            return;
-        }
-    }
-
-    // 產品推薦（預設）
+    // 預設為產品推薦
     intent.type = 'product_recommendation';
     intent.needsTemplates.push('product_recommendation');
 }

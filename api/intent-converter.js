@@ -3,7 +3,10 @@
  * 將 analyze.js 的 AI 分析結果轉換為 intent 格式
  * 
  * 用於「AI 優先、規則備援」混合架構
+ * v1.1: 從 intent-keywords.json 載入關鍵字，減少硬編碼
  */
+
+const { loadJSON } = require('./knowledge-cache');
 
 /**
  * 將 AI 分析結果轉換為 intent 格式
@@ -118,6 +121,7 @@ function convertAIResultToIntent(aiResult) {
 
 /**
  * 從車輛名稱中提取品牌
+ * 從 intent-keywords.json 載入品牌對照表
  * @param {string} vehicleName - 車輛全名
  * @returns {string|null} - 品牌名稱
  */
@@ -126,41 +130,12 @@ function extractBrandFromVehicleName(vehicleName) {
 
     const lowerName = vehicleName.toLowerCase();
 
-    // 常見品牌對照
-    const brands = {
-        'ford': 'Ford',
-        'toyota': 'Toyota',
-        'honda': 'Honda',
-        'mazda': 'Mazda',
-        'nissan': 'Nissan',
-        'subaru': 'Subaru',
-        'hyundai': 'Hyundai',
-        'kia': 'Kia',
-        'bmw': 'BMW',
-        'mercedes': 'Mercedes-Benz',
-        'benz': 'Mercedes-Benz',
-        'audi': 'Audi',
-        'volkswagen': 'VW',
-        'vw': 'VW',
-        'volvo': 'Volvo',
-        'lexus': 'Lexus',
-        'mitsubishi': 'Mitsubishi',
-        'suzuki': 'Suzuki',
-        'yamaha': 'Yamaha',
-        'kawasaki': 'Kawasaki',
-        'ducati': 'Ducati',
-        'harley': 'Harley-Davidson',
-        'ktm': 'KTM',
-        'triumph': 'Triumph',
-        'sym': 'SYM',
-        'kymco': 'KYMCO',
-        '光陽': 'KYMCO',
-        '三陽': 'SYM',
-        'gogoro': 'Gogoro'
-    };
+    // 從知識庫載入品牌對照表
+    const intentKeywordsData = loadJSON('intent-keywords.json');
+    const brandMappings = intentKeywordsData?.vehicle_brands?.mappings || {};
 
-    for (const [key, brand] of Object.entries(brands)) {
-        if (lowerName.includes(key)) {
+    for (const [key, brand] of Object.entries(brandMappings)) {
+        if (lowerName.includes(key.toLowerCase())) {
             return brand;
         }
     }
@@ -201,6 +176,7 @@ function isValidAIResult(aiResult) {
 
 /**
  * 用規則增強 AI 分析結果（補充 AI 無法識別的意圖類型）
+ * 從 intent-keywords.json 動態載入關鍵字
  * @param {Object} intent - 已轉換的 intent 物件
  * @param {string} message - 用戶原始訊息
  * @returns {Object} - 增強後的 intent
@@ -210,47 +186,24 @@ function enhanceIntentWithRules(intent, message) {
 
     const lowerMessage = message.toLowerCase();
 
-    // === 防偽驗證 ===
-    const authKeywords = ['真假', '正品', '假貨', '仿冒', '驗證', '防偽', '真的', '假的', '真品', '辨別真偽', '水貨', '公司貨', '平行輸入', '原廠貨'];
-    for (const kw of authKeywords) {
-        if (lowerMessage.includes(kw)) {
-            intent.type = 'authentication';
-            intent.needsTemplates = ['authentication'];
-            console.log('[IntentConverter] Enhanced: authentication detected via keyword:', kw);
-            return intent;
-        }
-    }
+    // 從知識庫載入意圖關鍵字
+    const intentKeywordsData = loadJSON('intent-keywords.json');
+    const intentKeywords = intentKeywordsData?.intent_keywords || {};
 
-    // === 價格查詢 ===
-    const priceKeywords = ['多少錢', '價格', '售價', '價位', '報價'];
-    for (const kw of priceKeywords) {
-        if (lowerMessage.includes(kw)) {
-            intent.type = 'price_inquiry';
-            intent.needsTemplates = ['price_inquiry'];
-            console.log('[IntentConverter] Enhanced: price_inquiry detected via keyword:', kw);
-            return intent;
-        }
-    }
+    // 依優先順序檢查各類意圖
+    const intentOrder = ['authentication', 'price_inquiry', 'purchase_inquiry', 'cooperation_inquiry'];
 
-    // === 購買查詢 ===
-    const purchaseKeywords = ['哪裡買', '店家', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
-    for (const kw of purchaseKeywords) {
-        if (lowerMessage.includes(kw)) {
-            intent.type = 'purchase_inquiry';
-            intent.needsTemplates = ['purchase_inquiry'];
-            console.log('[IntentConverter] Enhanced: purchase_inquiry detected via keyword:', kw);
-            return intent;
-        }
-    }
+    for (const intentType of intentOrder) {
+        const config = intentKeywords[intentType];
+        if (!config || !config.keywords) continue;
 
-    // === 合作洽詢 ===
-    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'kol', '網紅', '業務', '經銷商'];
-    for (const kw of cooperationKeywords) {
-        if (lowerMessage.includes(kw)) {
-            intent.type = 'cooperation_inquiry';
-            intent.needsTemplates = ['cooperation_inquiry'];
-            console.log('[IntentConverter] Enhanced: cooperation_inquiry detected via keyword:', kw);
-            return intent;
+        for (const kw of config.keywords) {
+            if (lowerMessage.includes(kw.toLowerCase())) {
+                intent.type = intentType;
+                intent.needsTemplates = [config.template || intentType];
+                console.log(`[IntentConverter] Enhanced: ${intentType} detected via keyword:`, kw);
+                return intent;
+            }
         }
     }
 
@@ -259,7 +212,7 @@ function enhanceIntentWithRules(intent, message) {
 
 module.exports = {
     convertAIResultToIntent,
-    extractBrandFromVehicleName,
     isValidAIResult,
     enhanceIntentWithRules
+    // extractBrandFromVehicleName 僅內部使用，不再 export
 };
