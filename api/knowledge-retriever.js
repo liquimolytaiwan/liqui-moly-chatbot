@@ -21,7 +21,8 @@ async function retrieveKnowledge(intent) {
         symptoms: null,
         templates: {},
         rules: {},
-        specialScenario: null
+        specialScenario: null,
+        antiHallucination: null  // 新增：反幻覺規則
     };
 
     // 1. 永遠載入核心身份（精簡版）
@@ -60,6 +61,9 @@ async function retrieveKnowledge(intent) {
 
     // 8. 載入統一 URL
     knowledge.urls = loadJSON('urls.json');
+
+    // 9. 載入反幻覺規則（Anti-Hallucination）
+    knowledge.antiHallucination = loadJSON('anti-hallucination-rules.json');
 
     console.log('[KnowledgeRetriever] Retrieved knowledge keys:', Object.keys(knowledge).filter(k => knowledge[k] !== null));
     return knowledge;

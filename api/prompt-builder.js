@@ -52,6 +52,11 @@ function buildPrompt(knowledge, intent, productContext = '') {
     // === 8. 最終提醒（約 100 tokens）===
     sections.push(buildFinalReminder());
 
+    // === 8.5. 反幻覺規則（Anti-Hallucination，按需載入）===
+    if (knowledge.antiHallucination) {
+        sections.push(buildAntiHallucinationRules(knowledge.antiHallucination));
+    }
+
     // === 9. 意圖導向指令（最高優先級）===
     sections.push(buildIntentInstructions(intent));
 
@@ -626,6 +631,51 @@ function buildFinalReminder() {
 - **摩托車機油**：推薦「🏍️ 摩托車機油」區塊的產品（標題含 Motorbike）
 - 禁止混用！汽車不可推薦 Motorbike 產品，摩托車不可推薦汽車機油
 - 如果資料庫有符合的產品，**禁止說「未顯示相關產品」或「資料庫沒有」**`;
+}
+
+/**
+ * 建構反幻覺規則（Anti-Hallucination）
+ * 從 anti-hallucination-rules.json 動態載入
+ */
+function buildAntiHallucinationRules(rules) {
+    if (!rules) return '';
+
+    let section = `## 🛡️ 反幻覺規則（Anti-Hallucination）`;
+
+    // 1. 不確定性處理規則
+    if (rules.uncertainty_handling) {
+        const uh = rules.uncertainty_handling;
+        section += `
+
+### 🤔 不確定性回應規則
+${uh.prompt_injection || ''}
+
+**觸發條件：**
+${(uh.trigger_conditions || []).map(c => `- ${c}`).join('\n')}
+
+**回應範本：**
+- 認證不確定：「${uh.response_templates?.uncertain_certification || ''}」
+- 相容性不確定：「${uh.response_templates?.uncertain_compatibility || ''}」`;
+    }
+
+    // 2. 超出範圍規則
+    if (rules.out_of_scope_rules) {
+        const oos = rules.out_of_scope_rules;
+        section += `
+
+### 🚫 超出專業範圍的回應
+${oos.prompt_injection || ''}`;
+    }
+
+    // 3. 接地規則（Grounding）
+    if (rules.grounding_rules) {
+        section += `
+
+### 📌 接地規則
+${rules.grounding_rules.prompt_injection || ''}`;
+    }
+
+    return section;
 }
 
 

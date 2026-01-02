@@ -3,9 +3,11 @@
  * 主要聊天 API - 使用 RAG 架構處理用戶訊息
  * 
  * RAG 重構版本 - 動態載入知識，大幅減少 Token 消耗
+ * v1.1: 新增產品驗證層（Anti-Hallucination）
  */
 
 const { processWithRAG } = require('./rag-pipeline');
+const { validateAIResponse } = require('./response-validator');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
@@ -45,14 +47,36 @@ export default async function handler(req, res) {
 
         // === RAG 處理管線 ===
         console.log('[Chat API] Starting RAG pipeline...');
-        const { intent, systemPrompt } = await processWithRAG(message, conversationHistory, productContext);
+        const ragResult = await processWithRAG(message, conversationHistory, productContext);
+        const { intent, systemPrompt } = ragResult;
         console.log(`[Chat API] Intent: ${intent.type}, Vehicle: ${intent.vehicleType}`);
 
         // 建構對話內容
         const contents = buildContents(message, conversationHistory, systemPrompt);
 
         // 呼叫 Gemini API
-        const aiResponse = await callGemini(apiKey, contents);
+        let aiResponse = await callGemini(apiKey, contents);
+
+        // === 產品驗證層 (Anti-Hallucination) ===
+        // 從 RAG 結果取得產品列表（如果有的話）
+        let productList = null;
+        try {
+            // 動態載入 search.js 取得產品列表
+            const searchModule = await import('./search.js');
+            productList = await searchModule.getProducts();
+        } catch (e) {
+            console.warn('[Chat API] Failed to get product list for validation:', e.message);
+        }
+
+        if (productList && productList.length > 0) {
+            console.log('[Chat API] Running product validation...');
+            const validationResult = validateAIResponse(aiResponse, productList);
+
+            if (validationResult.hasInvalidSKUs) {
+                console.warn('[Chat API] Invalid SKUs detected:', validationResult.invalidSKUs);
+                aiResponse = validationResult.validatedResponse;
+            }
+        }
 
         Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
         return res.status(200).json({
