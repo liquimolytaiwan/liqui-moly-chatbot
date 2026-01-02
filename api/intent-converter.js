@@ -183,11 +183,21 @@ function isValidAIResult(aiResult) {
 
     // 至少要有一個車輛或產品類別
     if (aiResult.vehicles.length === 0 && !aiResult.productCategory) {
+        // ⚡ 修正：如果有 searchKeywords（如用戶直接查詢 SKU）或有 intentType，也視為有效
+        if (aiResult.searchKeywords && aiResult.searchKeywords.length > 0) {
+            console.log('[isValidAIResult] No vehicle/category but has searchKeywords, treating as valid');
+            return true;
+        }
+        if (aiResult.intentType && aiResult.intentType !== 'product_recommendation') {
+            console.log('[isValidAIResult] Non-product intent type, treating as valid:', aiResult.intentType);
+            return true;
+        }
         return false;
     }
 
     return true;
 }
+
 
 /**
  * 用規則增強 AI 分析結果（補充 AI 無法識別的意圖類型）

@@ -474,7 +474,8 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
     }
 
     // === 3. SKU 自動偵測 ===
-    const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
+    // 修正：使用 [0-9] 替代 \d 確保正確匹配，支援大小寫混合（如 Lm3310）
+    const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})|(?<![0-9])([0-9]{5})(?![0-9])/g;
     const skuMatches = [...message.matchAll(skuPattern)];
     for (const match of skuMatches) {
         const skuNum = match[1] || match[2];
@@ -483,6 +484,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             if (!result.searchKeywords) result.searchKeywords = [];
             if (!result.searchKeywords.includes(fullSku)) {
                 result.searchKeywords.unshift(fullSku, skuNum);
+                console.log(`[Analyze] SKU detected: ${fullSku}`);
             }
         }
     }

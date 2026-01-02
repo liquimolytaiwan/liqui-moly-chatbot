@@ -401,9 +401,10 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                 if (!kw) continue;
                 const kwLower = kw.toLowerCase();
 
-                // 判斷關鍵字類型並對應到正確欄位
-                const isSkuKeyword = /^LM\d{4,5}$/i.test(kw);
-                const isViscosity = /^\d+W-?\d+$/i.test(kw);
+                // 判斷關鍵字類型並對應到正確欄位（修正：使用 [0-9] 替代 \d）
+                const isSkuKeyword = /^LM[0-9]{4,5}$/i.test(kw);
+                const isViscosity = /^[0-9]+W-?[0-9]+$/i.test(kw);
+
 
                 const matches = products.filter(p => {
                     // SKU 精確匹配 partno
@@ -437,7 +438,8 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         // 3. Title Expansion（完整版，含多 SKU 匹配）
         if (allResults.length > 0 && allResults.length <= 20) {
             // 從 query 中提取 SKU
-            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
+            // 修正：使用 [0-9] 替代 \d 確保正確匹配
+            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})|(?<![0-9])([0-9]{5})(?![0-9])/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
             let titlesToExpand = [];
 
@@ -539,7 +541,8 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
 
         // 6. SKU 優先排序
         if (allResults.length > 0) {
-            const skuPattern = /(?:LM|lm)[- ]?(\d{4,5})|(?<!\d)(\d{5})(?!\d)/g;
+            // 修正：使用 [0-9] 替代 \d 確保正確匹配
+            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})|(?<![0-9])([0-9]{5})(?![0-9])/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
 
             if (allSkuMatches.length > 0) {
