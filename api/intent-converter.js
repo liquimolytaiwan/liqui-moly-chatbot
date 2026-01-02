@@ -223,7 +223,7 @@ function enhanceIntentWithRules(intent, message) {
     }
 
     // === 購買查詢 ===
-    const purchaseKeywords = ['哪裡買', '店家', '經銷商', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
+    const purchaseKeywords = ['哪裡買', '店家', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
     for (const kw of purchaseKeywords) {
         if (lowerMessage.includes(kw)) {
             intent.type = 'purchase_inquiry';
@@ -234,7 +234,7 @@ function enhanceIntentWithRules(intent, message) {
     }
 
     // === 合作洽詢 ===
-    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'kol', '網紅'];
+    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'kol', '網紅', '業務', '經銷商'];
     for (const kw of cooperationKeywords) {
         if (lowerMessage.includes(kw)) {
             intent.type = 'cooperation_inquiry';

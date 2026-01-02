@@ -65,18 +65,37 @@ function buildPrompt(knowledge, intent, productContext = '') {
  * 建構意圖導向指令
  */
 function buildIntentInstructions(intent) {
+    // 檢查是否有車型資訊
+    const aiAnalysis = intent?._aiAnalysis;
+    const hasVehicleInfo = aiAnalysis?.vehicles?.length > 0 &&
+        aiAnalysis.vehicles[0].vehicleName;
+
+    // 針對純打招呼（無車型資訊、無具體需求）
+    if (intent.type === 'general_inquiry' && !hasVehicleInfo) {
+        return `## 🛑 互動指導 (Greeting / No Vehicle Info)
+用戶目前只是打招呼，或尚未提供任何車型資訊。
+
+**請嚴格執行以下動作：**
+1. **禮貌問候**：回覆問候語
+2. **⛔ 禁止編造車型**：絕對不要猜測或編造用戶的車型！
+3. **追問需求**：詢問用戶想了解什麼產品或有什麼問題
+
+**範例回覆：**
+「您好！歡迎詢問 LIQUI MOLY 產品！😊 請問您今天想找引擎機油、添加劑，還是有其他車輛保養問題想諮詢呢？」`;
+    }
+
     // 針對一般詢問（只提供車型，無具體需求）
-    if (intent.type === 'general_inquiry' && !intent.needsProductRecommendation) {
+    if (intent.type === 'general_inquiry' && hasVehicleInfo && !intent.needsProductRecommendation) {
         return `## 🛑 互動指導 (General Inquiry)
 用戶目前僅提供了車型資訊，尚未提出具體需求（機油/添加劑/保養等）。
 
 **請嚴格執行以下動作：**
-1. **確認車型**：禮貌地確認您已識別出車型（例如："好的，關於您的 2017 Ford Focus..."）。
+1. **確認車型**：禮貌地確認您已識別出車型（請根據用戶實際提供的車型回覆）。
 2. **⛔ 禁止推薦產品**：即使您知道適合的機油規格，也**絕對不要列出任何產品**。
 3. **追問需求**：詢問用戶希望找機油、添加劑，還是有其他車輛保養問題。
 
 **範例回覆：**
-"您好！收到，您的愛車是 2017 Ford Focus。請問您今天想找引擎機油、添加劑，還是有相關保養問題想諮詢呢？"`;
+「您好！收到，關於您的 [用戶提供的車型]，請問您今天想找引擎機油、添加劑，還是有相關保養問題想諮詢呢？」`;
     }
     return '';
 }

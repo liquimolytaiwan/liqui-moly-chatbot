@@ -222,7 +222,7 @@ function detectProductCategory(text, intent) {
  */
 function detectIntentType(text, intent) {
     // 購買相關
-    const purchaseKeywords = ['哪裡買', '店家', '經銷商', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
+    const purchaseKeywords = ['哪裡買', '店家', '門市', '實體店', '購買', '想買', '怎麼買', '附近'];
     for (const kw of purchaseKeywords) {
         if (text.includes(kw)) {
             intent.type = 'purchase_inquiry';
@@ -232,7 +232,7 @@ function detectIntentType(text, intent) {
     }
 
     // 合作洽詢
-    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'KOL', '網紅'];
+    const cooperationKeywords = ['合作', '經銷', '代理', '進貨', '批發', '贊助', 'KOL', '網紅', '業務', '經銷商'];
     for (const kw of cooperationKeywords) {
         if (text.includes(kw)) {
             intent.type = 'cooperation_inquiry';
