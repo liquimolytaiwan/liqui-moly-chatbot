@@ -438,8 +438,8 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         // 3. Title Expansion（完整版，含多 SKU 匹配）
         if (allResults.length > 0 && allResults.length <= 20) {
             // 從 query 中提取 SKU
-            // 修正：使用 [0-9] 替代 \d 確保正確匹配
-            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})|(?<![0-9])([0-9]{5})(?![0-9])/g;
+            // 修正：簡化正則表達式，移除 lookbehind assertion
+            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
             let titlesToExpand = [];
 
@@ -541,8 +541,8 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
 
         // 6. SKU 優先排序
         if (allResults.length > 0) {
-            // 修正：使用 [0-9] 替代 \d 確保正確匹配
-            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})|(?<![0-9])([0-9]{5})(?![0-9])/g;
+            // 修正：簡化正則表達式，移除 lookbehind assertion
+            const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})/g;
             const allSkuMatches = [...query.matchAll(skuPattern)];
 
             if (allSkuMatches.length > 0) {
