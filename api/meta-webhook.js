@@ -583,8 +583,9 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             console.error('[Meta Webhook] Failed to get conversation history:', e.message);
         }
 
-        // Step 2: 呼叫 Wix 的 chat API（完整包含產品搜尋邏輯）
-        const chatResponse = await fetch(`${WIX_API_URL}/chat`, {
+        // Step 2: 呼叫 Vercel 的 /api/chat（統一使用 Vercel RAG 管線 + 防幻覺驗證）
+        // 改用 Vercel API 確保網頁端和 META 端使用相同邏輯
+        const chatResponse = await fetch(`${VERCEL_API_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -596,8 +597,8 @@ async function handleTextMessage(senderId, text, source, userProfile) {
         // 檢查 HTTP 狀態碼
         if (!chatResponse.ok) {
             const errorText = await chatResponse.text();
-            console.error('[Meta Webhook] Wix Chat API HTTP error:', chatResponse.status, errorText);
-            throw new Error(`Wix Chat API error: ${chatResponse.status}`);
+            console.error('[Meta Webhook] Vercel Chat API HTTP error:', chatResponse.status, errorText);
+            throw new Error(`Vercel Chat API error: ${chatResponse.status}`);
         }
 
         // 嘗試解析 JSON
@@ -605,10 +606,10 @@ async function handleTextMessage(senderId, text, source, userProfile) {
         try {
             chatData = await chatResponse.json();
         } catch (jsonError) {
-            console.error('[Meta Webhook] Failed to parse Wix Chat API response as JSON');
-            throw new Error('Invalid JSON response from Wix Chat API');
+            console.error('[Meta Webhook] Failed to parse Vercel Chat API response as JSON');
+            throw new Error('Invalid JSON response from Vercel Chat API');
         }
-        console.log('[Meta Webhook] Chat response received:', { success: chatData.success });
+        console.log('[Meta Webhook] Chat response received from Vercel:', { success: chatData.success });
 
         if (chatData.success && chatData.response) {
             // 將 Markdown 格式轉換為純文字（FB/IG 不支援 Markdown）
