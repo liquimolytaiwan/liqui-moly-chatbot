@@ -39,6 +39,11 @@ function buildPrompt(knowledge, intent, productContext = '') {
         sections.push(buildSpecialScenario(knowledge.specialScenario, intent.specialScenario));
     }
 
+    // === 5.5 產品類別規格（按需載入）- 變速箱油、煞車系統等 ===
+    if (knowledge.categorySpec) {
+        sections.push(buildCategorySpec(knowledge.categorySpec, intent.productCategory));
+    }
+
     // === 6. 回覆範本（按需載入）===
     if (Object.keys(knowledge.templates).length > 0) {
         sections.push(buildTemplates(knowledge.templates));
@@ -673,6 +678,47 @@ ${oos.prompt_injection || ''}`;
 
 ### 📌 接地規則
 ${rules.grounding_rules.prompt_injection || ''}`;
+    }
+
+    return section;
+}
+
+/**
+ * 建構產品類別規格（變速箱油、煞車系統等）
+ * @param {Object} categorySpec - 類別規格資料
+ * @param {string} productCategory - 產品類別名稱
+ * @returns {string} - 組合後的提示詞區塊
+ */
+function buildCategorySpec(categorySpec, productCategory) {
+    if (!categorySpec) return '';
+
+    let section = `## 🔧 ${productCategory}規格指南\n`;
+
+    // 如果可以直接推薦（不需車型資訊）
+    if (categorySpec.direct_recommend) {
+        section += `**⚡ 可直接推薦，不需要車型資訊**\n`;
+    }
+
+    // 如果有提示
+    if (categorySpec.prompt_hint) {
+        section += `**推論規則：** ${categorySpec.prompt_hint}\n`;
+    }
+
+    // 如果有類型對照
+    if (categorySpec.types) {
+        section += `\n### 類型對照表\n`;
+        for (const [typeName, typeInfo] of Object.entries(categorySpec.types)) {
+            section += `- **${typeName}**（${typeInfo.keywords?.join('/')}）→ ${typeInfo.spec}`;
+            if (typeInfo.searchKeywords) {
+                section += `，搜尋：${typeInfo.searchKeywords.join(', ')}`;
+            }
+            section += `\n`;
+        }
+    }
+
+    // 如果有搜尋關鍵字
+    if (categorySpec.searchKeywords) {
+        section += `\n**建議搜尋關鍵字：** ${categorySpec.searchKeywords.join(', ')}\n`;
     }
 
     return section;

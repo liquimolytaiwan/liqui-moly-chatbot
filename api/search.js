@@ -725,11 +725,13 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             // 如果使用 sort 沒找到，嘗試使用標題關鍵字搜尋
             if (sampleProducts.length === 0) {
                 const categoryKeywords = {
-                    '變速箱油': ['atf', 'gear', '變速箱', 'transmission'],
-                    '煞車系統': ['brake', 'dot', '煞車'],
-                    '冷卻系統': ['coolant', 'antifreeze', '冷卻', '水箱'],
-                    '美容': ['wash', 'wax', '洗車', '美容', '鍍膜'],
-                    '自行車': ['bike', 'bicycle', '自行車'],
+                    '變速箱油': ['atf', 'gear', '變速箱', 'transmission', 'dexron', 'cvt', 'dsg', 'top tec atf', 'top tec 1'],
+                    '煞車系統': ['brake', 'dot', '煞車', 'dot 4', 'dot 5'],
+                    '冷卻系統': ['coolant', 'antifreeze', '冷卻', '水箱', '防凍'],
+                    '空調系統': ['空調', 'pag', '冷媒', 'air conditioning'],
+                    '美容': ['wash', 'wax', '洗車', '美容', '鍍膜', 'clean', 'polish'],
+                    '香氛': ['香氛', '芳香', 'fragrance'],
+                    '自行車': ['bike', 'bicycle', '自行車', 'chain'],
                     '船舶': ['marine', 'outboard', '船']
                 };
 

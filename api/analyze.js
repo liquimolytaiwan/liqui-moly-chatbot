@@ -215,6 +215,10 @@ ${scenarioRules}
 
 【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
 
+【變速箱油推論】手排(MT)→GL-4/GL-5｜自排(4-10AT)→ATF,Dexron｜CVT→CVT-Fluid｜DSG/DCT→DSG Oil
+【煞車系統推論】一般車輛→DOT 4｜高性能/賽道→DOT 5.1
+【冷卻/空調/美容/香氛/自行車】直接推薦，不需車型資訊
+
 【全合成識別】
 - 若用戶明確提到「全合成」、「Fully Synthetic」、「Synthoil」、「Race」、「賽道」或「跑山」，必須設定 **recommendSynthetic="full"**。
 - 這將觸發嚴格篩選，只顯示真正的全合成產品。

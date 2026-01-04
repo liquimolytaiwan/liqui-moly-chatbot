@@ -65,6 +65,16 @@ async function retrieveKnowledge(intent) {
     // 9. 載入反幻覺規則（Anti-Hallucination）
     knowledge.antiHallucination = loadJSON('anti-hallucination-rules.json');
 
+    // 10. 非機油類別規格（按需載入）- 變速箱油、煞車系統、冷卻系統等
+    const specialCategories = ['變速箱油', '煞車系統', '冷卻系統', '空調系統', '化學品', '美容', '香氛', '自行車'];
+    if (intent.productCategory && specialCategories.includes(intent.productCategory)) {
+        const categorySpecs = loadJSON('category-specs.json');
+        if (categorySpecs && categorySpecs[intent.productCategory]) {
+            knowledge.categorySpec = categorySpecs[intent.productCategory];
+            console.log(`[KnowledgeRetriever] Loaded category spec for: ${intent.productCategory}`);
+        }
+    }
+
     console.log('[KnowledgeRetriever] Retrieved knowledge keys:', Object.keys(knowledge).filter(k => knowledge[k] !== null));
     return knowledge;
 }

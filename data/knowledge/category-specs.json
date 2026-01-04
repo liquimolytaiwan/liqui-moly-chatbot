@@ -1,0 +1,175 @@
+{
+    "_description": "產品類別規格對照表 - 按需載入供 LLM 推薦使用",
+    "變速箱油": {
+        "description": "變速箱油規格對照",
+        "types": {
+            "MT": {
+                "keywords": [
+                    "手排",
+                    "Manual",
+                    "MT"
+                ],
+                "spec": "GL-4/GL-5",
+                "searchKeywords": [
+                    "Gear Oil",
+                    "GL-4",
+                    "GL-5",
+                    "齒輪油"
+                ]
+            },
+            "AT": {
+                "keywords": [
+                    "自排",
+                    "AT",
+                    "4AT",
+                    "5AT",
+                    "6AT",
+                    "8AT",
+                    "9AT",
+                    "10AT",
+                    "愛信",
+                    "AISIN"
+                ],
+                "spec": "Dexron VI / 車廠專用 ATF",
+                "searchKeywords": [
+                    "ATF",
+                    "Top Tec ATF",
+                    "Dexron",
+                    "自排"
+                ]
+            },
+            "CVT": {
+                "keywords": [
+                    "CVT",
+                    "無段變速"
+                ],
+                "spec": "CVT-Fluid",
+                "searchKeywords": [
+                    "CVT",
+                    "CVTF",
+                    "Top Tec 1400"
+                ]
+            },
+            "DSG": {
+                "keywords": [
+                    "DSG",
+                    "DCT",
+                    "PDK",
+                    "雙離合",
+                    "乾式離合",
+                    "濕式離合"
+                ],
+                "spec": "DSG Oil / DCT Fluid",
+                "searchKeywords": [
+                    "DSG",
+                    "DCT",
+                    "Top Tec 1800",
+                    "Top Tec 1700"
+                ]
+            }
+        },
+        "prompt_hint": "根據變速箱類型推論：手排→GL-4/5｜自排(AT)→ATF/Dexron｜CVT→CVT-Fluid｜DSG/DCT→DSG Oil"
+    },
+    "煞車系統": {
+        "description": "煞車油規格對照",
+        "types": {
+            "一般": {
+                "keywords": [
+                    "一般",
+                    "通勤",
+                    "日常"
+                ],
+                "spec": "DOT 4",
+                "searchKeywords": [
+                    "DOT 4",
+                    "Brake Fluid",
+                    "煞車油"
+                ]
+            },
+            "高性能": {
+                "keywords": [
+                    "高性能",
+                    "賽道",
+                    "跑山",
+                    "性能車",
+                    "煞車系統升級"
+                ],
+                "spec": "DOT 5.1",
+                "searchKeywords": [
+                    "DOT 5.1",
+                    "Racing Brake",
+                    "煞車油"
+                ]
+            }
+        },
+        "direct_recommend": true,
+        "prompt_hint": "一般車輛→DOT 4｜高性能/賽道→DOT 5.1，不需要車型資訊"
+    },
+    "冷卻系統": {
+        "description": "冷卻液規格",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "Coolant",
+            "Antifreeze",
+            "水箱精",
+            "冷卻液",
+            "防凍液"
+        ],
+        "prompt_hint": "直接推薦適合的冷卻液產品，不需要車型資訊"
+    },
+    "空調系統": {
+        "description": "空調保養產品",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "空調",
+            "冷氣",
+            "PAG",
+            "冷媒"
+        ],
+        "prompt_hint": "直接推薦空調保養產品，如 PAG 冷凍機油"
+    },
+    "化學品": {
+        "description": "化學品系列",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "化學品",
+            "清潔",
+            "除鏽",
+            "防鏽"
+        ],
+        "prompt_hint": "根據用途推薦對應化學品"
+    },
+    "美容": {
+        "description": "車輛美容產品",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "洗車",
+            "蠟",
+            "鍍膜",
+            "美容",
+            "清潔"
+        ],
+        "prompt_hint": "直接推薦，可在 CarMall 購買"
+    },
+    "香氛": {
+        "description": "車用香氛產品",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "香氛",
+            "芳香",
+            "香氛磚"
+        ],
+        "prompt_hint": "直接推薦，可在 CarMall 購買"
+    },
+    "自行車": {
+        "description": "自行車保養產品",
+        "direct_recommend": true,
+        "searchKeywords": [
+            "Bike",
+            "自行車",
+            "鏈條",
+            "Chain"
+        ],
+        "prompt_hint": "直接推薦，可在 CarMall 購買"
+    }
+}
