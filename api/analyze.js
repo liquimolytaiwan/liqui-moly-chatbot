@@ -215,7 +215,14 @@ ${scenarioRules}
 
 【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
 
-【變速箱油推論】手排(MT)→GL-4/GL-5｜自排(4-10AT)→ATF,Dexron｜CVT→CVT-Fluid｜DSG/DCT→DSG Oil
+【變速箱油認證推論 - 重要！】根據車型推論變速箱油認證，將認證加入 certifications 陣列：
+歐系：VW/Audi/Skoda→DSG Oil(乾/濕)或ATF｜BMW→ZF LifeguardFluid 6/8｜Benz→MB 236.14/236.15｜Volvo→Volvo ATF
+日韓系：Toyota→Toyota WS｜Honda→Honda ATF｜Nissan→Nissan Matic｜Hyundai/Kia→SP-IV
+美系：Ford→Mercon V/LV｜GM→Dexron VI｜Chrysler→ATF+4
+中國品牌：東安/愛信變速箱→通用 ATF(Dexron VI)或車廠指定
+⚠️ 若知道具體變速箱型號（如 ZF 8HP、愛信 8AT），請推論對應認證
+⚠️ 將推論的認證加入 vehicles[0].certifications，並加入 searchKeywords
+
 【煞車系統推論】一般車輛→DOT 4｜高性能/賽道→DOT 5.1
 【冷卻/空調/美容/香氛/自行車】直接推薦，不需車型資訊
 
@@ -741,6 +748,28 @@ function generateWixQueries(analysis) {
             if (isMotorcycle) {
                 queries.push({ field: 'title', value: 'Motorbike', limit: 30, method: 'contains' });
             }
+        }
+
+        // === 變速箱油專用搜尋（按認證搜尋 cert 欄位）===
+        else if (productCategory === '變速箱油') {
+            // 先按 sort 分類
+            queries.push({ field: 'sort', value: '變速箱', limit: 30, method: 'contains' });
+
+            // 按認證搜尋 cert 欄位（AI 推論的認證）
+            const certs = vehicle.certifications || [];
+            for (const cert of certs) {
+                queries.push({ field: 'cert', value: cert, limit: 20, method: 'contains' });
+                queries.push({ field: 'title', value: cert, limit: 20, method: 'contains' });
+                // 認證變體搜尋（移除空格）
+                const certNoSpace = cert.replace(/\s+/g, '');
+                if (certNoSpace !== cert) {
+                    queries.push({ field: 'cert', value: certNoSpace, limit: 20, method: 'contains' });
+                }
+            }
+
+            // 通用關鍵字搜尋
+            queries.push({ field: 'title', value: 'ATF', limit: 30, method: 'contains' });
+            queries.push({ field: 'title', value: 'Top Tec', limit: 20, method: 'contains' });
         }
 
         // === 其他產品類別（根據 sort 欄位搜尋）===
