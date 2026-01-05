@@ -35,7 +35,7 @@ console.log(`${LOG_TAGS.ANALYZE} Additive Guide: ${Array.isArray(additiveGuide) 
 
 
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -1024,4 +1024,6 @@ ${rules.product_category_rules.priority_note || '用戶明確指定的產品類�
     return promptRules;
 }
 
-export { analyzeUserQuery };
+// CommonJS 導出 - 同時導出 handler（API）和 analyzeUserQuery（供 rag-pipeline 呼叫）
+module.exports = handler;
+module.exports.analyzeUserQuery = analyzeUserQuery;
