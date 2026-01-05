@@ -17,13 +17,13 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// 導入統一服務模組（CommonJS）
-const { loadJSON } = require('./knowledge-cache');
-const { matchVehicle } = require('./vehicle-matcher');
-const { buildJasoRulesPrompt, buildSearchKeywordRulesPrompt } = require('./motorcycle-rules');
-const { detectCertification } = require('./certification-matcher');
-const { CORS_HEADERS, LOG_TAGS, GEMINI_ENDPOINT } = require('./constants');
-const { getCategoryToSort, getOilOnlyKeywords } = require('./search-helper');
+// 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
+const { loadJSON } = require('../lib/knowledge-cache');
+const { matchVehicle } = require('../lib/vehicle-matcher');
+const { buildJasoRulesPrompt, buildSearchKeywordRulesPrompt } = require('../lib/motorcycle-rules');
+const { detectCertification } = require('../lib/certification-matcher');
+const { CORS_HEADERS, LOG_TAGS, GEMINI_ENDPOINT } = require('../lib/constants');
+const { getCategoryToSort, getOilOnlyKeywords } = require('../lib/search-helper');
 
 // ============================================
 // 載入外部知識庫（使用統一快取模組）

@@ -15,7 +15,7 @@ const INSTAGRAM_ACCESS_TOKEN = process.env.META_INSTAGRAM_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const APP_SECRET = process.env.META_APP_SECRET;
 
-const { WIX_API_URL } = require('./constants');
+const { WIX_API_URL } = require('../lib/constants');
 
 // Vercel API URL（用於呼叫現有的 chat 邏輯）
 const VERCEL_API_URL = process.env.VERCEL_URL

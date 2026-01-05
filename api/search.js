@@ -18,9 +18,9 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// 導入統一服務模組（CommonJS）
-const { searchWithCertUpgrade, getScooterCertScore } = require('./certification-matcher.js');
-const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('./motorcycle-rules.js');
+// 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
+const { searchWithCertUpgrade, getScooterCertScore } = require('../lib/certification-matcher.js');
+const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('../lib/motorcycle-rules.js');
 const {
     WIX_API_URL,
     PRODUCT_BASE_URL,
@@ -28,8 +28,8 @@ const {
     CACHE_DURATION,
     SEARCH_LIMITS,
     LOG_TAGS
-} = require('./constants.js');
-const { getCategoryToSort } = require('./search-helper.js');
+} = require('../lib/constants.js');
+const { getCategoryToSort } = require('../lib/search-helper.js');
 
 // 產品快取
 let productsCache = null;

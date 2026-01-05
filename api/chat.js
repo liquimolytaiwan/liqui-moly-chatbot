@@ -10,10 +10,10 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// 導入統一服務模組（CommonJS）
-const { processWithRAG } = require('./rag-pipeline');
-const { validateAIResponse } = require('./response-validator');
-const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS } = require('./constants');
+// 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
+const { processWithRAG } = require('../lib/rag-pipeline');
+const { validateAIResponse } = require('../lib/response-validator');
+const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS } = require('../lib/constants');
 
 export default async function handler(req, res) {
     // Handle CORS preflight
