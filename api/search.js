@@ -15,9 +15,6 @@
  * - 認證兼容性搜尋（GF-7A → GF-6A 等）
  */
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
 const { searchWithCertUpgrade, getScooterCertScore } = require('../lib/certification-matcher.js');
 const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('../lib/motorcycle-rules.js');
@@ -35,7 +32,7 @@ const { getCategoryToSort } = require('../lib/search-helper.js');
 let productsCache = null;
 let cacheTimestamp = 0;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
@@ -935,4 +932,5 @@ function getSizeScore(title, size, preferLarge) {
 // ============================================
 // 匯出函式供直接呼叫（P0 優化：避免 HTTP 開銷）
 // ============================================
-export { searchProducts, getProducts };
+module.exports.searchProducts = searchProducts;
+module.exports.getProducts = getProducts;

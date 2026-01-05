@@ -141,7 +141,7 @@ async function saveConversationToWix(data) {
 // Vercel Edge/Serverless Handler
 // ============================================
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // GET: Webhook 驗證
     if (req.method === 'GET') {
         return handleVerification(req, res);

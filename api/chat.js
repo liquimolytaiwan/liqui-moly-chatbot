@@ -7,15 +7,12 @@
  * P0 優化：使用統一常數
  */
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
 const { processWithRAG } = require('../lib/rag-pipeline');
 const { validateAIResponse } = require('../lib/response-validator');
 const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS } = require('../lib/constants');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -57,7 +54,7 @@ export default async function handler(req, res) {
         let productList = null;
         try {
             // 動態載入 search.js 取得產品列表
-            const searchModule = await import('./search.js');
+            const searchModule = require('./search.js');
             productList = await searchModule.getProducts();
         } catch (e) {
             console.warn(`${LOG_TAGS.CHAT} Failed to get product list for validation:`, e.message);

@@ -14,9 +14,6 @@
  * - 從 data/*.json 動態載入知識補充 AI 判斷
  */
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
 const { loadJSON } = require('../lib/knowledge-cache');
 const { matchVehicle } = require('../lib/vehicle-matcher');
@@ -38,7 +35,7 @@ console.log(`${LOG_TAGS.ANALYZE} Additive Guide: ${Array.isArray(additiveGuide) 
 
 
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
