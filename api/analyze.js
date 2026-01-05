@@ -440,19 +440,45 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 
     // === 2. 添加劑症狀匹配 ===
     const vehicleType = result.vehicles?.[0]?.vehicleType || result.vehicleType;
-    const additiveMatches = matchAdditiveGuide(lowerMessage, vehicleType);
-    if (additiveMatches.length > 0) {
-        result.additiveGuideMatch = {
-            matched: true,
-            items: additiveMatches
-        };
+    const fuelType = result.vehicles?.[0]?.fuelType || result.fuelType;
+    const additiveMatches = matchAdditiveGuide(lowerMessage, vehicleType, fuelType);
 
-        // 加入 SKU 到搜尋關鍵字
-        if (!result.searchKeywords) result.searchKeywords = [];
-        for (const item of additiveMatches) {
-            for (const sku of item.solutions) {
-                if (!result.searchKeywords.includes(sku)) {
-                    result.searchKeywords.push(sku);
+    if (additiveMatches.length > 0) {
+        // 檢查是否有燃油類型專用的條目但 fuelType 未知
+        const hasFuelSpecific = additiveMatches.some(item =>
+            item.type === '汽油引擎' || item.type === '柴油引擎'
+        );
+
+        if (hasFuelSpecific && !fuelType) {
+            // 燃油類型未知但匹配到燃油專用條目，需要追問
+            console.log(`${LOG_TAGS.ANALYZE} Additive match requires fuelType confirmation`);
+            if (!result.needsMoreInfo) result.needsMoreInfo = [];
+            if (!result.needsMoreInfo.includes('fuelType')) {
+                result.needsMoreInfo.push('fuelType');
+            }
+            // 標記匹配但需要確認
+            result.additiveGuideMatch = {
+                matched: true,
+                needsFuelTypeConfirmation: true,
+                items: additiveMatches
+            };
+            // 不設定 needsProductRecommendation，讓系統追問
+            result.needsProductRecommendation = false;
+        } else {
+            // 燃油類型已知或條目不分燃油類型，可以直接推薦
+            result.additiveGuideMatch = {
+                matched: true,
+                needsFuelTypeConfirmation: false,
+                items: additiveMatches
+            };
+
+            // 加入 SKU 到搜尋關鍵字
+            if (!result.searchKeywords) result.searchKeywords = [];
+            for (const item of additiveMatches) {
+                for (const sku of item.solutions) {
+                    if (!result.searchKeywords.includes(sku)) {
+                        result.searchKeywords.push(sku);
+                    }
                 }
             }
         }
@@ -556,11 +582,15 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 
 /**
  * 從 additive-guide.json 匹配症狀
+ * @param {string} message - 用戶訊息
+ * @param {string} vehicleType - 車輛類型（汽車/機車）
+ * @param {string} fuelType - 燃油類型（汽油/柴油）
+ * @returns {Array} - 匹配結果，包含 type 欄位
  */
-function matchAdditiveGuide(message, vehicleType = null) {
+function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
     if (!additiveGuide.length) return [];
 
-    // 預設為汽車，除非明確是摩托車
+    // 預設為汽車，除非明確是機車
     const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
     const matched = [];
     const lowerMessage = message.toLowerCase();
@@ -574,7 +604,9 @@ function matchAdditiveGuide(message, vehicleType = null) {
         '異音': ['異音', '噪音', '達達聲', '敲擊聲'],
         '積碳': ['積碳', '積炭'],
         '缸壓不足': ['缸壓', '壓縮'],
-        '老鼠': ['老鼠', '貓', '小動物', '咬破', '躲藏']
+        '老鼠': ['老鼠', '貓', '小動物', '咬破', '躲藏'],
+        '黑煙': ['黑煙', '冒黑煙'],
+        'DPF': ['dpf', '柴油微粒子', '再生']
     };
 
     for (const item of additiveGuide) {
@@ -604,10 +636,24 @@ function matchAdditiveGuide(message, vehicleType = null) {
         }
 
         if (isMatched) {
+            // 如果有指定 fuelType，只匹配對應的燃油類型
+            if (fuelType) {
+                const itemFuelType = item.type;
+                // 汽油車只能匹配汽油引擎或通用
+                if (fuelType === '汽油' && itemFuelType !== '汽油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
+                    continue;
+                }
+                // 柴油車只能匹配柴油引擎或通用
+                if (fuelType === '柴油' && itemFuelType !== '柴油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
+                    continue;
+                }
+            }
+
             matched.push({
                 problem: item.problem,
                 explanation: item.explanation,
-                solutions: item.solutions
+                solutions: item.solutions,
+                type: item.type  // 返回燃油類型，用於判斷是否需要追問
             });
         }
     }
