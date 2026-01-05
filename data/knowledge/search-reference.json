@@ -135,18 +135,31 @@
         ]
     },
     "categoryToSort": {
-        "_description": "產品類別 → Wix sort 欄位值",
-        "機油_摩托車": "【摩托車】機油",
-        "機油_汽車": "【汽車】機油",
-        "添加劑_摩托車": "【摩托車】添加劑",
-        "添加劑_汽車": "【汽車】添加劑",
-        "變速箱油": "變速箱",
-        "煞車油": "煞車系統",
-        "冷卻系統": "冷卻系統",
-        "美容": "車輛美容",
-        "香氛": "車輛美容",
-        "自行車": "自行車系列",
-        "船舶": "船舶系列"
+        "_description": "產品類別 → Wix sort 欄位值（結構化版本）",
+        "機油": { "car": "【汽車】機油", "motorcycle": "【摩托車】機油" },
+        "添加劑": { "car": "【汽車】添加劑", "motorcycle": "【摩托車】添加劑" },
+        "變速箱油": { "default": "【汽車】變速箱" },
+        "煞車系統": { "default": "煞車系統" },
+        "冷卻系統": { "default": "冷卻系統" },
+        "空調系統": { "default": "【汽車】空調系統" },
+        "化學品": { "default": "化學品系列" },
+        "美容": { "default": "車輛美容系列" },
+        "香氛": { "default": "車輛美容系列" },
+        "自行車": { "default": "自行車系列" },
+        "船舶": { "default": "船舶系列" },
+        "商用車": { "default": "商用車系列" },
+        "PRO-LINE": { "default": "PRO-LINE 專業系列" },
+        "其他油品_摩托車": { "default": "【摩托車】其他油品" },
+        "人車養護_摩托車": { "default": "【摩托車】人車養護" }
+    },
+    "oilOnlyKeywords": {
+        "_description": "機油專用關鍵字（用於類別過濾）",
+        "keywords": [
+            "scooter", "street", "race", "synth", "top tec", "special tec",
+            "10w-", "5w-", "0w-", "20w-", "15w-",
+            "jaso", "api ", "ilsac", "acea",
+            "motorbike 4t", "motorbike synth"
+        ]
     },
     "keywordMapping": {
         "_description": "用戶關鍵字 → 搜尋關鍵字對照",

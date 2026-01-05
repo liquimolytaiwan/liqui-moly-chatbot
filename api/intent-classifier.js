@@ -1,27 +1,29 @@
 /**
  * LIQUI MOLY Chatbot - RAG 意圖分類器
  * 快速判斷用戶問題類型，決定需要載入哪些知識
- * 
- * P1 優化：使用統一的 knowledge-cache 模組
+ *
+ * P0 優化：使用統一服務模組
+ * - vehicle-matcher.js: 車型匹配
+ * - motorcycle-rules.js: 摩托車規則
+ * - constants.js: 統一常數
  */
 
 const { loadJSON } = require('./knowledge-cache');
+const { matchVehicle, getMetadata } = require('./vehicle-matcher');
+const { isScooter } = require('./motorcycle-rules');
+const { LOG_TAGS, INTENT_TYPES, PRODUCT_CATEGORIES } = require('./constants');
 
 // 載入分類規則（使用統一快取）
 let classificationRules = {};
 let specialScenarios = {};
 
 try {
-    const vehicleSpecs = loadJSON('vehicle-specs.json');
-
-    if (vehicleSpecs && vehicleSpecs._metadata) {
-        classificationRules = vehicleSpecs._metadata;
-        specialScenarios = vehicleSpecs._metadata.special_scenarios || {};
-    }
-
-    console.log('[IntentClassifier] Rules loaded from vehicle-specs.json (via cache)');
+    const metadata = getMetadata();
+    classificationRules = metadata;
+    specialScenarios = metadata.special_scenarios || {};
+    console.log(`${LOG_TAGS.INTENT} Rules loaded via vehicle-matcher`);
 } catch (e) {
-    console.warn('[IntentClassifier] Failed to load rules:', e.message);
+    console.warn(`${LOG_TAGS.INTENT} Failed to load rules:`, e.message);
 }
 
 /**
@@ -36,40 +38,60 @@ function classifyIntent(message, conversationHistory = []) {
     const combinedText = `${lowerMessage} ${historyText}`;
 
     const intent = {
-        type: 'general_inquiry',  // 預設類型
+        type: INTENT_TYPES.GENERAL_INQUIRY,  // 預設類型
         vehicleType: null,
         vehicleModel: null,
         vehicleBrand: null,
         productCategory: null,
         isElectricVehicle: false,
         isMotorcycle: false,
+        isScooter: false,
         isMultiVehicle: false,
         needsSpecs: false,
         needsSymptoms: false,
         needsTemplates: [],
         specialScenario: null,
-        detectedKeywords: []
+        detectedKeywords: [],
+        certifications: [],
+        viscosity: null
     };
 
-    // === 1. 車型偵測 ===
-    detectVehicleType(combinedText, intent);
+    // === 1. 車型偵測（使用統一服務）===
+    const vehicleMatch = matchVehicle(message, historyText);
+    if (vehicleMatch.matched) {
+        intent.vehicleType = vehicleMatch.vehicleType;
+        intent.vehicleModel = vehicleMatch.vehicleModel;
+        intent.vehicleBrand = vehicleMatch.vehicleBrand;
+        intent.isMotorcycle = vehicleMatch.isMotorcycle;
+        intent.isScooter = vehicleMatch.isScooter;
+        intent.isElectricVehicle = vehicleMatch.isElectricVehicle;
+        intent.detectedKeywords = vehicleMatch.detectedKeywords;
+        intent.certifications = vehicleMatch.certifications;
+        intent.viscosity = vehicleMatch.viscosity;
 
-    // === 2. 電動車偵測 ===
-    detectElectricVehicle(lowerMessage, intent);
+        // 如果有完整規格，標記需要規格
+        if (vehicleMatch.spec) {
+            intent.needsSpecs = true;
+        }
+    } else {
+        // Fallback: 使用原有邏輯（向後兼容）
+        detectVehicleType(combinedText, intent);
+        detectElectricVehicle(lowerMessage, intent);
+    }
 
-    // === 3. 產品類別偵測 ===
+    // === 2. 產品類別偵測 ===
     detectProductCategory(lowerMessage, intent);
 
-    // === 4. 意圖類型偵測 ===
+    // === 3. 意圖類型偵測 ===
     detectIntentType(lowerMessage, intent);
 
-    // === 5. 特殊情境偵測 ===
+    // === 4. 特殊情境偵測 ===
     detectSpecialScenario(lowerMessage, intent);
 
-    // === 6. 決定需要載入的知識 ===
+    // === 5. 決定需要載入的知識 ===
     determineRequiredKnowledge(intent);
 
-    console.log('[IntentClassifier] Result:', JSON.stringify(intent, null, 2));
+    console.log(`${LOG_TAGS.INTENT} Result:`, JSON.stringify(intent, null, 2));
     return intent;
 }
 
@@ -243,7 +265,7 @@ function detectIntentType(text, intent) {
     }
 
     // 預設為產品推薦
-    intent.type = 'product_recommendation';
+    intent.type = INTENT_TYPES.PRODUCT_RECOMMENDATION;
     intent.needsTemplates.push('product_recommendation');
 }
 
@@ -277,15 +299,20 @@ function detectSpecialScenario(text, intent) {
  */
 function determineRequiredKnowledge(intent) {
     // 車型規格
-    if (intent.type === 'product_recommendation' &&
+    if (intent.type === INTENT_TYPES.PRODUCT_RECOMMENDATION &&
         intent.vehicleType === '汽車' &&
-        intent.productCategory === '機油') {
+        intent.productCategory === PRODUCT_CATEGORIES.OIL) {
         intent.needsSpecs = true;
     }
 
     // 症狀映射
-    if (intent.productCategory === '添加劑') {
+    if (intent.productCategory === PRODUCT_CATEGORIES.ADDITIVE) {
         intent.needsSymptoms = true;
+    }
+
+    // 摩托車規格
+    if (intent.isMotorcycle && intent.productCategory === PRODUCT_CATEGORIES.OIL) {
+        intent.needsSpecs = true;
     }
 }
 

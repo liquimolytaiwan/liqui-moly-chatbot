@@ -1,27 +1,29 @@
 /**
  * LIQUI MOLY Chatbot - Vercel Serverless Function
  * AI 分析用戶問題 - 純 RAG 架構版本
- * 
+ *
+ * P0 優化：使用統一服務模組
+ * - vehicle-matcher.js: 車型匹配（取代 findVehicleByMessage）
+ * - motorcycle-rules.js: 摩托車規則（JASO Prompt 生成）
+ * - certification-matcher.js: 認證偵測
+ * - constants.js: 統一常數
+ *
  * 設計原則：AI 為主，知識庫為輔
  * - 移除所有硬編碼關鍵字
  * - Gemini 負責識別車型、判斷類型、推論規格
  * - 從 data/*.json 動態載入知識補充 AI 判斷
- * 
- * P1 優化：使用統一的 knowledge-cache 模組
  */
 
-const { findVehicleByMessage } = require('./knowledge-retriever');
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// 導入統一服務模組（CommonJS）
 const { loadJSON } = require('./knowledge-cache');
-
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-// CORS headers
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-};
+const { matchVehicle } = require('./vehicle-matcher');
+const { buildJasoRulesPrompt, buildSearchKeywordRulesPrompt } = require('./motorcycle-rules');
+const { detectCertification } = require('./certification-matcher');
+const { CORS_HEADERS, LOG_TAGS, GEMINI_ENDPOINT } = require('./constants');
+const { getCategoryToSort, getOilOnlyKeywords } = require('./search-helper');
 
 // ============================================
 // 載入外部知識庫（使用統一快取模組）
@@ -31,8 +33,8 @@ const additiveGuide = loadJSON('additive-guide.json') || [];
 const searchReference = loadJSON('search-reference.json') || {};
 const aiAnalysisRules = loadJSON('ai-analysis-rules.json') || {};
 
-console.log('[Analyze] Knowledge loaded via unified cache');
-console.log(`[Additive Guide] Loaded ${Array.isArray(additiveGuide) ? additiveGuide.length : 0} items`);
+console.log(`${LOG_TAGS.ANALYZE} Knowledge loaded via unified cache`);
+console.log(`${LOG_TAGS.ANALYZE} Additive Guide: ${Array.isArray(additiveGuide) ? additiveGuide.length : 0} items`);
 
 
 
@@ -62,12 +64,12 @@ export default async function handler(req, res) {
 
         const result = await analyzeUserQuery(apiKey, message, conversationHistory);
 
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(200).json({ success: true, analysis: result });
 
     } catch (error) {
         console.error('Analyze API error:', error);
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(500).json({ success: false, error: error.message });
     }
 }
@@ -246,7 +248,7 @@ ${dynamicRules}
 只返回 JSON。`;
 
     try {
-        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        const response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -290,7 +292,7 @@ ${dynamicRules}
                 // === 強制全合成覆寫 (Rule-Based Override) ===
                 // 1. 當前訊息檢查
                 if (/全合成|fully\s*synthetic|synthoil|race|賽道|跑山/i.test(message)) {
-                    console.log('[Analyze] ⚡ Force-enabling strict synthetic filter (Detected keywords in current message)');
+                    console.log(`${LOG_TAGS.ANALYZE} ⚡ Force-enabling strict synthetic filter (Detected keywords in current message)`);
                     result.recommendSynthetic = 'full';
                 }
                 // 2. 歷史訊息繼承 (若當前未設為 full，檢查前 3 則訊息)
@@ -304,7 +306,7 @@ ${dynamicRules}
                     );
 
                     if (hasPastPreference) {
-                        console.log('[Analyze] ⚡ Inheriting "full" synthetic preference from history');
+                        console.log(`${LOG_TAGS.ANALYZE} ⚡ Inheriting "full" synthetic preference from history`);
                         result.recommendSynthetic = 'full';
                     }
                 }
@@ -312,32 +314,10 @@ ${dynamicRules}
                 // === 使用知識庫增強 AI 結果 ===
                 enhanceWithKnowledgeBase(result, message, conversationHistory);
 
-                // === 偵測認證搜尋請求 ===
+                // === 偵測認證搜尋請求（使用統一的認證偵測）===
                 // 檢查用戶訊息是否明確詢問特定認證
-                const certPatterns = [
-                    /(?:ILSAC\s*)?GF[-\s]?(\d+[AB]?)/i,
-                    /API\s*(S[A-Z]|C[A-Z])/i,
-                    /JASO\s*(MA2?|MB)/i,
-                    /ACEA\s*([A-Z]\d)/i
-                ];
-
-                let detectedCert = null;
-                for (const pattern of certPatterns) {
-                    const match = message.match(pattern);
-                    if (match) {
-                        // 標準化認證名稱
-                        if (pattern.source.includes('GF')) {
-                            detectedCert = `GF-${match[1].toUpperCase()}`;
-                        } else if (pattern.source.includes('API')) {
-                            detectedCert = `API ${match[1].toUpperCase()}`;
-                        } else if (pattern.source.includes('JASO')) {
-                            detectedCert = `JASO ${match[1].toUpperCase()}`;
-                        } else if (pattern.source.includes('ACEA')) {
-                            detectedCert = `ACEA ${match[1].toUpperCase()}`;
-                        }
-                        break;
-                    }
-                }
+                const certDetection = detectCertification(message);
+                let detectedCert = certDetection ? certDetection.cert : null;
 
                 // 檢查是否有明確的黏度追問（從對話繼承認證）
                 const viscosityPattern = /(\d+[Ww][-]?\d+)/;
@@ -350,37 +330,26 @@ ${dynamicRules}
                         requestedCert: detectedCert,
                         viscosity: detectedViscosity || result.vehicles?.[0]?.viscosity || null
                     };
-                    console.log('[Analyze] Certification search detected:', result.certificationSearch);
+                    console.log(`${LOG_TAGS.ANALYZE} Certification search detected:`, result.certificationSearch);
                 }
-                // 若只有黏度追問且對話中有認證歷史，繼承認證
+                // 若只有黏度追問且對話中有認證歷史，繼承認證（使用統一的認證偵測）
                 else if (detectedViscosity && conversationHistory.length > 0) {
                     const historyText = conversationHistory.map(m => m.content).join(' ');
-                    for (const pattern of certPatterns) {
-                        const match = historyText.match(pattern);
-                        if (match) {
-                            if (pattern.source.includes('GF')) {
-                                detectedCert = `GF-${match[1].toUpperCase()}`;
-                            } else if (pattern.source.includes('API')) {
-                                detectedCert = `API ${match[1].toUpperCase()}`;
-                            } else if (pattern.source.includes('JASO')) {
-                                detectedCert = `JASO ${match[1].toUpperCase()}`;
-                            }
-                            if (detectedCert) {
-                                result.certificationSearch = {
-                                    requestedCert: detectedCert,
-                                    viscosity: detectedViscosity
-                                };
-                                console.log('[Analyze] Inherited certification from history:', result.certificationSearch);
-                                break;
-                            }
-                        }
+                    const historyCertDetection = detectCertification(historyText);
+                    if (historyCertDetection) {
+                        detectedCert = historyCertDetection.cert;
+                        result.certificationSearch = {
+                            requestedCert: detectedCert,
+                            viscosity: detectedViscosity
+                        };
+                        console.log(`${LOG_TAGS.ANALYZE} Inherited certification from history:`, result.certificationSearch);
                     }
                 }
 
                 // 生成 Wix 查詢
                 result.wixQueries = generateWixQueries(result);
 
-                console.log('[Analyze] AI result:', JSON.stringify(result, null, 2));
+                console.log(`${LOG_TAGS.ANALYZE} AI result:`, JSON.stringify(result, null, 2));
                 return result;
             } catch (parseError) {
                 console.error('JSON parse error:', parseError);
@@ -397,20 +366,29 @@ ${dynamicRules}
 /**
  * 使用知識庫增強 AI 分析結果
  * 僅作為補充，不覆蓋 AI 判斷
+ * P0 優化：使用統一的 vehicle-matcher 服務
  */
 function enhanceWithKnowledgeBase(result, message, conversationHistory) {
     const lowerMessage = message.toLowerCase();
     const historyText = conversationHistory.map(m => m.content).join(' ').toLowerCase();
     const combinedText = `${lowerMessage} ${historyText}`;
 
-    // === 1. 從 vehicle-specs.json 匹配精確車型規格 ===
-    let vehicleMatch = findVehicleByMessage(message);
-    if (!vehicleMatch) {
-        vehicleMatch = findVehicleByMessage(combinedText);
+    // === 1. 使用統一的車型匹配服務 ===
+    let vehicleMatchResult = matchVehicle(message, historyText);
+
+    // 轉換為舊格式以保持向後兼容
+    let vehicleMatch = null;
+    if (vehicleMatchResult.matched && vehicleMatchResult.spec) {
+        vehicleMatch = {
+            brand: vehicleMatchResult.vehicleBrand,
+            model: vehicleMatchResult.vehicleModel,
+            spec: vehicleMatchResult.spec,
+            matchedAlias: vehicleMatchResult.detectedKeywords[0] || null
+        };
     }
 
     if (vehicleMatch) {
-        console.log(`[Knowledge Base] Matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
+        console.log(`${LOG_TAGS.ANALYZE} Knowledge Base matched: ${vehicleMatch.brand} ${vehicleMatch.model}`);
         const spec = vehicleMatch.spec;
 
         // 補充搜尋關鍵字
@@ -428,12 +406,12 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
                     result.searchKeywords.unshift(sku); // 放在最前面優先搜尋
                 }
             }
-            console.log(`[Knowledge Base] Added recommended SKU: ${skus.join(', ')}`);
+            console.log(`${LOG_TAGS.ANALYZE} Added recommended SKU: ${skus.join(', ')}`);
         }
 
         // ⚠️ 關鍵修復：如果 AI 沒有識別出車型，但對話歷史中有，創建車型物件
         if (!result.vehicles || result.vehicles.length === 0) {
-            console.log(`[Knowledge Base] Creating vehicle from history: ${vehicleMatch.brand} ${vehicleMatch.model}`);
+            console.log(`${LOG_TAGS.ANALYZE} Creating vehicle from history: ${vehicleMatch.brand} ${vehicleMatch.model}`);
             result.vehicles = [{
                 vehicleName: `${vehicleMatch.brand} ${vehicleMatch.model}`,
                 vehicleType: spec.type?.includes('速克達') || spec.type?.includes('檔車') ? '摩托車' : '汽車',
@@ -496,14 +474,14 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
                 if (!result.searchKeywords) result.searchKeywords = [];
                 if (!result.searchKeywords.includes(fullSku)) {
                     result.searchKeywords.unshift(fullSku, skuNum);
-                    console.log(`[Analyze] SKU detected: ${fullSku}`);
+                    console.log(`${LOG_TAGS.ANALYZE} SKU detected: ${fullSku}`);
                 }
             }
         }
         // ⚡ 關鍵修復：偵測到 SKU 後，強制設定為產品查詢
         result.needsProductRecommendation = true;
         result.intentType = 'product_inquiry';
-        console.log('[Analyze] SKU query detected, forcing product search');
+        console.log(`${LOG_TAGS.ANALYZE} SKU query detected, forcing product search`);
     }
 
     // === 4. 添加劑子類別識別（機油添加劑 vs 汽油添加劑）===
@@ -524,7 +502,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             if (isOilAdditive && !isFuelAdditive) {
                 result.additiveSubtype = '機油添加劑';
                 result.productCategory = '添加劑';
-                console.log('[Additive] Detected subtype: 機油添加劑');
+                console.log(`${LOG_TAGS.ANALYZE} Detected additive subtype: 機油添加劑`);
 
                 // 根據車型推薦產品
                 const vehicleType = result.vehicles?.[0]?.vehicleType;
@@ -552,7 +530,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             } else if (isFuelAdditive && !isOilAdditive) {
                 result.additiveSubtype = '汽油添加劑';
                 result.productCategory = '添加劑';
-                console.log('[Additive] Detected subtype: 汽油添加劑');
+                console.log(`${LOG_TAGS.ANALYZE} Detected additive subtype: 汽油添加劑`);
 
                 const vehicleType = result.vehicles?.[0]?.vehicleType;
                 const mapping = subtypeRules.mapping?.['汽油添加劑'];
@@ -649,39 +627,16 @@ function generateWixQueries(analysis) {
     const vehicles = analysis.vehicles || [];
     const productCategory = analysis.productCategory;
 
-    // 機油專用關鍵字清單（不應用於其他類別搜尋）
-    const OIL_ONLY_KEYWORDS = [
-        'scooter', 'street', 'race', 'synth', 'top tec', 'special tec',
-        '10w-', '5w-', '0w-', '20w-', '15w-',
-        'jaso', 'api ', 'ilsac', 'acea',
-        'motorbike 4t', 'motorbike synth'
-    ];
-
-    // 根據類別取得對應的 sort 欄位值
-    const categoryToSort = {
-        '機油': { car: '【汽車】機油', motorcycle: '【摩托車】機油' },
-        '添加劑': { car: '【汽車】添加劑', motorcycle: '【摩托車】添加劑' },
-        '變速箱油': { default: '【汽車】變速箱' },
-        '煞車系統': { default: '煞車系統' },
-        '冷卻系統': { default: '冷卻系統' },
-        '空調系統': { default: '【汽車】空調系統' },
-        '化學品': { default: '化學品系列' },
-        '美容': { default: '車輛美容系列' },
-        '香氛': { default: '車輛美容系列' },
-        '自行車': { default: '自行車系列' },
-        '船舶': { default: '船舶系列' },
-        '商用車': { default: '商用車系列' },
-        'PRO-LINE': { default: 'PRO-LINE 專業系列' },
-        '其他油品_摩托車': { default: '【摩托車】其他油品' },
-        '人車養護_摩托車': { default: '【摩托車】人車養護' }
-    };
+    // 從知識庫讀取搜尋資料（RAG 架構）
+    const oilOnlyKeywords = getOilOnlyKeywords();
+    const categoryToSort = getCategoryToSort();
 
     /**
      * 檢查關鍵字是否為機油專用
      */
     function isOilOnlyKeyword(kw) {
         const lowerKw = kw.toLowerCase();
-        return OIL_ONLY_KEYWORDS.some(ok => lowerKw.includes(ok));
+        return oilOnlyKeywords.some(ok => lowerKw.includes(ok));
     }
 
     /**
@@ -823,24 +778,20 @@ function generateWixQueries(analysis) {
         }
     }
 
-    console.log(`[WixQueries] Generated ${uniqueQueries.length} queries for category: ${productCategory}`);
+    console.log(`${LOG_TAGS.ANALYZE} Generated ${uniqueQueries.length} Wix queries for category: ${productCategory}`);
     return uniqueQueries;
 }
 
 /**
  * 從知識庫動態生成 AI 分析規則提示詞
+ * P0 優化：使用統一的 motorcycle-rules 服務
  * @returns {string} 分析規則提示詞
  */
 function buildAnalysisPromptRules() {
     const rules = aiAnalysisRules;
     if (!rules || Object.keys(rules).length === 0) {
-        // 如果知識庫未載入，返回基本規則
-        return `
-【速克達/檔車識別】
-- 速克達：勁戰/JET/DRG/曼巴/Force/SMAX/Tigra/KRV/Many
-- 速克達 → JASO MB 認證
-- 檔車/重機 → JASO MA2 認證
-`;
+        // 如果知識庫未載入，使用統一的摩托車規則
+        return buildJasoRulesPrompt() + buildSearchKeywordRulesPrompt();
     }
 
     let promptRules = '';

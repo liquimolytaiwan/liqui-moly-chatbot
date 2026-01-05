@@ -1,24 +1,19 @@
 /**
  * LIQUI MOLY Chatbot - Vercel Serverless Function
  * 主要聊天 API - 使用 RAG 架構處理用戶訊息
- * 
+ *
  * RAG 重構版本 - 動態載入知識，大幅減少 Token 消耗
  * v1.1: 新增產品驗證層（Anti-Hallucination）
+ * P0 優化：使用統一常數
  */
 
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// 導入統一服務模組（CommonJS）
 const { processWithRAG } = require('./rag-pipeline');
 const { validateAIResponse } = require('./response-validator');
-
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
-
-// CORS headers
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-};
+const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS } = require('./constants');
 
 export default async function handler(req, res) {
     // Handle CORS preflight
@@ -46,10 +41,10 @@ export default async function handler(req, res) {
         }
 
         // === RAG 處理管線 ===
-        console.log('[Chat API] Starting RAG pipeline...');
+        console.log(`${LOG_TAGS.CHAT} Starting RAG pipeline...`);
         const ragResult = await processWithRAG(message, conversationHistory, productContext);
         const { intent, systemPrompt } = ragResult;
-        console.log(`[Chat API] Intent: ${intent.type}, Vehicle: ${intent.vehicleType}`);
+        console.log(`${LOG_TAGS.CHAT} Intent: ${intent.type}, Vehicle: ${intent.vehicleType}`);
 
         // 建構對話內容
         const contents = buildContents(message, conversationHistory, systemPrompt);
@@ -65,20 +60,20 @@ export default async function handler(req, res) {
             const searchModule = await import('./search.js');
             productList = await searchModule.getProducts();
         } catch (e) {
-            console.warn('[Chat API] Failed to get product list for validation:', e.message);
+            console.warn(`${LOG_TAGS.CHAT} Failed to get product list for validation:`, e.message);
         }
 
         if (productList && productList.length > 0) {
-            console.log('[Chat API] Running product validation...');
+            console.log(`${LOG_TAGS.CHAT} Running product validation...`);
             const validationResult = validateAIResponse(aiResponse, productList);
 
             if (validationResult.hasInvalidSKUs) {
-                console.warn('[Chat API] Invalid SKUs detected:', validationResult.invalidSKUs);
+                console.warn(`${LOG_TAGS.CHAT} Invalid SKUs detected:`, validationResult.invalidSKUs);
                 aiResponse = validationResult.validatedResponse;
             }
         }
 
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(200).json({
             success: true,
             response: aiResponse,
@@ -92,7 +87,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Chat API error:', error);
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(500).json({ success: false, error: error.message });
     }
 }
@@ -113,7 +108,7 @@ function buildContents(message, history, systemPrompt) {
         : history;
 
     if (history && history.length > MAX_HISTORY) {
-        console.log(`[Chat] Truncating history from ${history.length} to ${MAX_HISTORY} messages`);
+        console.log(`${LOG_TAGS.CHAT} Truncating history from ${history.length} to ${MAX_HISTORY} messages`);
     }
 
     if (recentHistory && recentHistory.length > 0) {
@@ -166,7 +161,7 @@ function buildContents(message, history, systemPrompt) {
  * 呼叫 Gemini API
  */
 async function callGemini(apiKey, contents) {
-    const url = `${GEMINI_API_URL}?key=${apiKey}`;
+    const url = `${GEMINI_ENDPOINT}?key=${apiKey}`;
 
     const requestBody = {
         contents: contents,
@@ -186,7 +181,7 @@ async function callGemini(apiKey, contents) {
 
     // 計算 Prompt 長度（用於監控 Token 消耗）
     const promptLength = JSON.stringify(contents).length;
-    console.log(`[Gemini] Prompt length: ${promptLength} chars (~${Math.round(promptLength / 4)} tokens)`);
+    console.log(`${LOG_TAGS.CHAT} Prompt length: ${promptLength} chars (~${Math.round(promptLength / 4)} tokens)`);
 
     const response = await fetch(url, {
         method: 'POST',
@@ -207,9 +202,9 @@ async function callGemini(apiKey, contents) {
 
         // 檢查 finishReason 來診斷截斷問題
         if (candidate.finishReason) {
-            console.log('[Gemini] finishReason:', candidate.finishReason);
+            console.log(`${LOG_TAGS.CHAT} finishReason:`, candidate.finishReason);
             if (candidate.finishReason === 'MAX_TOKENS') {
-                console.warn('[Gemini] Response was truncated due to MAX_TOKENS limit!');
+                console.warn(`${LOG_TAGS.CHAT} Response was truncated due to MAX_TOKENS limit!`);
             }
         }
 
@@ -218,7 +213,7 @@ async function callGemini(apiKey, contents) {
 
             // [Hotfix] 強制移除俄文/Cyrillic 字符 (如 уточнить)
             if (/[\u0400-\u04FF]/.test(text)) {
-                console.warn('[Gemini] Detected Cyrillic characters, stripping them...');
+                console.warn(`${LOG_TAGS.CHAT} Detected Cyrillic characters, stripping them...`);
                 text = text.replace(/[\u0400-\u04FF]/g, '').replace(/уточнить/gi, '');
             }
             return text;

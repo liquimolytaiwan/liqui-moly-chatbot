@@ -1,11 +1,17 @@
 /**
  * LIQUI MOLY Chatbot - RAG 知識檢索器
  * 根據意圖動態載入相關知識
- * 
- * P1 優化：使用統一的 knowledge-cache 模組
+ *
+ * P0 優化：使用統一服務模組
+ * - vehicle-matcher.js: 車型匹配（取代 findVehicleByMessage）
+ * - certification-matcher.js: 認證匹配（取代 getCertificationForVehicle）
+ * - constants.js: 統一常數
  */
 
 const { loadJSON } = require('./knowledge-cache');
+const { getVehicleSpec } = require('./vehicle-matcher');
+const { getCertificationForVehicle, getJasoCertification } = require('./certification-matcher');
+const { LOG_TAGS, PRODUCT_CATEGORIES } = require('./constants');
 
 
 /**
@@ -31,14 +37,19 @@ async function retrieveKnowledge(intent) {
     // 2. 載入 AI 分析與繼承規則
     knowledge.rules.analysis = loadJSON('ai-analysis-rules.json');
 
-    // 3. 根據需求載入車型規格
+    // 3. 根據需求載入車型規格（使用統一服務）
     if (intent.needsSpecs && intent.vehicleBrand) {
         knowledge.vehicleSpec = getVehicleSpec(intent.vehicleBrand, intent.vehicleModel);
     }
 
-    // 4. 根據產品類別載入相關認證
-    if (intent.productCategory === '機油') {
+    // 4. 根據產品類別載入相關認證（使用統一服務）
+    if (intent.productCategory === PRODUCT_CATEGORIES.OIL) {
         knowledge.certification = getCertificationForVehicle(intent);
+
+        // 摩托車額外載入 JASO 規則
+        if (intent.isMotorcycle) {
+            knowledge.jasoCert = getJasoCertification(intent.isScooter);
+        }
     }
 
     // 5. 症狀映射（從 additive-guide.json 讀取）
@@ -75,101 +86,11 @@ async function retrieveKnowledge(intent) {
         }
     }
 
-    console.log('[KnowledgeRetriever] Retrieved knowledge keys:', Object.keys(knowledge).filter(k => knowledge[k] !== null));
+    console.log(`${LOG_TAGS.KNOWLEDGE} Retrieved knowledge keys:`, Object.keys(knowledge).filter(k => knowledge[k] !== null));
     return knowledge;
 }
 
-/**
- * 取得車型規格
- */
-function getVehicleSpec(brand, model) {
-    const allSpecs = loadJSON('vehicle-specs.json');
-    if (!allSpecs) return null;
-
-    const brandSpecs = allSpecs[brand];
-    if (!brandSpecs) return null;
-
-    if (model) {
-        // 精確匹配
-        for (const [modelName, specs] of Object.entries(brandSpecs)) {
-            if (modelName.toLowerCase().includes(model.toLowerCase()) ||
-                model.toLowerCase().includes(modelName.toLowerCase())) {
-                return { brand, model: modelName, specs };
-            }
-        }
-    }
-
-    // 返回品牌所有車型供 AI 選擇
-    return { brand, allModels: brandSpecs };
-}
-
-/**
- * 根據用戶訊息智慧匹配車型規格
- * 使用 aliases 欄位進行模糊匹配
- * @param {string} message - 用戶訊息
- * @returns {Object|null} - 匹配到的車型規格
- */
-function findVehicleByMessage(message) {
-    const allSpecs = loadJSON('vehicle-specs.json');
-    if (!allSpecs) return null;
-
-    const lowerMessage = message.toLowerCase();
-
-    // 遍歷所有品牌和車型
-    for (const [brand, models] of Object.entries(allSpecs)) {
-        // 跳過 _metadata 等非車型資料
-        if (brand.startsWith('_')) continue;
-        if (!models || typeof models !== 'object') continue;
-
-        for (const [modelName, specs] of Object.entries(models)) {
-            // 確保 specs 是陣列才進行迭代
-            if (!Array.isArray(specs)) continue;
-
-            for (const spec of specs) {
-                // 檢查 aliases
-                if (spec.aliases && Array.isArray(spec.aliases)) {
-                    for (const alias of spec.aliases) {
-                        if (lowerMessage.includes(alias.toLowerCase())) {
-                            console.log(`[KnowledgeRetriever] Matched vehicle: ${brand} ${modelName} via alias "${alias}"`);
-                            return {
-                                brand,
-                                model: modelName,
-                                spec,
-                                matchedAlias: alias
-                            };
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return null;
-}
-
-
-/**
- * 取得車輛適用的認證
- */
-function getCertificationForVehicle(intent) {
-    const vehicleSpecs = loadJSON('vehicle-specs.json');
-    if (!vehicleSpecs || !vehicleSpecs._metadata) return null;
-
-    const metadata = vehicleSpecs._metadata;
-    const result = {};
-
-    // Ford 特殊處理
-    if (intent.vehicleBrand === 'Ford' && metadata.special_certifications?.ford) {
-        result.ford = metadata.special_certifications.ford;
-    }
-
-    // JASO 規則
-    if (intent.isMotorcycle && metadata.jaso_rules) {
-        result.jaso = metadata.jaso_rules;
-    }
-
-    return Object.keys(result).length > 0 ? result : null;
-}
+// findVehicleByMessage() 已廢棄，請直接使用 vehicle-matcher.matchVehicle()
 
 /**
  * 取得特殊情境資料
@@ -187,7 +108,7 @@ function getSpecialScenarioData(scenario) {
 }
 
 module.exports = {
-    retrieveKnowledge,
-    loadJSON,
-    findVehicleByMessage
+    retrieveKnowledge
+    // loadJSON 請從 knowledge-cache.js 導入
+    // findVehicleByMessage 已廢棄，請使用 vehicle-matcher.matchVehicle()
 };

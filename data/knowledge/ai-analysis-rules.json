@@ -74,28 +74,17 @@
         }
     },
     "scooter_identification": {
-        "description": "台灣速克達識別",
+        "description": "台灣速克達識別 - 使用 JASO MB 認證（無濕式離合器）",
         "models": [
-            "勁戰",
-            "JET",
-            "DRG",
-            "曼巴",
-            "MMBCU",
-            "Force",
-            "SMAX",
-            "Tigra",
-            "KRV",
-            "Many",
-            "GPR",
-            "Racing",
-            "彪虎"
+            "勁戰", "六代勁戰", "五代勁戰", "四代勁戰", "cygnus",
+            "force", "force 2.0", "smax", "bws",
+            "曼巴", "mmbcu", "mamba", "drg", "jet", "jet s", "jet sl", "fnx", "vega",
+            "krv", "racing", "racing s", "雷霆", "many", "like", "romeo",
+            "tigra", "彪虎", "tigra 200", "tigra 250",
+            "vino", "jog", "cuxi", "limi", "gt", "gp"
         ],
         "brands": [
-            "SYM",
-            "YAMAHA",
-            "KYMCO",
-            "PGO",
-            "Aeon"
+            "SYM", "YAMAHA", "KYMCO", "PGO", "Aeon", "Vespa"
         ],
         "characteristics": {
             "vehicleSubType": "速克達",
@@ -105,37 +94,22 @@
         }
     },
     "motorcycle_identification": {
-        "description": "檔車/重機識別",
+        "description": "檔車/重機識別 - 使用 JASO MA/MA2 認證（有濕式離合器）",
         "brands": [
-            "Honda",
-            "Yamaha",
-            "Kawasaki",
-            "Suzuki",
-            "Ducati",
-            "Harley-Davidson",
-            "KTM",
-            "Triumph",
-            "BMW",
-            "Aprilia"
+            "Honda", "Yamaha", "Kawasaki", "Suzuki", "Ducati",
+            "Harley-Davidson", "KTM", "Triumph", "BMW", "Aprilia",
+            "Benelli", "MV Agusta", "Indian", "Husqvarna"
         ],
         "series": [
-            "CBR",
-            "CB",
-            "Rebel",
-            "R1",
-            "R3",
-            "R6",
-            "R7",
-            "MT",
-            "YZF",
-            "Ninja",
-            "Z",
-            "ZX",
-            "GSX",
-            "SV",
-            "Panigale",
-            "Monster",
-            "Sportster"
+            "cbr", "cb", "rebel", "africa twin", "gold wing", "crf",
+            "r1", "r3", "r6", "r7", "mt-", "yzf", "xsr", "tenere",
+            "ninja", "z400", "z650", "z900", "z1000", "versys", "vulcan",
+            "gsx", "gsx-r", "sv", "v-strom", "katana",
+            "panigale", "monster", "scrambler", "diavel", "multistrada",
+            "sportster", "softail", "touring", "iron 883", "forty-eight", "fat boy", "street glide",
+            "duke", "rc", "adventure", "super duke",
+            "street triple", "speed triple", "tiger", "bonneville", "thruxton",
+            "s1000rr", "r1250gs", "f900", "r nine t"
         ],
         "characteristics": {
             "clutch": "有濕式離合器"

@@ -1,7 +1,12 @@
 /**
  * LIQUI MOLY Chatbot - Vercel Serverless Function
  * 統一產品搜尋邏輯（完整版）
- * 
+ *
+ * P0 優化：使用統一服務模組
+ * - certification-matcher.js: 認證搜尋（取代 searchWithCertUpgrade）
+ * - motorcycle-rules.js: 摩托車規則搜尋（取代 User Defined Rules）
+ * - constants.js: 統一常數
+ *
  * 功能：
  * - 完整 Title Expansion（含多 SKU 匹配）
  * - 多車型分類輸出
@@ -10,40 +15,30 @@
  * - 認證兼容性搜尋（GF-7A → GF-6A 等）
  */
 
-import fs from 'fs';
-import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-const WIX_API_URL = 'https://www.liqui-moly-tw.com/_functions';
-const PRODUCT_BASE_URL = 'https://www.liqui-moly-tw.com/products/';
+// 導入統一服務模組（CommonJS）
+const { searchWithCertUpgrade, getScooterCertScore } = require('./certification-matcher.js');
+const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('./motorcycle-rules.js');
+const {
+    WIX_API_URL,
+    PRODUCT_BASE_URL,
+    CORS_HEADERS,
+    CACHE_DURATION,
+    SEARCH_LIMITS,
+    LOG_TAGS
+} = require('./constants.js');
+const { getCategoryToSort } = require('./search-helper.js');
 
-// 產品快取 (30 分鐘過期)
+// 產品快取
 let productsCache = null;
 let cacheTimestamp = 0;
-const CACHE_DURATION = 30 * 60 * 1000; // 30 分鐘
-
-// 載入認證兼容表
-let certCompatibility = null;
-try {
-    const refPath = path.join(process.cwd(), 'data', 'knowledge', 'search-reference.json');
-    const searchRef = JSON.parse(fs.readFileSync(refPath, 'utf-8'));
-    certCompatibility = searchRef.certification_compatibility || null;
-    console.log('[Search] Certification compatibility table loaded');
-} catch (e) {
-    console.warn('[Search] Failed to load certification compatibility:', e.message);
-}
-
-// CORS headers
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-};
 
 export default async function handler(req, res) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(200).end();
     }
 
@@ -62,10 +57,10 @@ export default async function handler(req, res) {
         const products = await getProducts();
 
         // Debug: 輸出 searchInfo 內容
-        console.log('[Search] Received searchInfo:', JSON.stringify(searchInfo || {}, null, 2));
+        console.log(`${LOG_TAGS.SEARCH} Received searchInfo:`, JSON.stringify(searchInfo || {}, null, 2));
 
         if (!products || products.length === 0) {
-            Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+            Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
             return res.status(200).json({
                 success: true,
                 productContext: '目前沒有產品資料'
@@ -75,7 +70,7 @@ export default async function handler(req, res) {
         // 執行完整版搜尋
         const productContext = searchProducts(products, message, searchInfo);
 
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(200).json({
             success: true,
             productContext
@@ -83,7 +78,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Search API error:', error);
-        Object.keys(corsHeaders).forEach(key => res.setHeader(key, corsHeaders[key]));
+        Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(500).json({ success: false, error: error.message });
     }
 }
@@ -95,24 +90,24 @@ async function getProducts() {
     const now = Date.now();
 
     // 檢查快取是否有效
-    if (productsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        console.log('[Search] Using cached products:', productsCache.length);
+    if (productsCache && (now - cacheTimestamp) < CACHE_DURATION.products) {
+        console.log(`${LOG_TAGS.SEARCH} Using cached products:`, productsCache.length);
         return productsCache;
     }
 
     try {
-        console.log('[Search] Fetching products from Wix...');
+        console.log(`${LOG_TAGS.SEARCH} Fetching products from Wix...`);
         const response = await fetch(`${WIX_API_URL}/products`);
         const data = await response.json();
 
         if (data.success && data.products) {
             productsCache = data.products;
             cacheTimestamp = now;
-            console.log('[Search] Fetched and cached products:', productsCache.length);
+            console.log(`${LOG_TAGS.SEARCH} Fetched and cached products:`, productsCache.length);
             return productsCache;
         }
     } catch (e) {
-        console.error('[Search] Failed to fetch products:', e);
+        console.error(`${LOG_TAGS.SEARCH} Failed to fetch products:`, e);
     }
 
     return productsCache || [];
@@ -122,98 +117,7 @@ async function getProducts() {
 // 完整版搜尋邏輯（移植自 Wix searchProducts）
 // ============================================
 
-// ============================================
-// 認證搜尋（含升級兼容機制）
-// ============================================
-/**
- * 根據認證和黏度進行交集搜尋，支援認證升級
- * @param {Array} products - 產品列表
- * @param {string} requestedCert - 用戶請求的認證 (如 "GF-6A")
- * @param {string} viscosity - 可選的黏度 (如 "5W-30")
- * @returns {Object} { products, requestedCert, usedCert, isUpgrade, certNotice }
- */
-function searchWithCertUpgrade(products, requestedCert, viscosity = null) {
-    if (!requestedCert || !certCompatibility) {
-        return { products: [], requestedCert, usedCert: null, isUpgrade: false, certNotice: null };
-    }
-
-    const normalizedRequest = requestedCert.toUpperCase().replace(/[-\s]/g, '');
-    console.log(`[CertSearch] Searching for: ${requestedCert}${viscosity ? ` + ${viscosity}` : ''}`);
-
-    // 搜尋產品的輔助函式
-    const searchProducts = (certPattern, visc = null) => {
-        return products.filter(p => {
-            if (!p.cert) return false;
-            const certValue = p.cert.toUpperCase().replace(/[-\s]/g, '');
-            const certMatch = certValue.includes(certPattern);
-            if (!certMatch) return false;
-
-            // 如果有黏度條件，還要匹配黏度
-            if (visc) {
-                const word2 = (p.word2 || '').toUpperCase().replace('-', '');
-                const targetVisc = visc.toUpperCase().replace('-', '');
-                if (!word2.includes(targetVisc)) return false;
-            }
-            return true;
-        });
-    };
-
-    // 1. 先精確搜尋用戶請求的認證
-    let results = searchProducts(normalizedRequest, viscosity);
-    if (results.length > 0) {
-        console.log(`[CertSearch] Found ${results.length} products with exact cert: ${requestedCert}`);
-        return {
-            products: results,
-            requestedCert,
-            usedCert: requestedCert,
-            isUpgrade: false,
-            certNotice: null
-        };
-    }
-
-    // 2. 查找升級認證
-    console.log(`[CertSearch] No exact match, looking for upgrade certification...`);
-
-    // 遍歷所有認證標準（ILSAC, API, JASO）
-    for (const [standard, upgrades] of Object.entries(certCompatibility)) {
-        if (standard === '_description') continue;
-
-        // 遍歷每個升級認證
-        for (const [upgradeCert, compatibleWith] of Object.entries(upgrades)) {
-            const normalizedUpgrade = upgradeCert.toUpperCase().replace(/[-\s]/g, '');
-
-            // 檢查用戶請求的認證是否在兼容列表中
-            const isCompatible = compatibleWith.some(c =>
-                c.toUpperCase().replace(/[-\s]/g, '') === normalizedRequest
-            );
-
-            if (isCompatible) {
-                // 嘗試用升級認證搜尋
-                results = searchProducts(normalizedUpgrade, viscosity);
-                if (results.length > 0) {
-                    console.log(`[CertSearch] Found ${results.length} products with upgrade cert: ${upgradeCert} (compatible with ${requestedCert})`);
-                    return {
-                        products: results,
-                        requestedCert,
-                        usedCert: upgradeCert,
-                        isUpgrade: true,
-                        certNotice: `目前無 ${requestedCert} 認證產品，以下是 ${upgradeCert} 認證產品（向後兼容 ${requestedCert}）`
-                    };
-                }
-            }
-        }
-    }
-
-    // 3. 都沒有結果
-    console.log(`[CertSearch] No products found for ${requestedCert} or compatible upgrades`);
-    return {
-        products: [],
-        requestedCert,
-        usedCert: null,
-        isUpgrade: false,
-        certNotice: `目前沒有符合 ${requestedCert}${viscosity ? ` + ${viscosity}` : ''} 的產品`
-    };
-}
+// 注意：searchWithCertUpgrade 已從 certification-matcher.js 匯入
 function searchProducts(products, query, searchInfo) {
     try {
         let allResults = [];
@@ -263,73 +167,30 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 0.5 用戶定義的明確搜尋規則 (User Defined Rules) - 只針對機油
+        // 0.5 摩托車機油搜尋（使用統一的摩托車規則引擎）
         const vehicleInfo = searchInfo?.vehicles?.[0];
         if (vehicleInfo && vehicleInfo.vehicleType === '摩托車' && productCategory === '機油') {
-            console.log('[Search] Using User Defined Motorcycle Rules (Oil):', JSON.stringify(vehicleInfo));
+            console.log(`${LOG_TAGS.SEARCH} Using Motorcycle Rules Engine:`, JSON.stringify(vehicleInfo));
 
-            // 先檢查有多少 Motorbike 產品
-            const motorbikeProducts = products.filter(p => p.title && p.title.toLowerCase().includes('motorbike'));
-            console.log(`[Search] Total Motorbike products in DB: ${motorbikeProducts.length}`);
+            // 使用統一的摩托車規則引擎
+            const matches = searchMotorcycleOil(products, vehicleInfo);
 
-            // Debug: 列出前 5 個 Motorbike 產品的 cert 欄位格式
-            const certSamples = motorbikeProducts.slice(0, 5).map(p => ({ title: p.title?.substring(0, 50), cert: p.cert, word2: p.word2 }));
-            console.log('[Search] Motorbike cert samples:', JSON.stringify(certSamples));
-
-            const matches = products.filter(p => {
-                // Rule 1: Title must contain "Motorbike" (Case Insensitive)
-                if (!p.title || !p.title.toLowerCase().includes('motorbike')) return false;
-
-                // Rule 2: Classification (JASO) via "cert" field - 放寬匹配條件
-                const cert = (p.cert || '').toUpperCase().replace(/[-\s]/g, ''); // 移除連字號和空格
-                const title = (p.title || '').toUpperCase();
-
-                if (vehicleInfo.vehicleSubType === '速克達' || (vehicleInfo.certifications && vehicleInfo.certifications.includes('JASO MB'))) {
-                    // 速克達/JASO MB：多種格式匹配
-                    const hasMB = cert.includes('JASOMB') || cert.includes('MB') || title.includes('SCOOTER');
-                    // 排除 MA2/MA 產品（這些是給檔車的）
-                    const hasMA = cert.includes('JASOMA2') || cert.includes('JASOMA') || (cert.includes('MA') && !cert.includes('MB'));
-                    if (hasMA && !hasMB) return false;  // 有 MA 沒有 MB → 不要
-                    if (!hasMB && !title.includes('SCOOTER')) return false;  // 沒有 MB 也不是 Scooter 標題 → 不要
-                } else {
-                    // 檔車/重機/一般摩托車 (預設 JASO MA/MA2)
-                    if (vehicleInfo.certifications && (vehicleInfo.certifications.includes('JASO MA2') || vehicleInfo.certifications.includes('JASO MA'))) {
-                        const hasMA = cert.includes('JASOMA2') || cert.includes('JASOMA') || cert.includes('MA2') || cert.includes('MA');
-                        if (!hasMA) return false;
-                    }
-                }
-
-                // Rule 3: Viscosity via "word2" field - 放寬匹配
-                if (vehicleInfo.viscosity) {
-                    const word2 = (p.word2 || '').toUpperCase().replace('-', '');
-                    const targetViscosity = vehicleInfo.viscosity.toUpperCase().replace('-', '');
-                    // 簡單包含匹配 (e.g., matching "10W40" in word2)
-                    if (!word2.includes(targetViscosity)) return false;
-                }
-
-                return true;
-            });
-
-            console.log(`[Search] User Rules matched ${matches.length} products`);
             if (matches.length > 0) {
-                // Debug: 列出匹配到的產品
-                console.log('[Search] Matched products:', matches.slice(0, 3).map(p => p.title));
-
                 // 全合成優先排序（跑山/賽道場景）
                 const recommendSynthetic = searchInfo?.recommendSynthetic;
-                if (recommendSynthetic === 'full' && matches.length > 1) {
-                    console.log('[Search] Applying synthetic priority sorting for User Rules (full synthetic first)');
-                    matches.sort((a, b) => {
-                        const aScore = getSyntheticScore(a.title);
-                        const bScore = getSyntheticScore(b.title);
-                        return bScore - aScore; // 降冪排序，全合成優先
+                let sortedMatches = matches;
+
+                if (recommendSynthetic === 'full') {
+                    console.log(`${LOG_TAGS.SEARCH} Applying synthetic priority sorting`);
+                    sortedMatches = sortMotorcycleProducts(matches, {
+                        preferFullSynthetic: true,
+                        isScooter: isScooter(vehicleInfo)
                     });
-                    console.log('[Search] After sorting:', matches.slice(0, 3).map(p => p.title));
                 }
 
-                return formatProducts(matches.slice(0, 30), searchInfo);
+                return formatProducts(sortedMatches.slice(0, SEARCH_LIMITS.max), searchInfo);
             } else {
-                console.log('[Search] User Rules matched 0 products, falling back to query search');
+                console.log(`${LOG_TAGS.SEARCH} Motorcycle Rules matched 0 products, falling back to query search`);
             }
         }
 
@@ -393,9 +254,9 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
 
         // 2. Fallback 搜尋（如果沒有結果）- 擴大搜尋欄位範圍
         if (allResults.length === 0) {
-            console.log('[Search] No results from wixQueries, using fallback search');
+            console.log(`${LOG_TAGS.SEARCH} No results from wixQueries, using fallback search`);
             const keywords = searchInfo?.searchKeywords || [query];
-            console.log('[Search] Fallback keywords:', keywords);
+            console.log(`${LOG_TAGS.SEARCH} Fallback keywords:`, keywords);
 
             for (const kw of keywords.slice(0, 4)) {
                 if (!kw) continue;
@@ -432,7 +293,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                     }
                 }
             }
-            console.log(`[Search] Fallback found ${allResults.length} products`);
+            console.log(`${LOG_TAGS.SEARCH} Fallback found ${allResults.length} products`);
         }
 
         // 3. Title Expansion（完整版，含多 SKU 匹配）
@@ -489,7 +350,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                     return !title.includes('motorbike') && !sort.includes('摩托車') && sort.includes('機油');
                 });
 
-                console.log(`[Search] Multi-Vehicle: Motorcycle=${motorcycleProducts.length}, Car=${carProducts.length}`);
+                console.log(`${LOG_TAGS.SEARCH} Multi-Vehicle: Motorcycle=${motorcycleProducts.length}, Car=${carProducts.length}`);
 
                 if (motorcycleProducts.length > 0 || carProducts.length > 0) {
                     return formatMultiVehicleProducts(motorcycleProducts.slice(0, 15), carProducts.slice(0, 15));
@@ -497,45 +358,32 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 5. 單一車型摩托車過濾（含 JASO 認證過濾）
+        // 5. 單一車型摩托車過濾（使用統一的摩托車規則）
         if (vehicleType === '摩托車' && productCategory === '機油') {
             const vehicleSubType = searchInfo?.vehicles?.[0]?.vehicleSubType;
-            const certifications = searchInfo?.vehicles?.[0]?.certifications || [];
-            const isScooter = vehicleSubType === '速克達' || certifications.includes('JASO MB');
+            const isScooterVehicle = isScooter(searchInfo?.vehicles?.[0]);
 
-            const filteredResults = allResults.filter(p => {
-                const title = (p.title || '').toLowerCase();
-                const sort = (p.sort || '').toLowerCase();
-                const cert = (p.cert || '').toUpperCase().replace(/[-\s]/g, '');
-
-                // 必須是摩托車產品
-                const isMotorbikeProduct = title.includes('motorbike') || sort.includes('摩托車') || sort.includes('motorbike') || sort.includes('scooter');
-                if (!isMotorbikeProduct) return false;
-
-                // JASO 認證過濾
-                if (isScooter) {
-                    // 速克達：優先 JASO MB，排除純 MA/MA2 產品
-                    const hasMB = cert.includes('JASOMB') || cert.includes('MB') || title.includes('scooter');
-                    const hasOnlyMA = (cert.includes('JASOMA2') || cert.includes('JASOMA')) && !hasMB;
-                    if (hasOnlyMA) return false;  // 排除只有 MA 沒有 MB 的產品
-                }
-                // 如果是檔車且有 MA2 認證要求，這裡不做額外過濾（fallback 保留所有摩托車產品）
-
-                return true;
+            // 使用統一的過濾函式
+            const filteredResults = filterMotorcycleProducts(allResults, {
+                isScooter: isScooterVehicle
             });
-            console.log(`[Search] Motorcycle filter (isScooter=${isScooter}): ${allResults.length} -> ${filteredResults.length}`);
+
+            console.log(`${LOG_TAGS.SEARCH} Motorcycle filter (isScooter=${isScooterVehicle}): ${allResults.length} -> ${filteredResults.length}`);
+
             if (filteredResults.length > 0) {
-                // 在 return 前執行全合成優先排序
+                // 全合成優先排序
                 const recommendSynthetic = searchInfo?.recommendSynthetic;
-                if (recommendSynthetic === 'full' && filteredResults.length > 1) {
-                    console.log('[Search] Applying synthetic priority sorting for motorcycle (full synthetic first)');
-                    filteredResults.sort((a, b) => {
-                        const aScore = getSyntheticScore(a.title);
-                        const bScore = getSyntheticScore(b.title);
-                        return bScore - aScore; // 降冪排序，全合成優先
+                let sortedResults = filteredResults;
+
+                if (recommendSynthetic === 'full') {
+                    console.log(`${LOG_TAGS.SEARCH} Applying synthetic priority sorting for motorcycle`);
+                    sortedResults = sortMotorcycleProducts(filteredResults, {
+                        preferFullSynthetic: true,
+                        isScooter: isScooterVehicle
                     });
                 }
-                return formatProducts(filteredResults.slice(0, 30), searchInfo);
+
+                return formatProducts(sortedResults.slice(0, SEARCH_LIMITS.max), searchInfo);
             }
         }
 
@@ -570,23 +418,23 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 7. 全合成優先排序與強制過濾
+        // 7. 全合成優先排序與強制過濾（使用統一的評分函式）
         const recommendSynthetic = searchInfo?.recommendSynthetic;
         if (recommendSynthetic === 'full') {
             const fullSyntheticProducts = allResults.filter(p => getSyntheticScore(p.title) === 3);
 
             if (fullSyntheticProducts.length > 0) {
-                console.log(`[Search] Strict filter applied: Only showing fully synthetic products (${fullSyntheticProducts.length} items)`);
+                console.log(`${LOG_TAGS.SEARCH} Strict filter applied: Only showing fully synthetic products (${fullSyntheticProducts.length} items)`);
                 // 強制只顯示全合成產品
                 allResults = fullSyntheticProducts;
             } else {
-                console.log('[Search] Strict filter returned 0 items, fallback to sorting only');
+                console.log(`${LOG_TAGS.SEARCH} Strict filter returned 0 items, fallback to sorting only`);
                 // 無法強制過濾，但保留變數供後續排序使用
             }
         }
 
         // 8. 綜合排序 (認證優先 + 容量優先 + 全合成優先)
-        const isScooterSearch = vehicleType === '摩托車' && (searchInfo?.vehicles?.[0]?.vehicleSubType === '速克達' || searchInfo?.vehicles?.[0]?.certifications?.includes('JASO MB'));
+        const isScooterSearch = vehicleType === '摩托車' && isScooter(searchInfo?.vehicles?.[0]);
         const preferLargePack = query.includes('4l') || query.includes('4公升') || query.includes('大瓶') || query.includes('大包裝');
 
         if (allResults.length > 0) {
@@ -632,7 +480,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                 }
             }
             if (solutionSkus.length > 0) {
-                console.log('[Search] AdditiveGuideMatch solution SKUs:', solutionSkus);
+                console.log(`${LOG_TAGS.SEARCH} AdditiveGuideMatch solution SKUs:`, solutionSkus);
 
                 // 將解決方案產品提到最前面
                 const solutionProducts = [];
@@ -657,7 +505,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                     }
                 }
 
-                console.log('[Search] Solution products found:', solutionProducts.map(p => p.partno));
+                console.log(`${LOG_TAGS.SEARCH} Solution products found:`, solutionProducts.map(p => p.partno));
 
                 // 重組結果：解決方案產品在前
                 allResults = [...solutionProducts, ...otherProducts];
@@ -665,7 +513,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         }
 
         if ((productCategory === '添加劑' || productCategory === '化學品') && allResults.length > 2) {
-            console.log(`[Search] Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
+            console.log(`${LOG_TAGS.SEARCH} Applying additive priority sorting (severity=${symptomSeverity}, fuel=${fuelTypeForAdditive}, scenario=${usageScenario})`);
             allResults.sort((a, b) => {
                 const aScore = getAdditivePriorityScore(a, symptomSeverity, fuelTypeForAdditive, usageScenario);
                 const bScore = getAdditivePriorityScore(b, symptomSeverity, fuelTypeForAdditive, usageScenario);
@@ -679,7 +527,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             });
 
             // 輸出排序後的前 3 名產品名稱和分數，用於驗證
-            console.log('[Search] Top 3 additives after sort:', allResults.slice(0, 3).map(p => ({
+            console.log(`${LOG_TAGS.SEARCH} Top 3 additives after sort:`, allResults.slice(0, 3).map(p => ({
                 sku: p.partno,
                 title: p.title,
                 score: getAdditivePriorityScore(p, symptomSeverity, fuelTypeForAdditive, usageScenario)
@@ -688,38 +536,29 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
 
         // 8. 最終 Fallback：如果完全沒有結果，返回對應類別的產品樣本
         if (allResults.length === 0 && products.length > 0) {
-            console.log('[Search] All strategies failed, returning sample products');
+            console.log(`${LOG_TAGS.SEARCH} All strategies failed, returning sample products`);
 
             let sampleProducts = [];
             const vehicleType = searchInfo?.vehicleType;
 
-            // 產品類別與 sort 欄位對應表
-            const categoryToSort = {
-                '機油': vehicleType === '摩托車' ? '【摩托車】機油' : '【汽車】機油',
-                '添加劑': vehicleType === '摩托車' ? '【摩托車】添加劑' : '【汽車】添加劑',
-                '變速箱油': '【汽車】變速箱',
-                '煞車系統': '煞車系統',
-                '冷卻系統': '冷卻系統',
-                '空調系統': '【汽車】空調系統',
-                '化學品': '化學品系列',
-                '美容': '車輛美容系列',
-                '香氛': '車輛美容系列',
-                '自行車': '自行車系列',
-                '船舶': '船舶系列',
-                '商用車': '商用車系列',
-                'PRO-LINE': 'PRO-LINE 專業系列',
-                '其他油品_摩托車': '【摩托車】其他油品',
-                '人車養護_摩托車': '【摩托車】人車養護'
-            };
-
-            // 根據 productCategory 取得對應的 sort 值
-            const sortValue = categoryToSort[productCategory];
+            // 使用統一的類別對應表（從知識庫讀取 - RAG 架構）
+            // 動態處理摩托車/汽車的差異
+            let sortValue;
+            const categoryToSort = getCategoryToSort();
+            const categoryConfig = categoryToSort[productCategory];
+            if (categoryConfig) {
+                if (categoryConfig.default) {
+                    sortValue = categoryConfig.default;
+                } else {
+                    sortValue = vehicleType === '摩托車' ? categoryConfig.motorcycle : categoryConfig.car;
+                }
+            }
 
             if (sortValue) {
                 sampleProducts = products.filter(p =>
                     p.sort && p.sort.includes(sortValue.replace('【', '').replace('】', ''))
-                ).slice(0, 20);
-                console.log(`[Search] Fallback by sort "${sortValue}": found ${sampleProducts.length} products`);
+                ).slice(0, SEARCH_LIMITS.default);
+                console.log(`${LOG_TAGS.SEARCH} Fallback by sort "${sortValue}": found ${sampleProducts.length} products`);
             }
 
             // 如果使用 sort 沒找到，嘗試使用標題關鍵字搜尋
@@ -741,14 +580,14 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                         const title = (p.title || '').toLowerCase();
                         const sort = (p.sort || '').toLowerCase();
                         return keywords.some(kw => title.includes(kw) || sort.includes(kw));
-                    }).slice(0, 20);
-                    console.log(`[Search] Fallback by keywords: found ${sampleProducts.length} products`);
+                    }).slice(0, SEARCH_LIMITS.default);
+                    console.log(`${LOG_TAGS.SEARCH} Fallback by keywords: found ${sampleProducts.length} products`);
                 }
             }
 
             // 如果還是沒有，返回前 20 個產品
             if (sampleProducts.length === 0) {
-                sampleProducts = products.slice(0, 20);
+                sampleProducts = products.slice(0, SEARCH_LIMITS.default);
             }
 
             for (const p of sampleProducts) {
@@ -757,7 +596,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                     allResults.push(p);
                 }
             }
-            console.log(`[Search] Final fallback: ${allResults.length} products`);
+            console.log(`${LOG_TAGS.SEARCH} Final fallback: ${allResults.length} products`);
         }
 
         // 9. 一般格式化輸出（限制 15 個產品，節省 Token）
@@ -773,47 +612,7 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
     }
 }
 
-// ============================================
-// 判斷產品基礎油等級（用於全合成優先排序）
-// ============================================
-function getSyntheticScore(title) {
-    if (!title) return 0;
-    const titleLower = title.toLowerCase();
-
-    // 嚴格全合成（3分）：僅限 Synthoil, Race, Fully Synthetic
-    if (titleLower.includes('synthoil') ||
-        titleLower.includes('race') ||
-        titleLower.includes('fully synthetic') ||
-        titleLower.includes('fully-synthetic') ||
-        titleLower.includes('全合成')) {
-        return 3;
-    }
-
-    // 合成技術/半合成（2分）：Top Tec, Special Tec, Leichtlauf
-    if (titleLower.includes('top tec') ||
-        titleLower.includes('special tec') ||
-        titleLower.includes('leichtlauf') ||
-        titleLower.includes('synthetic technology') ||
-        titleLower.includes('合成')) {
-        return 2;
-    }
-
-    // 合成技術/半合成（次優先）
-    if (titleLower.includes('合成') ||
-        titleLower.includes('street') ||
-        titleLower.includes('formula')) {
-        return 2;
-    }
-
-    // 礦物油（最低優先）
-    if (titleLower.includes('mineral') ||
-        titleLower.includes('礦物')) {
-        return 1;
-    }
-
-    // 無法判斷，給預設分數
-    return 1.5;
-}
+// 注意：getSyntheticScore 已從 motorcycle-rules.js 匯入
 
 // ============================================
 // 判斷添加劑優先級（用於症狀嚴重度和使用場景排序）
@@ -1112,21 +911,7 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
     return context;
 }
 
-// ============================================
-// 速克達認證評分 (MB > MA/MA2)
-// ============================================
-function getScooterCertScore(cert) {
-    if (!cert) return 5; // 無認證資訊，中等分數
-    const c = cert.toUpperCase().replace(/[-\s]/g, '');
-
-    // JASO MB 最優先 (10分)
-    if (c.includes('JASOMB') || c.includes('MB')) return 10;
-
-    // JASO MA/MA2 較低優先 (1分)，但若無 MB 選項時仍可顯示
-    if (c.includes('JASOMA')) return 1;
-
-    return 5; // 其他認證
-}
+// 注意：getScooterCertScore 已從 certification-matcher.js 匯入
 
 // ============================================
 // 容量評分 (預設 1L > 大包裝)
