@@ -438,52 +438,42 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
         };
     }
 
-    // === 2. 添加劑症狀匹配 ===
+    // === 2. 添加劑症狀匹配（知識庫輔助，AI 推論為主）===
     const vehicleType = result.vehicles?.[0]?.vehicleType || result.vehicleType;
     const fuelType = result.vehicles?.[0]?.fuelType || result.fuelType;
+
+    // 先嘗試知識庫匹配（傳入 fuelType 進行過濾）
     const additiveMatches = matchAdditiveGuide(lowerMessage, vehicleType, fuelType);
 
     if (additiveMatches.length > 0) {
-        // 檢查是否有燃油類型專用的條目但 fuelType 未知
-        const hasFuelSpecific = additiveMatches.some(item =>
-            item.type === '汽油引擎' || item.type === '柴油引擎'
-        );
+        // 知識庫有匹配，使用知識庫推薦
+        result.additiveGuideMatch = {
+            matched: true,
+            items: additiveMatches
+        };
 
-        if (hasFuelSpecific && !fuelType) {
-            // 燃油類型未知但匹配到燃油專用條目，需要追問
-            console.log(`${LOG_TAGS.ANALYZE} Additive match requires fuelType confirmation`);
-            if (!result.needsMoreInfo) result.needsMoreInfo = [];
-            if (!result.needsMoreInfo.includes('fuelType')) {
-                result.needsMoreInfo.push('fuelType');
-            }
-            // 標記匹配但需要確認
-            result.additiveGuideMatch = {
-                matched: true,
-                needsFuelTypeConfirmation: true,
-                items: additiveMatches
-            };
-            // 不設定 needsProductRecommendation，讓系統追問
-            result.needsProductRecommendation = false;
-        } else {
-            // 燃油類型已知或條目不分燃油類型，可以直接推薦
-            result.additiveGuideMatch = {
-                matched: true,
-                needsFuelTypeConfirmation: false,
-                items: additiveMatches
-            };
-
-            // 加入 SKU 到搜尋關鍵字
-            if (!result.searchKeywords) result.searchKeywords = [];
-            for (const item of additiveMatches) {
-                for (const sku of item.solutions) {
-                    if (!result.searchKeywords.includes(sku)) {
-                        result.searchKeywords.push(sku);
-                    }
+        // 加入 SKU 到搜尋關鍵字（補充 AI 推論）
+        if (!result.searchKeywords) result.searchKeywords = [];
+        for (const item of additiveMatches) {
+            for (const sku of item.solutions) {
+                if (!result.searchKeywords.includes(sku)) {
+                    result.searchKeywords.push(sku);
                 }
             }
         }
         result.productCategory = '添加劑';
+        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched: ${additiveMatches.length} items`);
+    } else {
+        // 知識庫沒有匹配，但 AI 可能已推論出 searchKeywords
+        // 不強制追問，讓 AI 推論的關鍵字去產品庫搜尋
+        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide no match, relying on AI inference`);
+
+        // 如果 AI 有推論產品類別為添加劑，保留設定
+        if (result.productCategory === '添加劑' && result.searchKeywords?.length > 0) {
+            console.log(`${LOG_TAGS.ANALYZE} AI inferred additive keywords: ${result.searchKeywords.join(', ')}`);
+        }
     }
+
 
     // === 3. SKU 自動偵測 ===
     // 修正：簡化正則表達式，確保 Vercel 兼容；偵測到 SKU 後強制搜尋產品
