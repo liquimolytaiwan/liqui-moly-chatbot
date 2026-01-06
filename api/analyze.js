@@ -247,7 +247,34 @@ ${scenarioRules}
 → 推薦：齒輪油(Gear Oil)、煞車油(Brake Fluid DOT 4/5.1)
 → searchKeywords 加入 "Gear Oil" 或 "Brake Fluid"
 
-【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF
+【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF｜Cera Tec/陶瓷保護→機油添加劑(加在引擎機油)
+
+
+【⚠️⚠️⚠️ 產品適用部位識別 - 超級重要！防止誤解用戶意圖！】
+**當用戶問某產品「能不能用」時，必須先判斷該產品的適用部位：**
+
+1. **引擎機油添加劑**（加在引擎機油中，與變速箱完全無關）：
+   - Cera Tec 陶瓷保護機油精 (LM2321) → 加在引擎機油
+   - MoS2 二硫化鉬機油精 (LM1015) → 加在引擎機油
+   - Oil Additive 機油添加劑 → 加在引擎機油
+   - Engine Flush 引擎油路清洗劑 → 清洗引擎
+   → **這類產品只需知道車型，不需要問變速箱類型！**
+   → 用戶問「XX車能不能加 Cera Tec」→ 回答是否適用於該車引擎，與變速箱無關！
+
+2. **變速箱專用產品**（只有這類才需要問變速箱類型）：
+   - ATF 自動變速箱油
+   - DSG 雙離合變速箱油
+   - Gear Oil 齒輪油
+   - ATF Additive 變速箱添加劑
+   → 這類才需要問「手排/自排/乾式離合器/濕式離合器」
+
+3. **⚠️ 關鍵判斷規則**：
+   - 若用戶問的產品是「引擎機油添加劑」→ **禁止追問變速箱類型！直接回答能否使用！**
+   - 若用戶提到「乾式離合器」但問的是機油添加劑 → 這是在描述車型特徵，不是要把添加劑加到變速箱！
+   - 範例：用戶說「Golf 乾式離合器」+ 問「能否用 Cera Tec」
+     → 正確理解：用戶的 Golf 是 DSG 乾式離合變速箱車型，想知道能否在**引擎**加 Cera Tec
+     → 正確回答：Cera Tec 是機油添加劑，可以加在 Golf 的引擎機油中，與變速箱類型無關
+     → 錯誤理解：❌ 以為用戶要把 Cera Tec 加到變速箱
 
 【變速箱油認證推論 - 重要！】根據車型推論變速箱油認證，將認證加入 certifications 陣列：
 歐系：VW/Audi/Skoda→DSG Oil(乾/濕)或ATF｜BMW→ZF LifeguardFluid 6/8｜Benz→MB 236.14/236.15｜Volvo→Volvo ATF
