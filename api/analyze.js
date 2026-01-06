@@ -81,15 +81,49 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
 
     if (conversationHistory && conversationHistory.length > 0) {
         const recentHistory = conversationHistory.slice(-6);  // 增加到 6 條
-        contextSummary = '對話上下文：\n' + recentHistory.map(m =>
-            `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`  // 增加到 200 字
-        ).join('\n') + '\n\n';
 
-        // 從對話歷史構建完整上下文（不再硬編碼症狀）
+        // 從對話歷史構建完整上下文
         const allHistoryText = recentHistory.map(m => m.content).join(' ');
+
+        // 嘗試從對話歷史中提取已知車型資訊
+        let extractedVehicleInfo = '';
+
+        // 提取車型關鍵資訊供 AI 參考
+        const historyLines = recentHistory.map(m => m.content).join('\n');
+        if (historyLines.match(/C300|Benz|賓士|Mercedes/i)) {
+            extractedVehicleInfo += '- 可能車型：Mercedes-Benz C300\n';
+        }
+        if (historyLines.match(/汽油/)) {
+            extractedVehicleInfo += '- 燃油類型：汽油\n';
+        }
+        if (historyLines.match(/柴油/)) {
+            extractedVehicleInfo += '- 燃油類型：柴油\n';
+        }
+        if (historyLines.match(/自排|自動/)) {
+            extractedVehicleInfo += '- 變速箱：自排\n';
+        }
+        if (historyLines.match(/手排|手動/)) {
+            extractedVehicleInfo += '- 變速箱：手排\n';
+        }
+        if (historyLines.match(/\d{4}/)) {
+            const yearMatch = historyLines.match(/(\d{4})\s*年?/);
+            if (yearMatch) {
+                extractedVehicleInfo += `- 年份：${yearMatch[1]}\n`;
+            }
+        }
+
+        contextSummary = '【對話上下文 - 請繼承已知資訊！】\n' + recentHistory.map(m =>
+            `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`
+        ).join('\n') + '\n';
+
+        if (extractedVehicleInfo) {
+            contextSummary += `\n【⚠️ 從對話中提取的車型資訊 - 必須繼承！】\n${extractedVehicleInfo}\n`;
+        }
+        contextSummary += '\n';
+
         // 如果對話中有提到症狀相關問題，提醒 AI 這是添加劑諮詢
         if (allHistoryText.match(/怎麼辦|問題|症狀|異常|異音|過熱|抖動|漏油|吃油/)) {
-            symptomContext = `\n⚠️ 重要：對話中可能涉及車輛症狀問題，請仔細判斷是否需要推薦添加劑而非機油。\n`;
+            symptomContext = `\n⚠️ 重要：對話中涉及車輛症狀問題，應推薦添加劑而非機油。請用 LLM 知識推論可能的解決方案關鍵字！\n`;
         }
     }
 
@@ -231,10 +265,47 @@ ${scenarioRules}
 
 【規則】
 - 用戶沒提車型→vehicleType=null
-- 用戶沒說用途→usageScenario=null  
-- 無法確定油種→needsMoreInfo:["fuelType"]
+- 用戶沒說用途→usageScenario=null
 - 只問認證/黏度/SKU→直接搜尋不追問
 - 用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ intentType="general_inquiry", needsProductRecommendation=false
+
+【⚠️ 車型資訊智慧推論 - 減少追問！】
+你是汽機車專家，請用你的知識來推論車型資訊，**盡量避免不必要的追問**：
+
+1. **燃油類型推論**：
+   - 若該車型/年份只有汽油版→直接設 fuelType="汽油"，不要追問
+   - 若該車型/年份只有柴油版→直接設 fuelType="柴油"，不要追問
+   - 例如：Benz C300 通常是汽油、Toyota Prius 是油電、Porsche Cayenne Diesel 是柴油
+   - **只有當該車型確實同時有汽油和柴油版本時**，才將 fuelType 設為 null 並追問
+
+2. **變速箱推論**：
+   - 若該車型/年份只有自排→直接推論，不要追問
+   - 若該車型/年份只有手排→直接推論，不要追問
+   - 例如：多數現代車款都只有自排、跑車可能有手排選項
+   - **只有當需要區分變速箱類型才能推薦正確產品時**（如變速箱油），才追問
+
+3. **年份推論**：
+   - 若用戶只說車型沒說年份，但該車型規格多年不變→直接用通用規格推薦
+   - 若年份會影響認證需求（如 2019 前後 API SP vs SN）→才需追問
+
+4. **追問原則**：
+   - needsMoreInfo 只放「無法推論且會影響推薦結果」的資訊
+   - 能推論的就推論，不要什麼都追問
+   - 症狀類問題（添加劑）通常不需要變速箱資訊
+
+【⚠️ 對話歷史繼承規則 - 極重要！】
+如果「對話上下文」中已經包含車型資訊（如車型、年份、燃油類型），你**必須**：
+1. 將已知車型資訊填入 vehicles 陣列，**不要再追問已知資訊**
+2. needsMoreInfo 只能包含「對話中尚未提及」的資訊
+3. 例如：對話中已說「C300 2020 汽油」，用戶問「怠速會抖怎麼辦」→ 直接使用已知車型，不要追問！
+
+【⚠️ 症狀推論規則 - 當知識庫無匹配時】
+如果用戶描述的症狀在「症狀與添加劑產品對照表」中找不到精確匹配：
+1. 使用你的汽車知識推論可能的解決方案類型（如：清潔劑、添加劑、止漏劑等）
+2. 在 searchKeywords 中加入推論的關鍵字（如：Engine Flush, Fuel Additive, Oil Additive, Injection Cleaner 等）
+3. 設定 productCategory = "添加劑"
+4. 設定 needsProductRecommendation = true
+5. **不要因為知識庫沒有匹配就放棄推薦！**
 
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${symptomRefPrompt}
