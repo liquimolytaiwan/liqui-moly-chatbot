@@ -232,11 +232,41 @@ ${Object.entries(types).map(([type, data]) =>
 ${intentTypeRules}
 ${scenarioRules}
 
-【車廠認證推論】根據車型推論認證和黏度：
-歐系：VW/Audi/Skoda/Porsche→VW 504 00(汽)/507 00(柴)｜BMW→LL-01(汽)/LL-04(柴)｜Benz→MB 229.5(汽)/229.51(柴)｜Volvo→VCC RBS0-2AE
-日韓系(2019+)：Toyota/Honda/Mazda/Nissan/Subaru→API SP, GF-6A｜Hyundai/Kia→API SP/SN
-美系：Ford EcoBoost→WSS-M2C948-B｜Ford 柴油(TDCi/EcoBlue)→WSS-M2C950-A｜其他舊款→WSS-M2C913-D
-注意：Ford 車型若不確定引擎（如只說 Focus），請勿盲目推論，應將 fuelType 設為 null 以觸發追問！
+【⚠️⚠️⚠️ 車廠認證推論 - 必須按照車主手冊規範！⚠️⚠️⚠️】
+**關鍵原則**：機油認證會隨車型年份變化！不同年份可能需要完全不同的認證！
+
+**Mercedes-Benz（依年份區分）**：
+- 2019年前：MB 229.5(汽)/229.51(柴)
+- 2019年後新款：**MB 229.71**(低灰分長效，多數新車)/229.52
+- ⚠️ 未提供年份→**必須追問**！
+
+**VW/Audi/Skoda/Porsche（依年份區分）**：
+- 2019年前：VW 504 00(汽)/507 00(柴)
+- 2020年後：**VW 508 00**(汽長效)/**509 00**(柴長效)
+- ⚠️ 新舊認證不相容，必須確認年份！
+
+**BMW（依年份區分）**：
+- 2019年前：LL-01(汽)/LL-04(柴)
+- 2019年後：**LL-17 FE+**(低黏度節能)
+- ⚠️ 未提供年份→追問！
+
+**日韓系車**：
+- 2019年前：API SN, GF-5
+- 2020年後：**API SP, GF-6A**
+- Toyota/Honda/Mazda/Nissan/Subaru/Hyundai/Kia 適用
+
+**Ford**：
+- EcoBoost(Focus MK4/Kuga MK3)→**WSS-M2C948-B**(必須!)
+- 柴油TDCi/EcoBlue→WSS-M2C950-A
+- 舊款非EcoBoost→WSS-M2C913-D
+- ⚠️ 若只說Focus未說年份或引擎→**必須追問**！
+
+**Volvo**：VCC RBS0-2AE
+
+**⚠️ 推論規則**：
+1. 提供完整年份→根據該年份推論正確認證
+2. 未提供年份且不同年份認證不同→**將「年份」加入needsMoreInfo，說明「年份會影響機油認證需求」**
+3. 禁止用過時認證推薦新款車型！
 
 【品牌專用產品】Harley/哈雷→會自動匹配專用產品
 
