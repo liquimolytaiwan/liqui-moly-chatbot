@@ -834,13 +834,19 @@ export async function post_getConversationHistory(request) {
             }
         }
 
-        console.log(`[getConversationHistory] Found ${conversationHistory.length} messages for ${senderId}`);
+        // 取得最近一筆對話的時間（用於判斷是否為今天第一次）
+        // items 已經是反轉過的（從舊到新），所以最後一筆是最新的
+        // 但原始 results.items 是按 descending，所以第一筆是最新的
+        const lastMessageTime = results.items.length > 0 ? results.items[0].createdAt : null;
+
+        console.log(`[getConversationHistory] Found ${conversationHistory.length} messages for ${senderId}, lastMessageTime: ${lastMessageTime}`);
 
         return ok({
             headers: corsHeaders,
             body: JSON.stringify({
                 success: true,
-                conversationHistory
+                conversationHistory,
+                lastMessageTime: lastMessageTime ? new Date(lastMessageTime).toISOString() : null
             })
         });
 
