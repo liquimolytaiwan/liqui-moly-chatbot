@@ -194,6 +194,9 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         // 1. 執行 Vercel 傳來的搜尋指令
         const queries = searchInfo?.wixQueries || [];
 
+        // 認證正規化函式（移除空格和連字號，便於比對）
+        const normalizeCertForSearch = (str) => str ? str.toUpperCase().replace(/[-\s]/g, '') : '';
+
         if (queries.length > 0) {
             for (const task of queries) {
                 try {
@@ -201,6 +204,18 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                         const fieldValue = p[task.field];
                         if (!fieldValue) return false;
 
+                        // 認證欄位使用正規化比對（處理空格和連字號差異）
+                        if (task.field === 'cert') {
+                            const normalizedValue = normalizeCertForSearch(String(fieldValue));
+                            const normalizedSearch = normalizeCertForSearch(String(task.value));
+                            if (task.method === 'contains') {
+                                return normalizedValue.includes(normalizedSearch);
+                            } else if (task.method === 'eq') {
+                                return normalizedValue === normalizedSearch;
+                            }
+                        }
+
+                        // 其他欄位使用原本的比對方式
                         const value = String(fieldValue).toLowerCase();
                         const searchValue = String(task.value).toLowerCase();
 
@@ -432,7 +447,19 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
 
         // 8. 綜合排序 (認證優先 + 容量優先 + 全合成優先)
         const isScooterSearch = vehicleType === '摩托車' && isScooter(searchInfo?.vehicles?.[0]);
-        const preferLargePack = query.includes('4l') || query.includes('4公升') || query.includes('大瓶') || query.includes('大包裝');
+
+        // 偵測用戶容量偏好（從訊息或 AI 分析結果）
+        const queryLower = query.toLowerCase();
+        const preferLargePack = searchInfo?.preferLargePack ||
+            queryLower.includes('4l') || queryLower.includes('5l') ||
+            queryLower.includes('4公升') || queryLower.includes('5公升') ||
+            queryLower.includes('大瓶') || queryLower.includes('大包裝') ||
+            queryLower.includes('大容量');
+
+        // 將容量偏好加入 searchInfo，供 formatProducts 使用
+        if (preferLargePack && searchInfo) {
+            searchInfo.preferLargePack = true;
+        }
 
         if (allResults.length > 0) {
             allResults.sort((a, b) => {
@@ -683,6 +710,10 @@ function formatProducts(products, searchInfo = null) {
         return '目前沒有匹配的產品資料';
     }
 
+    // === 同產品不同容量去重：優先顯示 1L ===
+    // 根據產品標題（去除容量部分）分組，每組只保留最優先的容量
+    const deduplicatedProducts = deduplicateBySize(products, searchInfo?.preferLargePack);
+
     const productCategory = searchInfo?.productCategory || '產品';
     const isAdditive = productCategory === '添加劑';
     const additiveMatch = searchInfo?.additiveGuideMatch;
@@ -803,7 +834,7 @@ function formatProducts(products, searchInfo = null) {
 
 `;
 
-    products.forEach((p, i) => {
+    deduplicatedProducts.forEach((p, i) => {
         const pid = p.partno || p.partNo || p.Partno || p.PartNo || p.sku || p.SKU;
         let url = p.productPageUrl || 'https://www.liqui-moly-tw.com/products/';
 
@@ -909,6 +940,47 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
 }
 
 // 注意：getScooterCertScore 已從 certification-matcher.js 匯入
+
+// ============================================
+// 同產品不同容量去重（預設優先顯示 1L）
+// 產品標題 (title) 相同代表同一產品，容量由 size 欄位區分
+// ============================================
+function deduplicateBySize(products, preferLargePack = false) {
+    if (!products || products.length === 0) return products;
+
+    // 根據產品標題 (title) 進行分組
+    // 同標題的產品代表同一產品的不同容量版本
+    const groups = new Map();
+
+    for (const product of products) {
+        const title = product.title || '';
+
+        if (!groups.has(title)) {
+            groups.set(title, []);
+        }
+        groups.get(title).push(product);
+    }
+
+    // 每組只保留最優先的容量
+    const result = [];
+    for (const [title, group] of groups) {
+        if (group.length === 1) {
+            result.push(group[0]);
+        } else {
+            // 依容量評分排序，取最高分的
+            group.sort((a, b) => {
+                const scoreA = getSizeScore(a.title, a.size, preferLargePack);
+                const scoreB = getSizeScore(b.title, b.size, preferLargePack);
+                return scoreB - scoreA; // 高分優先
+            });
+            result.push(group[0]);
+            // Log 去重資訊
+            console.log(`${LOG_TAGS.SEARCH} Dedupe: "${title}" - kept ${group[0].size || '1L'} (${group[0].partno}), removed ${group.length - 1} variants`);
+        }
+    }
+
+    return result;
+}
 
 // ============================================
 // 容量評分 (預設 1L > 大包裝)

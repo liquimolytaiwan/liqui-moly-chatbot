@@ -192,6 +192,7 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
     "productCategory": "機油/添加劑/...",
     "usageScenario": null,
     "recommendSynthetic": "any",
+    "preferLargePack": false,
     "symptomMatched": null,
     "symptomSeverity": "none",
     "isGeneralProduct": false,
@@ -262,6 +263,11 @@ ${scenarioRules}
 【全合成識別】
 - 若用戶明確提到「全合成」、「Fully Synthetic」、「Synthoil」、「Race」、「賽道」或「跑山」，必須設定 **recommendSynthetic="full"**。
 - 這將觸發嚴格篩選，只顯示真正的全合成產品。
+
+【容量偏好識別】
+- 若用戶提到「4L」、「5L」、「大瓶」、「大包裝」、「大容量」→設定 **preferLargePack=true**
+- 預設為 false（優先推薦 1L 小包裝）
+- 這會影響同產品不同容量時的推薦順序
 
 【規則】
 - 用戶沒提車型→vehicleType=null
