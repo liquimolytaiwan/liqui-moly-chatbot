@@ -197,11 +197,13 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
         // 認證正規化函式（移除空格、連字號和常見後綴詞，統一匹配格式）
         // 例：「MB-Approval 229.71」→「MB229.71」，「MB 229.71」→「MB229.71」
         // 例：「VW 504 00」→「VW50400」，「VW504 00」→「VW50400」
+        // 例：「BMW LL-01」→「BMWLONGLIFE01」，「BMW Longlife-01」→「BMWLONGLIFE01」
         const normalizeCertForSearch = (str) => {
             if (!str) return '';
             return str.toUpperCase()
                 .replace(/[-\s]/g, '')          // 移除空格和連字號
-                .replace(/APPROVAL[S]?/g, '');  // 移除「APPROVAL」或「APPROVALS」後綴
+                .replace(/APPROVAL[S]?/g, '')   // 移除「APPROVAL」後綴
+                .replace(/\bLL(\d)/g, 'LONGLIFE$1');  // BMW LL-01 → LONGLIFE01
         };
 
         if (queries.length > 0) {
