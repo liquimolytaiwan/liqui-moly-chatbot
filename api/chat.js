@@ -79,9 +79,13 @@ module.exports = async function handler(req, res) {
         }
 
         // === 判斷是否為第一次回答 ===
-        const isFirstResponse = !conversationHistory || conversationHistory.length === 0;
+        // 檢查對話歷史中是否有任何 AI 回覆（assistant 訊息）
+        // 如果沒有 assistant 回覆，表示這是第一次 AI 回答
+        const hasAssistantMessage = conversationHistory &&
+            conversationHistory.some(msg => msg.role === 'assistant' || msg.role === 'model');
+        const isFirstResponse = !hasAssistantMessage;
         if (isFirstResponse) {
-            console.log(`${LOG_TAGS.CHAT} First response detected`);
+            console.log(`${LOG_TAGS.CHAT} First response detected (no previous assistant messages)`);
         }
 
         Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
