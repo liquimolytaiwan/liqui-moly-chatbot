@@ -9,7 +9,7 @@
     },
     "purchase_inquiry": {
         "store_finder": {
-            "template": "🏪 推薦使用我們的店家查詢系統：\nhttps://www.liqui-moly-tw.com/storefinder\n\n只要選擇縣市，即可找到您附近的合作保修廠/車行。\n\n⚠️ 若查詢不到附近店家，請填寫聯絡表單：\nhttps://www.liqui-moly-tw.com/contact\n我們會以簡訊回覆您！\n\n其他方式：\n- 產品頁面的「這哪裡買」功能\n- 線上商城 CarMall 車魔商城：\nhttps://www.carmall.com.tw/"
+            "template": "👉 點擊產品連結「這哪裡買」可查詢鄰近店家\n\n💡 若查詢不到附近店家，歡迎填寫聯絡表單：\nhttps://www.liqui-moly-tw.com/contact\n我們會以簡訊回覆您購買資訊！\n\n🏪 也可使用店家查詢系統（選擇縣市區域）：\nhttps://www.liqui-moly-tw.com/storefinder"
         },
         "online_purchase": {
             "template": "🔗 CarMall 車魔商城：\nhttps://www.carmall.com.tw/\n\n宜福工業官方直營線上商城，所有 LIQUI MOLY 產品皆為總代理公司貨，品質有保障！",
