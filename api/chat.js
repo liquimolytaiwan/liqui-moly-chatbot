@@ -50,24 +50,32 @@ module.exports = async function handler(req, res) {
         let aiResponse = await callGemini(apiKey, contents);
 
         // === 產品驗證層 (Anti-Hallucination) ===
-        // 從 RAG 結果取得產品列表（如果有的話）
-        let productList = null;
-        try {
-            // 動態載入 search.js 取得產品列表
-            const searchModule = require('./search.js');
-            productList = await searchModule.getProducts();
-        } catch (e) {
-            console.warn(`${LOG_TAGS.CHAT} Failed to get product list for validation:`, e.message);
-        }
+        // ⚡ 優化：只有在需要產品推薦時才執行驗證
+        const needsValidation = intent.needsProductRecommendation !== false ||
+            (intent.needsTemplates && intent.needsTemplates.includes('product_recommendation'));
 
-        if (productList && productList.length > 0) {
-            console.log(`${LOG_TAGS.CHAT} Running product validation...`);
-            const validationResult = validateAIResponse(aiResponse, productList);
-
-            if (validationResult.hasInvalidSKUs) {
-                console.warn(`${LOG_TAGS.CHAT} Invalid SKUs detected:`, validationResult.invalidSKUs);
-                aiResponse = validationResult.validatedResponse;
+        if (needsValidation) {
+            // 從 RAG 結果取得產品列表（如果有的話）
+            let productList = null;
+            try {
+                // 動態載入 search.js 取得產品列表
+                const searchModule = require('./search.js');
+                productList = await searchModule.getProducts();
+            } catch (e) {
+                console.warn(`${LOG_TAGS.CHAT} Failed to get product list for validation:`, e.message);
             }
+
+            if (productList && productList.length > 0) {
+                console.log(`${LOG_TAGS.CHAT} Running product validation...`);
+                const validationResult = validateAIResponse(aiResponse, productList);
+
+                if (validationResult.hasInvalidSKUs) {
+                    console.warn(`${LOG_TAGS.CHAT} Invalid SKUs detected:`, validationResult.invalidSKUs);
+                    aiResponse = validationResult.validatedResponse;
+                }
+            }
+        } else {
+            console.log(`${LOG_TAGS.CHAT} ⚡ Skipping validation - no product recommendation intent`);
         }
 
         Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
