@@ -136,7 +136,11 @@ export async function post_chat(request) {
 
         return ok({
             headers: corsHeaders,
-            body: JSON.stringify({ success: true, response: chatData.response })
+            body: JSON.stringify({
+                success: true,
+                response: chatData.response,
+                isFirstResponse: chatData.isFirstResponse || false
+            })
         });
 
     } catch (error) {

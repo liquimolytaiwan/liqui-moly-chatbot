@@ -46,7 +46,10 @@ const CONFIG = {
     // Mock API for development
     MOCK_RESPONSES: {
         default: '感謝您的詢問！我是 LIQUI MOLY Taiwan 的 AI產品諮詢助理。請問有什麼可以為您服務的嗎？'
-    }
+    },
+
+    // AI 警語（第一次回答時顯示）
+    AI_DISCLAIMER: '\n\n---\n💡 *AI 助理的回覆僅供參考，可能會有錯誤。如有疑問，請以車主手冊或專業技師建議為準。*'
 };
 
 // 凍結配置避免意外修改

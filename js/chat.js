@@ -607,7 +607,14 @@ class LiquiMolyChatbot {
         }
 
         const data = await response.json();
-        return data.response;
+
+        // 第一次回答加上 AI 警語
+        let responseText = data.response;
+        if (data.isFirstResponse && CONFIG.AI_DISCLAIMER) {
+            responseText += CONFIG.AI_DISCLAIMER;
+        }
+
+        return responseText;
     }
 
     /**

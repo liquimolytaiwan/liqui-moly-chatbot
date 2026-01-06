@@ -15,7 +15,7 @@ const INSTAGRAM_ACCESS_TOKEN = process.env.META_INSTAGRAM_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const APP_SECRET = process.env.META_APP_SECRET;
 
-const { WIX_API_URL } = require('../lib/constants');
+const { WIX_API_URL, AI_DISCLAIMER } = require('../lib/constants');
 
 // Vercel API URL（用於呼叫現有的 chat 邏輯）
 const VERCEL_API_URL = process.env.VERCEL_URL
@@ -625,6 +625,12 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 .replace(/\*([^*]+)\*/g, '$1')
                 // 清理多餘的連續換行（超過2個換行變成2個）
                 .replace(/\n{3,}/g, '\n\n');
+
+            // === 第一次回答加上 AI 警語 ===
+            if (chatData.isFirstResponse) {
+                plainTextResponse += AI_DISCLAIMER.meta;
+                console.log('[Meta Webhook] First response - added AI disclaimer');
+            }
 
             // 在 AI 回覆前加上機器人標註，讓用戶能分辨 AI 和人工回覆
             const aiPrefixedResponse = `🤖 ${plainTextResponse}`;

@@ -10,7 +10,7 @@
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
 const { processWithRAG } = require('../lib/rag-pipeline');
 const { validateAIResponse } = require('../lib/response-validator');
-const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS } = require('../lib/constants');
+const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS, AI_DISCLAIMER } = require('../lib/constants');
 
 module.exports = async function handler(req, res) {
     // Handle CORS preflight
@@ -78,10 +78,17 @@ module.exports = async function handler(req, res) {
             console.log(`${LOG_TAGS.CHAT} ⚡ Skipping validation - no product recommendation intent`);
         }
 
+        // === 判斷是否為第一次回答 ===
+        const isFirstResponse = !conversationHistory || conversationHistory.length === 0;
+        if (isFirstResponse) {
+            console.log(`${LOG_TAGS.CHAT} First response detected`);
+        }
+
         Object.keys(CORS_HEADERS).forEach(key => res.setHeader(key, CORS_HEADERS[key]));
         return res.status(200).json({
             success: true,
             response: aiResponse,
+            isFirstResponse, // 讓各端口自行加上適合的警語格式
             // 開發模式：返回 RAG 詳情（可選）
             _debug: process.env.NODE_ENV === 'development' ? {
                 intentType: intent.type,
