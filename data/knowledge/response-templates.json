@@ -32,7 +32,7 @@
         }
     },
     "cooperation_inquiry": {
-        "template": "您好～ 我們僅針對保修廠/車行客戶銷售，若您為保修廠/車行想要洽詢合作事宜，請填寫我們的合作洽詢表單：\nhttps://www.liqui-moly-tw.com/cooperate\n我們會請業務盡快與您聯繫拜訪～\n\n若為消費者的話，我司並無直接販售，請以店家查詢系統上之店家資訊聯繫詢價，謝謝您",
+        "template": "您好～ 我們僅針對保修廠/車行客戶銷售，若您為保修廠/車行想要洽詢合作事宜，請填寫我們的合作洽詢表單：\nhttps://www.liqui-moly-tw.com/cooperate\n我們會請業務盡快與您聯繫拜訪～\n\n若為消費者的話，我司並無直接販售，請以店家查詢系統上之店家資訊聯繫詢價：\nhttps://www.liqui-moly-tw.com/storefinder\n謝謝您",
         "keywords": [
             "保修廠",
             "車行",
