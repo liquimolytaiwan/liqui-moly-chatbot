@@ -618,10 +618,16 @@ class LiquiMolyChatbot {
      * 格式化訊息內容
      */
     formatMessage(text) {
-        // 先處理 Markdown 連結 [text](url) - 在轉義前處理
-        // 保存連結為暫存標記
+        // Step 1: 清理殘留的單獨 * 符號（在粗體處理前）
+        let formatted = text
+            // 處理 "* 文字" 格式的列表項目，轉換為統一格式
+            .replace(/^\* /gm, '• ')
+            // 處理文字中間殘留的 * 符號（不在星號對中間的）
+            .replace(/([^\*])\*([^\*])/g, '$1$2');
+
+        // Step 2: 處理 Markdown 連結 [text](url) - 在轉義前處理
         const links = [];
-        let formatted = text.replace(
+        formatted = formatted.replace(
             /\[([^\]]+)\]\(([^)]+)\)/g,
             (match, linkText, url) => {
                 const index = links.length;
@@ -653,7 +659,8 @@ class LiquiMolyChatbot {
         // 轉換粗體 **text**
         formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-        // 轉換列表項目
+        // 轉換列表項目（• 和 - 開頭）
+        formatted = formatted.replace(/^• (.+)$/gm, '<li>$1</li>');
         formatted = formatted.replace(/^- (.+)$/gm, '<li>$1</li>');
 
         // 包裝連續的列表項目

@@ -619,21 +619,27 @@ async function handleTextMessage(senderId, text, source, userProfile) {
 
         if (chatData.success && chatData.response) {
             // 將 Markdown 格式轉換為純文字（FB/IG 不支援 Markdown）
-            // [文字](連結) → 文字\n連結（確保連結獨立一行）
-            // **粗體** → 粗體
             let plainTextResponse = chatData.response
-                // 移除 Markdown 連結格式，連結後如有標點符號則保留在下一行
-                .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)([，。！？、])?/g, (match, text, url, punct) => {
-                    return punct ? `${text}\n${url}\n${punct}` : `${text}\n${url}`;
-                })
-                // 移除粗體標記
+                // Step 1: 處理 Markdown 連結 [文字](連結) → 文字\n連結
+                .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1\n$2')
+                // Step 2: 處理粗體標記 **文字** → 文字
                 .replace(/\*\*([^*]+)\*\*/g, '$1')
-                // 移除斜體標記
-                .replace(/\*([^*]+)\*/g, '$1')
-                // 移除重複的連續 URL（同一 URL 在相鄰行出現多次）
+                // Step 3: 處理 Markdown 列表項目（* 開頭改為換行 + 數字或符號）
+                .replace(/^\* /gm, '\n• ')
+                .replace(/^- /gm, '\n• ')
+                // Step 4: 處理殘留的單獨 * 符號（不在詞組中間的）
+                .replace(/\s\*\s/g, ' ')
+                .replace(/^\*\s/gm, '')
+                // Step 5: 處理產品連結標籤，確保連結獨立成行
+                .replace(/產品連結[：:]\s*(https?:\/\/[^\s\n]+)/g, '🔗 產品連結：\n$1')
+                // Step 6: 移除重複的連續 URL
                 .replace(/(https?:\/\/[^\s\n]+)\n+\1/g, '$1')
-                // 清理多餘的連續換行（超過2個換行變成2個）
-                .replace(/\n{3,}/g, '\n\n');
+                // Step 7: 清理多餘的連續換行（超過2個變成2個）
+                .replace(/\n{3,}/g, '\n\n')
+                // Step 8: 清理開頭的多餘換行
+                .replace(/^\n+/, '')
+                // Step 9: 將數字編號格式統一 (1. 2. 3.)
+                .replace(/^(\d+)\.\s+/gm, '$1. ');
 
 
             // AI 警語現在由 AI 自動生成並翻譯成用戶語言
