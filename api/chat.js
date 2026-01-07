@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        const { message, conversationHistory = [], productContext = '' } = req.body;
+        const { message, conversationHistory = [], productContext = '', useMultiAgent = true } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'Missing message parameter' });
@@ -37,11 +37,11 @@ module.exports = async function handler(req, res) {
             return res.status(500).json({ error: 'API key not configured' });
         }
 
-        // === RAG 處理管線 ===
-        console.log(`${LOG_TAGS.CHAT} Starting RAG pipeline...`);
-        const ragResult = await processWithRAG(message, conversationHistory, productContext);
-        const { intent, systemPrompt } = ragResult;
-        console.log(`${LOG_TAGS.CHAT} Intent: ${intent.type}, Vehicle: ${intent.vehicleType}`);
+        // === RAG 處理管線（支援 Multi-Agent）===
+        console.log(`${LOG_TAGS.CHAT} Starting RAG pipeline (Multi-Agent: ${useMultiAgent})...`);
+        const ragResult = await processWithRAG(message, conversationHistory, productContext, { useMultiAgent });
+        const { intent, systemPrompt, agentType } = ragResult;
+        console.log(`${LOG_TAGS.CHAT} Intent: ${intent.type}, Vehicle: ${intent.vehicleType}, Agent: ${agentType}`);
 
         // === 判斷是否為第一次回答（用於 AI 自動加上警語）===
         // META 端可透過 req.body.isFirstResponse 傳入（當天第一次）
@@ -107,7 +107,10 @@ module.exports = async function handler(req, res) {
             _debug: process.env.NODE_ENV === 'development' ? {
                 intentType: intent.type,
                 vehicleType: intent.vehicleType,
-                promptLength: systemPrompt.length
+                agentType: agentType,           // v2.2: 使用的 Agent 類型
+                useMultiAgent: useMultiAgent,   // v2.2: Multi-Agent 模式
+                promptLength: systemPrompt.length,
+                promptTokens: Math.round(systemPrompt.length / 4)
             } : undefined
         });
 
