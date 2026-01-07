@@ -155,6 +155,9 @@ function buildContents(message, history, systemPrompt, isFirstResponse = false) 
     // 第一次回答時，要求 AI 在回覆結尾加上警語（用用戶的語言）
     if (isFirstResponse) {
         systemInstruction += `\n5. FIRST RESPONSE: Add a disclaimer at the END in user's language (e.g., "⚠️ AI responses are for reference only and may contain errors.")`;
+    } else {
+        // 非第一次回答時，明確告知不要加警語（防止 AI 從歷史記錄學習）
+        systemInstruction += `\n5. This is NOT the first response. Do NOT add any disclaimer or warning message.`;
     }
 
     if (recentHistory && recentHistory.length > 0) {
