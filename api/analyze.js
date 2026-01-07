@@ -78,6 +78,7 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
     // 準備對話上下文
     let contextSummary = '';
     let symptomContext = '';  // 症狀上下文
+    let intentContext = '';   // ⚡ 新增：意圖上下文
 
     if (conversationHistory && conversationHistory.length > 0) {
         const recentHistory = conversationHistory.slice(-6);  // 增加到 6 條
@@ -112,6 +113,21 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
             }
         }
 
+        // ⚡ 新增：提取前一輪的產品推薦意圖
+        // 如果 AI 在前一輪追問資訊（年份、燃油類型等），代表使用者想要產品推薦
+        const aiMessages = recentHistory.filter(m => m.role === 'model' || m.role === 'assistant');
+        const lastAIMessage = aiMessages[aiMessages.length - 1]?.content || '';
+
+        if (lastAIMessage.match(/為了推薦|請問.*年份|請問.*燃油|請問.*汽油.*柴油|請問.*檔車.*速克達/)) {
+            intentContext = `\n【⚠️ 意圖繼承 - 非常重要！】
+- AI 在前一輪詢問了車型補充資訊（年份、燃油類型等）
+- 這代表使用者想要「產品推薦」（機油或添加劑）
+- 當使用者補充這些資訊時，**必須設定 intentType="product_recommendation", needsProductRecommendation=true**
+- **禁止**將使用者的補充資訊當作「只提供車型沒說需求」！
+- 使用者是在「回答追問」，不是「純粹報車型」！
+\n`;
+        }
+
         contextSummary = '【對話上下文 - 請繼承已知資訊！】\n' + recentHistory.map(m =>
             `${m.role === 'user' ? '用戶' : 'AI'}: ${m.content.substring(0, 200)}`
         ).join('\n') + '\n';
@@ -119,6 +135,12 @@ async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
         if (extractedVehicleInfo) {
             contextSummary += `\n【⚠️ 從對話中提取的車型資訊 - 必須繼承！】\n${extractedVehicleInfo}\n`;
         }
+
+        // ⚡ 添加意圖上下文
+        if (intentContext) {
+            contextSummary += intentContext;
+        }
+
         contextSummary += '\n';
 
         // 如果對話中有提到症狀相關問題，提醒 AI 這是添加劑諮詢
