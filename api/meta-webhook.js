@@ -567,7 +567,6 @@ async function handleTextMessage(senderId, text, source, userProfile) {
     try {
         // Step 1: 取得對話歷史
         let conversationHistory = [];
-        let isTodayFirstMessage = true; // 預設為今天第一次（如果沒有對話記錄）
 
         try {
             const historyResponse = await fetch(`${WIX_API_URL}/getConversationHistory`, {
@@ -579,19 +578,6 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             if (historyData.success && historyData.conversationHistory) {
                 conversationHistory = historyData.conversationHistory;
                 console.log(`[Meta Webhook] Loaded ${conversationHistory.length} history messages`);
-
-                // 判斷是否為今天第一次詢問
-                // 檢查最近一筆對話的時間是否在今天
-                if (historyData.lastMessageTime) {
-                    const lastMessageDate = new Date(historyData.lastMessageTime);
-                    const today = new Date();
-                    // 比較日期（忽略時間）
-                    const isSameDay = lastMessageDate.getFullYear() === today.getFullYear() &&
-                        lastMessageDate.getMonth() === today.getMonth() &&
-                        lastMessageDate.getDate() === today.getDate();
-                    isTodayFirstMessage = !isSameDay;
-                    console.log(`[Meta Webhook] Last message: ${lastMessageDate.toISOString()}, today: ${today.toISOString()}, isTodayFirstMessage: ${isTodayFirstMessage}`);
-                }
             }
         } catch (e) {
             console.error('[Meta Webhook] Failed to get conversation history:', e.message);
@@ -641,12 +627,9 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 // 清理多餘的連續換行（超過2個換行變成2個）
                 .replace(/\n{3,}/g, '\n\n');
 
-            // === 今天第一次詢問加上 AI 警語 ===
-            console.log(`[Meta Webhook] isTodayFirstMessage: ${isTodayFirstMessage}, history length: ${conversationHistory.length}`);
-            if (isTodayFirstMessage) {
-                plainTextResponse += AI_DISCLAIMER.meta;
-                console.log('[Meta Webhook] Today first message - added AI disclaimer');
-            }
+
+            // AI 警語現在由 AI 自動生成並翻譯成用戶語言
+            // 不再前端硬編碼加上
 
             // 在 AI 回覆前加上機器人標註，讓用戶能分辨 AI 和人工回覆
             const aiPrefixedResponse = `🤖 ${plainTextResponse}`;
