@@ -630,6 +630,8 @@ async function handleTextMessage(senderId, text, source, userProfile) {
                 .replace(/\*\*([^*]+)\*\*/g, '$1')
                 // 移除斜體標記
                 .replace(/\*([^*]+)\*/g, '$1')
+                // 移除重複的連續 URL（同一 URL 在相鄰行出現多次）
+                .replace(/(https?:\/\/[^\s\n]+)\n+\1/g, '$1')
                 // 清理多餘的連續換行（超過2個換行變成2個）
                 .replace(/\n{3,}/g, '\n\n');
 
