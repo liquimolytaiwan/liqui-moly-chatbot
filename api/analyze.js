@@ -176,7 +176,7 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
     const responseFormat = aiAnalysisRules?.json_response_format
         ? JSON.stringify(aiAnalysisRules.json_response_format, null, 4)
         : `{
-    "intentType": "product_recommendation",
+    "intentType": null,
     "isMultiVehicleQuery": false,
     "vehicles": [{
         "vehicleName": "車型全名（如 2020 VW Caddy）",
@@ -196,7 +196,7 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
     "symptomMatched": null,
     "symptomSeverity": "none",
     "isGeneralProduct": false,
-    "needsProductRecommendation": true,
+    "needsProductRecommendation": false,
     "needsMoreInfo": ["需要追問的資訊，如 fuelType"]
 }`;
 
@@ -330,7 +330,7 @@ ${scenarioRules}
 - 用戶沒提車型→vehicleType=null
 - 用戶沒說用途→usageScenario=null
 - 只問認證/黏度/SKU→直接搜尋不追問
-- 用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ intentType="general_inquiry", needsProductRecommendation=false
+- **強制規則**：用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ **intentType="general_inquiry", needsProductRecommendation=false**。嚴禁在此情況下預設機油推薦！
 
 【⚠️ 車型資訊智慧推論 - 減少追問！】
 你是汽機車專家，請用你的知識來推論車型資訊，**盡量避免不必要的追問**：
