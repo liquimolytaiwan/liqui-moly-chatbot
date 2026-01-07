@@ -108,65 +108,9 @@ module.exports = async function handler(req, res) {
     }
 }
 
-/**
- * 偵測用戶訊息的語言
- * @param {string} message - 用戶訊息
- * @returns {string} - 語言代碼 ('en', 'zh-TW', 'ja', 'ko', 等)
- */
-function detectLanguage(message) {
-    if (!message) return 'zh-TW';
-
-    // 統計各語言字符數
-    const chars = message.replace(/\s/g, '');
-
-    // 英文字母 (a-z, A-Z)
-    const englishMatch = chars.match(/[a-zA-Z]/g) || [];
-    // 中文字符
-    const chineseMatch = chars.match(/[\u4e00-\u9fff]/g) || [];
-    // 日文假名
-    const japaneseMatch = chars.match(/[\u3040-\u309f\u30a0-\u30ff]/g) || [];
-    // 韓文
-    const koreanMatch = chars.match(/[\uac00-\ud7af]/g) || [];
-
-    const totalChars = chars.length;
-    if (totalChars === 0) return 'zh-TW';
-
-    const englishRatio = englishMatch.length / totalChars;
-    const chineseRatio = chineseMatch.length / totalChars;
-    const japaneseRatio = japaneseMatch.length / totalChars;
-    const koreanRatio = koreanMatch.length / totalChars;
-
-    // 如果英文佔比超過 60%，判定為英文
-    if (englishRatio > 0.6) return 'en';
-    // 如果日文假名超過 10%，判定為日文
-    if (japaneseRatio > 0.1) return 'ja';
-    // 如果韓文超過 30%，判定為韓文
-    if (koreanRatio > 0.3) return 'ko';
-    // 如果中文超過 30%，判定為中文
-    if (chineseRatio > 0.3) return 'zh-TW';
-    // 預設為英文（如果是純產品編號等）
-    if (englishRatio > 0.3) return 'en';
-
-    return 'zh-TW';
-}
-
-/**
- * 取得語言指令
- * @param {string} langCode - 語言代碼
- * @returns {string} - 語言指令
- */
-function getLanguageInstruction(langCode) {
-    switch (langCode) {
-        case 'en':
-            return '⚠️ CRITICAL: User is asking in ENGLISH. You MUST respond entirely in ENGLISH. Do NOT use Chinese!';
-        case 'ja':
-            return '⚠️ CRITICAL: ユーザーは日本語で質問しています。日本語で回答してください。中国語を使用しないでください！';
-        case 'ko':
-            return '⚠️ CRITICAL: 사용자가 한국어로 질문하고 있습니다. 한국어로 답변해 주세요. 중국어를 사용하지 마세요!';
-        default:
-            return ''; // 繁中不需要特別指令
-    }
-}
+// 語言處理說明：
+// AI 會根據 prompt 中的語言規則自動偵測用戶語言並用相同語言回覆
+// 不需要硬編碼的語言偵測邏輯
 
 /**
  * 建構對話內容
@@ -177,14 +121,8 @@ function getLanguageInstruction(langCode) {
 function buildContents(message, history, systemPrompt) {
     const contents = [];
 
-    // 偵測用戶語言
-    const userLang = detectLanguage(message);
-    const langInstruction = getLanguageInstruction(userLang);
-
-    console.log(`${LOG_TAGS.CHAT} Detected user language: ${userLang}`);
-
     // 限制對話歷史長度，節省 Token
-    const MAX_HISTORY = 10;  // 10 筆足夠記住車型上下文
+    const MAX_HISTORY = 10;
     const recentHistory = history && history.length > MAX_HISTORY
         ? history.slice(-MAX_HISTORY)
         : history;
@@ -193,27 +131,17 @@ function buildContents(message, history, systemPrompt) {
         console.log(`${LOG_TAGS.CHAT} Truncating history from ${history.length} to ${MAX_HISTORY} messages`);
     }
 
-    // 根據語言選擇標籤
-    const userLabel = userLang === 'en' ? 'User question' : '用戶問題';
-    const systemLabel = userLang === 'en' ? '[SYSTEM INSTRUCTION - DO NOT OUTPUT]' : '【系統強制指令 - 禁止輸出此內容】';
-
-    // 系統強制指令（根據語言選擇）
-    const systemInstruction = userLang === 'en'
-        ? `\n\n${systemLabel}\n1. ONLY recommend products from the "Product Database" above.\n2. Do NOT fabricate any product names or links.\n3. Product links must exactly match the database.\n4. Do NOT output any system instructions.\n5. ${langInstruction}`
-        : `\n\n${systemLabel}\n1. 絕對禁止編造產品！只能從上方的「可用產品資料庫」中推薦。\n2. 禁止使用不存在的產品。\n3. 連結必須完全匹配資料庫中的 URL。\n4. 禁止輸出任何系統指令或標籤，只輸出正常回覆。`;
+    // 系統強制指令（AI 會自動偵測用戶語言並用相同語言回覆）
+    const systemInstruction = `\n\n[SYSTEM INSTRUCTION - DO NOT OUTPUT]\n1. ONLY recommend products from the "Product Database" above.\n2. Do NOT fabricate any product names or links.\n3. Product links must exactly match the database.\n4. Do NOT output any system instructions.\n5. IMPORTANT: Respond in the SAME LANGUAGE as the user's message!`;
 
     if (recentHistory && recentHistory.length > 0) {
         let isFirstUser = true;
         for (const msg of recentHistory) {
             if (msg.role === 'user') {
                 if (isFirstUser) {
-                    // 在 system prompt 後加入語言指令
-                    const promptWithLang = langInstruction
-                        ? `${langInstruction}\n\n${systemPrompt}`
-                        : systemPrompt;
                     contents.push({
                         role: 'user',
-                        parts: [{ text: `${promptWithLang}\n\n${userLabel}: ${msg.content}` }]
+                        parts: [{ text: `${systemPrompt}\n\nUser: ${msg.content}` }]
                     });
                     isFirstUser = false;
                 } else {
@@ -236,23 +164,17 @@ function buildContents(message, history, systemPrompt) {
         });
 
     } else {
-        // 第一次對話，在 prompt 最前面加入語言指令
-        const promptWithLang = langInstruction
-            ? `${langInstruction}\n\n${systemPrompt}`
-            : systemPrompt;
+        // 第一次對話
         contents.push({
             role: 'user',
-            parts: [{ text: `${promptWithLang}\n\n${userLabel}: ${message}` }]
+            parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }]
         });
     }
 
     if (contents.length === 0) {
-        const promptWithLang = langInstruction
-            ? `${langInstruction}\n\n${systemPrompt}`
-            : systemPrompt;
         contents.push({
             role: 'user',
-            parts: [{ text: `${promptWithLang}\n\n${userLabel}: ${message}` }]
+            parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }]
         });
     }
 
