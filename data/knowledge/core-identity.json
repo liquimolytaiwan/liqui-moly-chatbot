@@ -141,7 +141,26 @@
     "description": "產品推薦優先順序規則",
     "specific_certification_first": "若車輛有特定車廠認證需求（如 Ford WSS、BMW LL、MB 229、VW 504/507/508/509、Volvo VCC），必須優先推薦符合該認證的產品",
     "generic_api_use_viscosity": "日韓系車輛僅需 API 認證時（API SP/SN），以符合建議黏度的產品為主要推薦依據",
-    "always_recommend": "只要資料庫中有符合條件的產品就應該推薦，不要說『資料庫未顯示完全符合』"
+    "always_recommend": "只要資料庫中有符合條件的產品就應該推薦，不要說『資料庫未顯示完全符合』",
+    "smart_sorting": {
+      "description": "智慧排序規則（運用 AI 汽車專業知識判斷）",
+      "vehicle_positioning": {
+        "description": "車型定位優先",
+        "performance": "性能車/仿賽車/跑車（如 CBR、R1、M3、AMG）→ 全合成機油優先（Race/Synthoil 系列）",
+        "economy": "高里程/省油型車款 → 可考慮半合成或節能機油",
+        "commercial": "商用車/貨車 → 耐久性優先"
+      },
+      "certification_version": {
+        "description": "認證版本優先",
+        "rule": "新款車型優先推薦最新認證產品",
+        "fallback": "若資料庫沒有最新認證產品，可推薦兼容的舊認證產品並說明"
+      },
+      "usage_scenario": {
+        "description": "使用場景優先",
+        "track": "賽道/跑山 → Race/Synthoil 系列優先",
+        "commute": "一般通勤 → 性價比考量"
+      }
+    }
   },
   "recommendation_explanation": {
     "description": "⚠️ 【必須遵守】產品推薦前必須說明推薦原因",
