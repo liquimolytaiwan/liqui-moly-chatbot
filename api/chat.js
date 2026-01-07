@@ -187,17 +187,17 @@ function buildContents(message, history, systemPrompt, isFirstResponse = false) 
         });
 
     } else {
-        // 第一次對話
+        // 第一次對話 - 修正：也要加上 systemInstruction（包含警語指令）
         contents.push({
             role: 'user',
-            parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }]
+            parts: [{ text: `${systemPrompt}\n\nUser: ${message}${systemInstruction}` }]
         });
     }
 
     if (contents.length === 0) {
         contents.push({
             role: 'user',
-            parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }]
+            parts: [{ text: `${systemPrompt}\n\nUser: ${message}${systemInstruction}` }]
         });
     }
 
