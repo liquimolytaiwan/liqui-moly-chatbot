@@ -458,16 +458,34 @@ ${dynamicRules}
                     console.log(`${LOG_TAGS.ANALYZE} Certification search detected:`, result.certificationSearch);
                 }
                 // 若只有黏度追問且對話中有認證歷史，繼承認證（使用統一的認證偵測）
+                // ⚠️ 修復：只有當車型類型匹配時才繼承認證，避免汽車認證套用到摩托車
                 else if (detectedViscosity && conversationHistory.length > 0) {
+                    const currentVehicleType = result.vehicles?.[0]?.vehicleType;
+                    const isMotorcycleQuery = currentVehicleType === '摩托車';
+
                     const historyText = conversationHistory.map(m => m.content).join(' ');
                     const historyCertDetection = detectCertification(historyText);
+
                     if (historyCertDetection) {
-                        detectedCert = historyCertDetection.cert;
-                        result.certificationSearch = {
-                            requestedCert: detectedCert,
-                            viscosity: detectedViscosity
-                        };
-                        console.log(`${LOG_TAGS.ANALYZE} Inherited certification from history:`, result.certificationSearch);
+                        const historyCert = historyCertDetection.cert;
+                        const certType = historyCertDetection.type;
+
+                        // 檢查認證類型是否與當前車型匹配
+                        // JASO 認證只適用於摩托車，ILSAC/API 等適用於汽車
+                        const isMotorcycleCert = certType === 'JASO';
+
+                        // 只有當認證類型與車型匹配時才繼承
+                        if (isMotorcycleQuery === isMotorcycleCert) {
+                            detectedCert = historyCert;
+                            result.certificationSearch = {
+                                requestedCert: detectedCert,
+                                viscosity: detectedViscosity
+                            };
+                            console.log(`${LOG_TAGS.ANALYZE} Inherited certification from history:`, result.certificationSearch);
+                        } else {
+                            // 車型不匹配，不繼承認證，讓摩托車規則引擎處理
+                            console.log(`${LOG_TAGS.ANALYZE} Skipping cert inheritance: ${historyCert} (${certType}) not suitable for ${currentVehicleType}`);
+                        }
                     }
                 }
 
