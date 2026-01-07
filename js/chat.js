@@ -608,13 +608,10 @@ class LiquiMolyChatbot {
 
         const data = await response.json();
 
-        // 第一次回答加上 AI 警語
-        let responseText = data.response;
-        if (data.isFirstResponse && CONFIG.AI_DISCLAIMER) {
-            responseText += CONFIG.AI_DISCLAIMER;
-        }
+        // AI 警語現在由 AI 自動生成並翻譯成用戶語言
+        // 不再前端硬編碼加上
 
-        return responseText;
+        return data.response;
     }
 
     /**
