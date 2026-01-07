@@ -567,6 +567,7 @@ async function handleTextMessage(senderId, text, source, userProfile) {
     try {
         // Step 1: 取得對話歷史
         let conversationHistory = [];
+        let isTodayFirstMessage = true; // 預設為今天第一次（如果沒有對話記錄）
 
         try {
             const historyResponse = await fetch(`${WIX_API_URL}/getConversationHistory`, {
@@ -578,19 +579,33 @@ async function handleTextMessage(senderId, text, source, userProfile) {
             if (historyData.success && historyData.conversationHistory) {
                 conversationHistory = historyData.conversationHistory;
                 console.log(`[Meta Webhook] Loaded ${conversationHistory.length} history messages`);
+
+                // 判斷是否為今天第一次詢問
+                // 檢查最近一筆對話的時間是否在今天
+                if (historyData.lastMessageTime) {
+                    const lastMessageDate = new Date(historyData.lastMessageTime);
+                    const today = new Date();
+                    // 比較日期（忽略時間）
+                    const isSameDay = lastMessageDate.getFullYear() === today.getFullYear() &&
+                        lastMessageDate.getMonth() === today.getMonth() &&
+                        lastMessageDate.getDate() === today.getDate();
+                    isTodayFirstMessage = !isSameDay;
+                    console.log(`[Meta Webhook] Last message: ${lastMessageDate.toISOString()}, isTodayFirstMessage: ${isTodayFirstMessage}`);
+                }
             }
         } catch (e) {
             console.error('[Meta Webhook] Failed to get conversation history:', e.message);
         }
 
         // Step 2: 呼叫 Vercel 的 /api/chat（統一使用 Vercel RAG 管線 + 防幻覺驗證）
-        // 改用 Vercel API 確保網頁端和 META 端使用相同邏輯
+        // META 端傳入 isFirstResponse（當天第一次邏輯）
         const chatResponse = await fetch(`${VERCEL_API_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: text,
-                conversationHistory
+                conversationHistory,
+                isFirstResponse: isTodayFirstMessage  // META 端使用當天第一次邏輯
             })
         });
 

@@ -44,9 +44,19 @@ module.exports = async function handler(req, res) {
         console.log(`${LOG_TAGS.CHAT} Intent: ${intent.type}, Vehicle: ${intent.vehicleType}`);
 
         // === 判斷是否為第一次回答（用於 AI 自動加上警語）===
-        const hasAssistantMessage = conversationHistory &&
-            conversationHistory.some(msg => msg.role === 'assistant' || msg.role === 'model');
-        const isFirstResponse = !hasAssistantMessage;
+        // META 端可透過 req.body.isFirstResponse 傳入（當天第一次）
+        // 網頁端則根據 conversationHistory 判斷（session 第一次）
+        let isFirstResponse;
+        if (req.body.isFirstResponse !== undefined) {
+            // 外部傳入（META 端使用當天第一次邏輯）
+            isFirstResponse = req.body.isFirstResponse;
+            console.log(`${LOG_TAGS.CHAT} First response (from request): ${isFirstResponse}`);
+        } else {
+            // 網頁端：判斷 session 中是否有 AI 回覆
+            const hasAssistantMessage = conversationHistory &&
+                conversationHistory.some(msg => msg.role === 'assistant' || msg.role === 'model');
+            isFirstResponse = !hasAssistantMessage;
+        }
         if (isFirstResponse) {
             console.log(`${LOG_TAGS.CHAT} First response detected - AI will add disclaimer`);
         }
