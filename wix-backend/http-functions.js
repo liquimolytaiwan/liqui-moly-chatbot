@@ -97,13 +97,19 @@ export async function post_chat(request) {
         // 所有 AI 邏輯（analyze, search, chat, 防幻覺驗證）
         // 都在 Vercel 端處理，與 META 端統一
         // ============================================
+
+        // 判斷是否為 session 第一次回答（根據是否有 assistant 消息）
+        const hasAssistantMessage = conversationHistory &&
+            conversationHistory.some(msg => msg.role === 'assistant' || msg.role === 'model');
+        const isFirstResponse = !hasAssistantMessage;
+
         const chatResponse = await fetch(`${VERCEL_API_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: body.message,
-                conversationHistory
-                // 不再傳 productContext，由 /api/chat 內部處理
+                conversationHistory,
+                isFirstResponse  // 明確傳入，讓 Vercel 知道要加警語
             })
         });
         const chatData = await chatResponse.json();
