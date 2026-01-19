@@ -328,6 +328,7 @@ ${scenarioRules}
 - 用戶沒說用途→usageScenario=null
 - 只問認證/黏度/SKU→直接搜尋不追問
 - **強制規則**：用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ **intentType="general_inquiry", needsProductRecommendation=false**。嚴禁在此情況下預設機油推薦！
+- **🔧 產品類別追問規則**：用戶說「產品推薦」但沒明確說是「機油」「添加劑」還是其他類別（如「2019 Elantra 產品推薦」「幫我推薦產品」）→ **productCategory=null, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]**。禁止自動假設為機油！
 
 【⚠️ 車型資訊智慧推論 - 減少追問！】
 你是汽機車專家，請用你的知識來推論車型資訊，**盡量避免不必要的追問**：
