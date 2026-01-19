@@ -388,7 +388,8 @@ ${dynamicRules}
         });
 
         if (!response.ok) {
-            console.error('AI analysis API error:', response.status);
+            const errorText = await response.text();
+            console.error(`AI analysis API error: ${response.status}`, errorText);
             return null;
         }
 
