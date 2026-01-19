@@ -382,7 +382,7 @@
                 "certifications": [
                     "根據車廠推論"
                 ],
-                "viscosity": "根據車廠推論",
+                "viscosity": "根據車主手冊推論，如 5W-30、0W-20",
                 "searchKeywords": [
                     "搜尋關鍵字"
                 ]
@@ -391,7 +391,18 @@
         "productCategory": "機油/添加劑/...",
         "usageScenario": null,
         "needsProductRecommendation": true,
-        "needsMoreInfo": []
+        "needsMoreInfo": "只放無法推論的關鍵資訊，⛔禁止放黏度！"
+    },
+    "viscosity_inference_rules": {
+        "description": "LLM 應該根據車型推論黏度，不追問用戶",
+        "rule": "使用你的汽車知識推論車主手冊建議的黏度",
+        "examples": [
+            {"vehicle": "2018 Hyundai Elantra 汽油", "viscosity": "5W-30", "certifications": ["API SN"]},
+            {"vehicle": "2020 VW Golf R", "viscosity": "0W-20", "certifications": ["VW 508 00"]},
+            {"vehicle": "2019 BMW 330i", "viscosity": "0W-30", "certifications": ["BMW LL-01"]},
+            {"vehicle": "2021 Toyota Camry", "viscosity": "0W-20", "certifications": ["ILSAC GF-6A"]}
+        ],
+        "important_note": "⛔ 禁止將「黏度」或「黏度偏好」加入 needsMoreInfo！黏度是專業規格，應由 LLM 推論。"
     },
     "intent_type_rules": {
         "description": "意圖類型判斷規則 - AI 必須根據用戶問題選擇正確的 intentType",

@@ -16,7 +16,7 @@
  */
 
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
-const { searchWithCertUpgrade, getScooterCertScore } = require('../lib/certification-matcher.js');
+const { searchWithCertUpgrade, searchWithViscosityFallback, getScooterCertScore } = require('../lib/certification-matcher.js');
 const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('../lib/motorcycle-rules.js');
 const {
     WIX_API_URL,
@@ -188,6 +188,36 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
                 return formatProducts(sortedMatches.slice(0, SEARCH_LIMITS.max), searchInfo);
             } else {
                 console.log(`${LOG_TAGS.SEARCH} Motorcycle Rules matched 0 products, falling back to query search`);
+            }
+        }
+
+        // 0.6 汽車機油搜尋（認證優先、黏度降級機制）
+        if (vehicleInfo && vehicleInfo.vehicleType === '汽車' && productCategory === '機油') {
+            const requestedCert = vehicleInfo.certifications?.[0];
+            const requestedViscosity = vehicleInfo.viscosity;
+
+            if (requestedCert) {
+                console.log(`${LOG_TAGS.SEARCH} Using Car Oil Certification Search: cert=${requestedCert}, viscosity=${requestedViscosity}`);
+
+                const fallbackResult = searchWithViscosityFallback(
+                    products,
+                    requestedCert,
+                    requestedViscosity
+                );
+
+                if (fallbackResult.products.length > 0) {
+                    console.log(`${LOG_TAGS.SEARCH} Certification search found ${fallbackResult.products.length} products (fallback=${fallbackResult.fallbackUsed}, type=${fallbackResult.fallbackType})`);
+
+                    return formatProducts(fallbackResult.products.slice(0, SEARCH_LIMITS.max), {
+                        ...searchInfo,
+                        fallbackNotice: fallbackResult.notice,
+                        fallbackType: fallbackResult.fallbackType,
+                        usedCert: fallbackResult.usedCert,
+                        requestedViscosity: fallbackResult.requestedViscosity
+                    });
+                } else {
+                    console.log(`${LOG_TAGS.SEARCH} Certification search found 0 products, falling back to query search`);
+                }
             }
         }
 
@@ -752,6 +782,28 @@ function formatProducts(products, searchInfo = null) {
 1. 向用戶說明目前無 ${requestedCert} 認證產品
 2. 解釋 ${usedCert} 是更新一代的認證，向後兼容 ${requestedCert}
 3. 推薦以下產品
+
+`;
+    }
+
+    // 黏度降級通知（認證優先搜尋結果）
+    const fallbackNotice = searchInfo?.fallbackNotice;
+    const fallbackType = searchInfo?.fallbackType;
+    const requestedViscosity = searchInfo?.requestedViscosity;
+
+    if (fallbackNotice && fallbackType === 'viscosity') {
+        context += `
+## ⚠️ 搜尋說明（黏度降級）
+
+${fallbackNotice}
+
+**用戶需求黏度:** ${requestedViscosity || '未指定'}
+**實際搜尋結果:** 符合 ${usedCert || searchInfo?.vehicles?.[0]?.certifications?.[0] || '認證'} 認證的產品（黏度可能不同）
+
+**回覆要求:**
+1. 向用戶說明目前沒有 ${requestedViscosity} 黏度且符合認證的產品
+2. 解釋以下產品符合原廠認證要求，黏度略有不同
+3. 建議用戶確認車主手冊是否允許替代黏度
 
 `;
     }
