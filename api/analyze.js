@@ -406,8 +406,27 @@ ${dynamicRules}
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
+            let jsonStr = jsonMatch[0];
+
+            // ⚠️ JSON 修復：嘗試修復常見的 AI 輸出錯誤
             try {
-                const result = JSON.parse(jsonMatch[0]);
+                // 1. 移除尾隨逗號（JSON 不允許）
+                jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+
+                // 2. 移除控制字符（換行符以外）
+                jsonStr = jsonStr.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+                // 3. 修復單引號（JSON 要求雙引號）
+                // 謹慎處理：只處理明顯的鍵值對引號問題
+                jsonStr = jsonStr.replace(/'([^']+)':/g, '"$1":');
+                jsonStr = jsonStr.replace(/:\s*'([^']*)'/g, ': "$1"');
+
+            } catch (fixError) {
+                console.warn(`${LOG_TAGS.ANALYZE} JSON pre-fix failed:`, fixError.message);
+            }
+
+            try {
+                const result = JSON.parse(jsonStr);
 
                 // === 向後兼容：從 vehicles 陣列提取頂層欄位 ===
                 if (result.vehicles && result.vehicles.length > 0) {
@@ -506,8 +525,38 @@ ${dynamicRules}
                 console.log(`${LOG_TAGS.ANALYZE} AI result:`, JSON.stringify(result, null, 2));
                 return result;
             } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                return null;
+                console.error(`${LOG_TAGS.ANALYZE} JSON parse error:`, parseError.message);
+                console.error(`${LOG_TAGS.ANALYZE} Failed JSON string:`, jsonStr.substring(0, 200));
+
+                // ⚠️ JSON 解析失敗時的降級處理：嘗試提取部分資訊
+                const fallbackResult = {
+                    intentType: 'general_inquiry',
+                    needsProductRecommendation: false,
+                    vehicles: [],
+                    searchKeywords: []
+                };
+
+                // 嘗試從原始文字提取意圖類型
+                if (text.includes('product_recommendation')) {
+                    fallbackResult.intentType = 'product_recommendation';
+                    fallbackResult.needsProductRecommendation = true;
+                }
+
+                // 嘗試提取車型關鍵字
+                const vehiclePatterns = [
+                    /vehicleName["\s:]+["']?([^"',}\]]+)/i,
+                    /車型[：:]\s*([^\n,]+)/
+                ];
+                for (const pattern of vehiclePatterns) {
+                    const match = text.match(pattern);
+                    if (match && match[1]) {
+                        fallbackResult.searchKeywords.push(match[1].trim());
+                        break;
+                    }
+                }
+
+                console.log(`${LOG_TAGS.ANALYZE} Using fallback result due to JSON parse error`);
+                return fallbackResult;
             }
         }
         return null;
@@ -634,24 +683,37 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 
     // === 3. SKU 自動偵測 ===
     // 修正：簡化正則表達式，確保 Vercel 兼容；偵測到 SKU 後強制搜尋產品
+    // ⚠️ 新增：過濾年份誤判（2019-2030 範圍內的 4 位數可能是年份）
     const skuPattern = /[Ll][Mm][ -]?([0-9]{4,5})/g;
     const skuMatches = [...message.matchAll(skuPattern)];
+    let validSkuCount = 0;
+
     if (skuMatches.length > 0) {
         for (const match of skuMatches) {
             const skuNum = match[1];
             if (skuNum) {
+                // ⚠️ 過濾可能是年份的 SKU（4 位數且在 2019-2030 範圍）
+                const num = parseInt(skuNum, 10);
+                if (skuNum.length === 4 && num >= 2019 && num <= 2030) {
+                    console.log(`${LOG_TAGS.ANALYZE} Filtered potential year: LM${skuNum}`);
+                    continue;
+                }
+
                 const fullSku = `LM${skuNum}`;
                 if (!result.searchKeywords) result.searchKeywords = [];
                 if (!result.searchKeywords.includes(fullSku)) {
                     result.searchKeywords.unshift(fullSku, skuNum);
+                    validSkuCount++;
                     console.log(`${LOG_TAGS.ANALYZE} SKU detected: ${fullSku}`);
                 }
             }
         }
-        // ⚡ 關鍵修復：偵測到 SKU 後，強制設定為產品查詢
-        result.needsProductRecommendation = true;
-        result.intentType = 'product_inquiry';
-        console.log(`${LOG_TAGS.ANALYZE} SKU query detected, forcing product search`);
+        // ⚡ 關鍵修復：偵測到有效 SKU 後，強制設定為產品查詢
+        if (validSkuCount > 0) {
+            result.needsProductRecommendation = true;
+            result.intentType = 'product_inquiry';
+            console.log(`${LOG_TAGS.ANALYZE} SKU query detected, forcing product search`);
+        }
     }
 
     // === 4. 添加劑子類別識別（機油添加劑 vs 汽油添加劑）===
@@ -740,6 +802,7 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
     // 預設為汽車，除非明確是機車
     const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
     const matched = [];
+    const noProductMatched = [];  // ⚠️ 新增：記錄無產品的匹配項
     const lowerMessage = message.toLowerCase();
 
     // 常見症狀關鍵字和變體（包含打字錯誤）
@@ -753,13 +816,16 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
         '缸壓不足': ['缸壓', '壓縮'],
         '老鼠': ['老鼠', '貓', '小動物', '咬破', '躲藏'],
         '黑煙': ['黑煙', '冒黑煙'],
-        'DPF': ['dpf', '柴油微粒子', '再生']
+        'DPF': ['dpf', '柴油微粒子', '再生'],
+        '代鉛劑': ['代鉛', '含鉛', '老車', '老式引擎'],
+        '柴油菌': ['柴油菌', '細菌', '膠化', '真菌'],
+        '抗凝固': ['結蠟', '凝固', '冬季', '低溫'],
+        '方向機': ['方向機', '轉向', '動力方向', '方向盤']
     };
 
     for (const item of additiveGuide) {
         // 通用問題（如防鼠）不分汽機車，或是符合目標區域
         if (item.type !== '通用' && item.area !== targetArea) continue;
-        if (!item.hasProduct) continue;
 
         const problem = (item.problem || '').toLowerCase();
         const explanation = (item.explanation || '').toLowerCase();
@@ -796,16 +862,35 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
                 }
             }
 
-            matched.push({
+            // ⚠️ 修改：區分有產品和無產品的匹配項
+            const matchResult = {
                 problem: item.problem,
                 explanation: item.explanation,
-                solutions: item.solutions,
-                type: item.type  // 返回燃油類型，用於判斷是否需要追問
-            });
+                solutions: item.solutions || [],
+                type: item.type,
+                hasProduct: item.hasProduct !== false  // 預設為 true
+            };
+
+            if (item.hasProduct === false) {
+                noProductMatched.push(matchResult);
+            } else {
+                matched.push(matchResult);
+            }
         }
     }
 
-    return matched.slice(0, 3);
+    // ⚠️ 修改：返回結構包含有產品和無產品的匹配項
+    // 如果只有無產品匹配，也要返回（讓 AI 誠實告知用戶）
+    const result = matched.slice(0, 3);
+
+    // 將無產品匹配項也加入結果（標記 hasProduct=false）
+    if (noProductMatched.length > 0 && matched.length === 0) {
+        // 如果完全沒有產品可推薦，返回無產品匹配項
+        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched ${noProductMatched.length} items with hasProduct=false`);
+        return noProductMatched.slice(0, 3);
+    }
+
+    return result;
 }
 
 /**
