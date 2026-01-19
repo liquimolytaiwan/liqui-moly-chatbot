@@ -199,12 +199,39 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             if (requestedCert) {
                 console.log(`${LOG_TAGS.SEARCH} Using Smart Certification Search: cert=${requestedCert}, viscosity=${requestedViscosity}`);
 
+                // 優先檢查：用戶是否指定了特定 SKU？
+                // 如果用戶問「LM9047 能用嗎」，即使 9047 不符合推論的認證，也必須把它找出來給 AI 判斷
+                const skuMatch = query.match(/(?:LM|lm)?[- ]?([0-9]{4,5})/);
+                let specificSkuProduct = null;
+                if (skuMatch) {
+                    const skuNum = skuMatch[1];
+                    const fullSku = `LM${skuNum}`;
+                    specificSkuProduct = products.find(p => p.partno === fullSku || p.partno === skuNum);
+                    if (specificSkuProduct) {
+                        console.log(`${LOG_TAGS.SEARCH} 🎯 Specific SKU query detected: ${fullSku}, will force include in results.`);
+                    }
+                }
+
                 // 使用智慧認證搜尋（API認證會自動升級到最新版本，OEM認證則精確匹配）
                 const certResult = searchWithCertPriority(
                     products,
                     requestedCert,
                     requestedViscosity
                 );
+
+                // ⚡ 強制合併特定 SKU 產品
+                if (specificSkuProduct) {
+                    // 檢查是否已存在於結果中
+                    const exists = certResult.products.some(p => p.id === specificSkuProduct.id);
+                    if (!exists) {
+                        // 加到最前面
+                        certResult.products.unshift(specificSkuProduct);
+                        // 如果原本沒結果，現在有結果了，要確保 fallback 標記正確
+                        if (certResult.products.length === 1) {
+                            // 這是唯一的產品
+                        }
+                    }
+                }
 
                 if (certResult.products.length > 0) {
                     console.log(`${LOG_TAGS.SEARCH} Smart cert search found ${certResult.products.length} products (strategy=${certResult.certStrategy}, fallback=${certResult.fallbackUsed}, type=${certResult.fallbackType})`);
