@@ -252,6 +252,13 @@ ${Object.entries(types).map(([type, data]) =>
 
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
+【🔴🔴🔴 最重要規則 - 產品類別判斷 🔴🔴🔴】
+**用戶說「產品推薦」但沒說是「機油」「添加劑」還是其他類別時：**
+- productCategory = null（不是「機油」！）
+- needsMoreInfo = ["請問您想找機油、添加劑，還是其他保養產品？"]
+- 範例：「2019 Elantra 產品推薦」「幫我推薦產品」→ productCategory=null
+- ⛔ 禁止自動假設為機油！只有用戶明確說「機油」才設為機油！
+
 ${intentTypeRules}
 ${scenarioRules}
 
