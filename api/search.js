@@ -16,7 +16,7 @@
  */
 
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
-const { searchWithCertUpgrade, searchWithViscosityFallback, getScooterCertScore } = require('../lib/certification-matcher.js');
+const { searchWithCertUpgrade, searchWithViscosityFallback, searchWithCertPriority, getScooterCertScore, isAPICertification } = require('../lib/certification-matcher.js');
 const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('../lib/motorcycle-rules.js');
 const {
     WIX_API_URL,
@@ -191,32 +191,48 @@ ${certResult.certNotice || `目前沒有符合 ${certSearchRequest.requestedCert
             }
         }
 
-        // 0.6 汽車機油搜尋（認證優先、黏度降級機制）
+        // 0.6 汽車機油搜尋（智慧認證搜尋：API最新優先 / OEM精確匹配）
         if (vehicleInfo && vehicleInfo.vehicleType === '汽車' && productCategory === '機油') {
             const requestedCert = vehicleInfo.certifications?.[0];
             const requestedViscosity = vehicleInfo.viscosity;
 
             if (requestedCert) {
-                console.log(`${LOG_TAGS.SEARCH} Using Car Oil Certification Search: cert=${requestedCert}, viscosity=${requestedViscosity}`);
+                console.log(`${LOG_TAGS.SEARCH} Using Smart Certification Search: cert=${requestedCert}, viscosity=${requestedViscosity}`);
 
-                const fallbackResult = searchWithViscosityFallback(
+                // 使用智慧認證搜尋（API認證會自動升級到最新版本，OEM認證則精確匹配）
+                const certResult = searchWithCertPriority(
                     products,
                     requestedCert,
                     requestedViscosity
                 );
 
-                if (fallbackResult.products.length > 0) {
-                    console.log(`${LOG_TAGS.SEARCH} Certification search found ${fallbackResult.products.length} products (fallback=${fallbackResult.fallbackUsed}, type=${fallbackResult.fallbackType})`);
+                if (certResult.products.length > 0) {
+                    console.log(`${LOG_TAGS.SEARCH} Smart cert search found ${certResult.products.length} products (strategy=${certResult.certStrategy}, fallback=${certResult.fallbackUsed}, type=${certResult.fallbackType})`);
 
-                    return formatProducts(fallbackResult.products.slice(0, SEARCH_LIMITS.max), {
+                    // 根據認證策略決定顯示的通知訊息
+                    let displayNotice = certResult.notice;
+                    let certUpgradeInfo = null;
+
+                    // API認證升級時，提供清楚的說明
+                    if (certResult.certStrategy === 'api_newest' && certResult.fallbackType === 'cert_upgrade') {
+                        certUpgradeInfo = {
+                            originalCert: requestedCert,
+                            upgradedCert: certResult.usedCert,
+                            explanation: `${certResult.usedCert} 是比 ${requestedCert} 更新的認證版本，向後兼容舊版認證。`
+                        };
+                    }
+
+                    return formatProducts(certResult.products.slice(0, SEARCH_LIMITS.max), {
                         ...searchInfo,
-                        fallbackNotice: fallbackResult.notice,
-                        fallbackType: fallbackResult.fallbackType,
-                        usedCert: fallbackResult.usedCert,
-                        requestedViscosity: fallbackResult.requestedViscosity
+                        fallbackNotice: displayNotice,
+                        fallbackType: certResult.fallbackType,
+                        usedCert: certResult.usedCert,
+                        requestedViscosity: certResult.requestedViscosity,
+                        certStrategy: certResult.certStrategy,
+                        certUpgradeInfo: certUpgradeInfo
                     });
                 } else {
-                    console.log(`${LOG_TAGS.SEARCH} Certification search found 0 products, falling back to query search`);
+                    console.log(`${LOG_TAGS.SEARCH} Smart cert search found 0 products, falling back to query search`);
                 }
             }
         }
@@ -804,6 +820,29 @@ ${fallbackNotice}
 1. 向用戶說明目前沒有 ${requestedViscosity} 黏度且符合認證的產品
 2. 解釋以下產品符合原廠認證要求，黏度略有不同
 3. 建議用戶確認車主手冊是否允許替代黏度
+
+`;
+    }
+
+    // API 認證升級通知（日韓系車推薦最新認證）
+    const certUpgradeInfo = searchInfo?.certUpgradeInfo;
+    const certStrategy = searchInfo?.certStrategy;
+
+    if (certUpgradeInfo && certStrategy === 'api_newest') {
+        context += `
+## 🌟 認證升級推薦
+
+**用戶詢問認證:** ${certUpgradeInfo.originalCert}
+**推薦產品認證:** ${certUpgradeInfo.upgradedCert}
+
+> ✅ ${certUpgradeInfo.explanation}
+
+**說明：** API/ILSAC 認證是向後兼容的，新版本認證的機油完全適用於舊版本認證的車輛。例如：API SP 機油可以用於要求 API SN 的車輛，而且性能更好。
+
+**回覆要求:**
+1. 告知用戶推薦的是更新版認證 (${certUpgradeInfo.upgradedCert}) 的產品
+2. 解釋新版認證向後兼容，性能更優
+3. 推薦以下產品
 
 `;
     }
