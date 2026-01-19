@@ -197,6 +197,53 @@
             }
         ]
     },
+    "Volvo": {
+        "Common": [
+            {
+                "years": "2014+",
+                "fuel": "Drive-E 引擎 (汽/柴油)",
+                "certification": [
+                    "Volvo VCC RBS0-2AE"
+                ],
+                "viscosity": "0W-20",
+                "aliases": [
+                    "xc40",
+                    "xc60",
+                    "xc90",
+                    "s60",
+                    "v60",
+                    "s90",
+                    "v90",
+                    "v40",
+                    "volvo",
+                    "drive-e",
+                    "b4",
+                    "b5",
+                    "t4",
+                    "t5",
+                    "t6"
+                ],
+                "note": "Volvo Drive-E 四缸引擎全系使用 0W-20 (VCC RBS0-2AE)"
+            },
+            {
+                "years": "2013前",
+                "fuel": "五缸/六缸/舊款四缸",
+                "certification": [
+                    "ACEA A5/B5"
+                ],
+                "viscosity": "0W-30",
+                "aliases": [
+                    "old volvo",
+                    "xc60 old",
+                    "xc90 old",
+                    "s80",
+                    "d4",
+                    "d5"
+                ],
+                "note": "舊款 Volvo 引擎多使用 0W-30 (ACEA A5/B5)"
+            }
+        ]
+    },
     "SYM": {
         "_note": "台灣常見速克達",
         "曼巴 MMBCU": [

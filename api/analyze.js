@@ -352,11 +352,10 @@ ${intentTypeRules}
 ${scenarioRules}
 
 **規則 3 - 車廠認證推論：**
-**規則 3 - 車廠認證推論（精確匹配）：**
-- 歐系車與歐規規範（VW, BMW, Benz, Audi, Porsche, **Ford**, **Volvo**）→ **必須**推論 OEM 認證！
-- 範例：BMW → "BMW Longlife-04", Ford → "Ford WSS-M2C948-B", VW → "VW 504 00"
-- 日韓系車可用 API 認證（SP/SN）即可
-- 將推論出的認證加入 certifications 陣列中
+**規則 3 - 車廠認證處理：**
+- 若用戶明確提到認證（如 "229.71"），請提取至 certifications
+- **不需要**自行背誦車廠規格（如 Ford 用什麼油），請專注於識別準確的車型與年份
+- 系統後端會根據你識別的車型自動匹配認證資料
 
 **規則 4 - 基本判斷：**
 - 用戶只提供車型但沒說需求 → intentType="general_inquiry", needsProductRecommendation=false
