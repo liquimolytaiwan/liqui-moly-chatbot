@@ -71,6 +71,73 @@ async function handler(req, res) {
     }
 }
 
+// ============================================
+// 條件規則定義（動態載入，解決 Lost in the Middle）
+// ============================================
+
+const CONDITIONAL_RULES = {
+    // 電動車規則
+    EV: `【純電動車識別】
+純電動車品牌：Gogoro/Ionex/eMOVING/eReady (電動機車)｜Tesla/BYD/Porsche Taycan (電動汽車)
+⚠️ 純電動車 isElectricVehicle=true，不需要傳統機油！
+→ 產品類別設為「其他油品」或「煞車系統」
+→ 推薦：齒輪油(Gear Oil)、煞車油(Brake Fluid DOT 4/5.1)`,
+
+    // 添加劑/症狀規則
+    ADDITIVE: `【產品適用部位識別】
+1. **引擎機油添加劑**（加在引擎機油，與變速箱無關）：
+   - Cera Tec/MoS2/Oil Additive/Engine Flush → 只需知道車型，不問變速箱！
+2. **變速箱專用產品**（才需問變速箱類型）：
+   - ATF/DSG/Gear Oil/ATF Additive
+⚠️ 若用戶問機油添加劑 → 禁止追問變速箱類型！`,
+
+    // 變速箱認證規則
+    TRANSMISSION: `【變速箱油認證推論】
+歐系：VW/Audi/Skoda→DSG Oil｜BMW→ZF LifeguardFluid 6/8｜Benz→MB 236.14/236.15
+日韓系：Toyota→Toyota WS｜Honda→Honda ATF｜Hyundai/Kia→SP-IV
+美系：Ford→Mercon V/LV｜GM→Dexron VI
+⚠️ 將推論認證加入 certifications 和 searchKeywords`,
+
+    // 機油推論規則
+    OIL: `【車型資訊智慧推論】
+1. **燃油類型**：台灣市場同時有汽油和柴油版本時才追問
+2. **年份推論**：年份會影響認證需求時才追問
+3. **⚠️ 黏度推論**：使用汽車知識推論，⛔ 禁止追問用戶黏度偏好！`
+};
+
+/**
+ * 根據訊息內容動態載入條件規則
+ * @param {string} message - 用戶訊息
+ * @param {string} contextText - 對話上下文
+ * @returns {string} - 條件規則字串
+ */
+function getConditionalRules(message, contextText = '') {
+    const rules = [];
+    const combined = `${message} ${contextText}`.toLowerCase();
+
+    // 電動車規則
+    if (/gogoro|ionex|emoving|ereader|tesla|byd|taycan|電動車|電動機車|純電/i.test(combined)) {
+        rules.push(CONDITIONAL_RULES.EV);
+    }
+
+    // 添加劑規則
+    if (/漏油|吃油|異音|過熱|抖動|添加劑|cera\s*tec|mos2|機油精|oil\s*additive|engine\s*flush|止漏|清潔/i.test(combined)) {
+        rules.push(CONDITIONAL_RULES.ADDITIVE);
+    }
+
+    // 變速箱規則
+    if (/變速箱|atf|dsg|手排|自排|齒輪油|gear\s*oil|cvt/i.test(combined)) {
+        rules.push(CONDITIONAL_RULES.TRANSMISSION);
+    }
+
+    // 機油推論規則（預設載入，因為很常用）
+    if (rules.length === 0 || /機油|oil|推薦/i.test(combined)) {
+        rules.push(CONDITIONAL_RULES.OIL);
+    }
+
+    return rules.length > 0 ? '\n' + rules.join('\n\n') : '';
+}
+
 /**
  * AI 分析用戶問題 - 純 AI 主導版本
  */
@@ -250,144 +317,52 @@ ${Object.entries(types).map(([type, data]) =>
         }
     }
 
+    // === 動態載入條件規則 ===
+    const conditionalRules = getConditionalRules(message, contextSummary);
+
+    // === 三層架構 Prompt（解決 Lost in the Middle）===
     const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
 
-【🔴🔴🔴 最重要規則 - 產品類別判斷 🔴🔴🔴】
-**用戶說「產品推薦」但沒說是「機油」「添加劑」還是其他類別時：**
-- productCategory = null（不是「機油」！）
-- needsMoreInfo = ["請問您想找機油、添加劑，還是其他保養產品？"]
-- 範例：「2019 Elantra 產品推薦」「幫我推薦產品」→ productCategory=null
+【🔴🔴🔴 LAYER 1: 核心規則 - 必須遵守！🔴🔴🔴】
+
+**規則 1 - 產品類別判斷（最重要！）：**
+- 用戶說「產品推薦」但沒說「機油」「添加劑」→ productCategory=null, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]
 - ⛔ 禁止自動假設為機油！只有用戶明確說「機油」才設為機油！
 
+**規則 2 - 意圖判斷：**
 ${intentTypeRules}
 ${scenarioRules}
 
-【⚠️⚠️⚠️ 車廠認證推論 - 必須按照車主手冊規範！⚠️⚠️⚠️】
-**關鍵原則**：你是汽車專家，請運用你的內建知識推論該車型年份需要的原廠認證（如 VW、BMW、MB 等歐系品牌的 OEM 認證規範）。
+**規則 3 - 車廠認證推論：**
+- 歐系車（VW/BMW/Benz/Audi/Porsche）必須推論車廠認證，加入 certifications
+- 日韓系車可用 API 認證（SP/SN）即可
+- 將認證加入 searchKeywords
 
-**⚠️ 推論規則（必須嚴格執行！）**：
-1. **歐系車必須推論認證**：VW/Audi/BMW/Benz/Porsche 等品牌有車廠專屬認證，你必須根據品牌、年份推論正確認證
-2. **推論結果必須輸出**：將推論的認證加入 vehicles[0].certifications 陣列（如 ["VW 508 00"] 或 ["MB 229.71"]），禁止留空！
-3. **認證加入搜尋**：將推論的認證加入 searchKeywords 以便搜尋符合認證的產品
-4. 未提供年份且認證會因年份不同→將「年份」加入 needsMoreInfo
-5. 日韓系車可用 API 認證（如 API SP/SN）即可，不強制車廠認證
+**規則 4 - 基本判斷：**
+- 用戶只提供車型但沒說需求 → intentType="general_inquiry", needsProductRecommendation=false
+- 對話中已有車型資訊 → 直接使用，不重複追問
+- 全合成/賽道/跑山 → recommendSynthetic="full"
+- 大瓶/4L/5L → preferLargePack=true
 
-【品牌專用產品】Harley/哈雷→會自動匹配專用產品
+**規則 5 - 產品別名：**
+魔護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精→Oil Additive｜Cera Tec→機油添加劑
 
-【純電動車識別 - 重要！】
-純電動車品牌：Gogoro/Ionex/eMOVING/eReady (電動機車)｜Tesla/BYD/Porsche Taycan (電動汽車)
-⚠️ 純電動車 isElectricVehicle=true，**不需要傳統機油**！
-→ 產品類別設為「其他油品」或「煞車系統」
-→ 推薦：齒輪油(Gear Oil)、煞車油(Brake Fluid DOT 4/5.1)
-→ searchKeywords 加入 "Gear Oil" 或 "Brake Fluid"
+【LAYER 2: 情境規則（動態載入）】
+${conditionalRules}
 
-【產品別名識別】魔護/摩護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精/MoS2→Oil Additive｜汽油精→Fuel Additive｜變速箱油/ATF→ATF｜Cera Tec/陶瓷保護→機油添加劑(加在引擎機油)
-
-
-【⚠️⚠️⚠️ 產品適用部位識別 - 超級重要！防止誤解用戶意圖！】
-**當用戶問某產品「能不能用」時，必須先判斷該產品的適用部位：**
-
-1. **引擎機油添加劑**（加在引擎機油中，與變速箱完全無關）：
-   - Cera Tec 陶瓷保護機油精 (LM2321) → 加在引擎機油
-   - MoS2 二硫化鉬機油精 (LM1015) → 加在引擎機油
-   - Oil Additive 機油添加劑 → 加在引擎機油
-   - Engine Flush 引擎油路清洗劑 → 清洗引擎
-   → **這類產品只需知道車型，不需要問變速箱類型！**
-   → 用戶問「XX車能不能加 Cera Tec」→ 回答是否適用於該車引擎，與變速箱無關！
-
-2. **變速箱專用產品**（只有這類才需要問變速箱類型）：
-   - ATF 自動變速箱油
-   - DSG 雙離合變速箱油
-   - Gear Oil 齒輪油
-   - ATF Additive 變速箱添加劑
-   → 這類才需要問「手排/自排/乾式離合器/濕式離合器」
-
-3. **⚠️ 關鍵判斷規則**：
-   - 若用戶問的產品是「引擎機油添加劑」→ **禁止追問變速箱類型！直接回答能否使用！**
-   - 若用戶提到「乾式離合器」但問的是機油添加劑 → 這是在描述車型特徵，不是要把添加劑加到變速箱！
-   - 範例：用戶說「Golf 乾式離合器」+ 問「能否用 Cera Tec」
-     → 正確理解：用戶的 Golf 是 DSG 乾式離合變速箱車型，想知道能否在**引擎**加 Cera Tec
-     → 正確回答：Cera Tec 是機油添加劑，可以加在 Golf 的引擎機油中，與變速箱類型無關
-     → 錯誤理解：❌ 以為用戶要把 Cera Tec 加到變速箱
-
-【變速箱油認證推論 - 重要！】根據車型推論變速箱油認證，將認證加入 certifications 陣列：
-歐系：VW/Audi/Skoda→DSG Oil(乾/濕)或ATF｜BMW→ZF LifeguardFluid 6/8｜Benz→MB 236.14/236.15｜Volvo→Volvo ATF
-日韓系：Toyota→Toyota WS｜Honda→Honda ATF｜Nissan→Nissan Matic｜Hyundai/Kia→SP-IV
-美系：Ford→Mercon V/LV｜GM→Dexron VI｜Chrysler→ATF+4
-中國品牌：東安/愛信變速箱→通用 ATF(Dexron VI)或車廠指定
-⚠️ 若知道具體變速箱型號（如 ZF 8HP、愛信 8AT），請推論對應認證
-⚠️ 將推論的認證加入 vehicles[0].certifications，並加入 searchKeywords
-
-【煞車系統推論】一般車輛→DOT 4｜高性能/賽道→DOT 5.1
-【冷卻/空調/美容/香氛/自行車】直接推薦，不需車型資訊
-
-【全合成識別】
-- 若用戶明確提到「全合成」、「Fully Synthetic」、「Synthoil」、「Race」、「賽道」或「跑山」，必須設定 **recommendSynthetic="full"**。
-- 這將觸發嚴格篩選，只顯示真正的全合成產品。
-
-【容量偏好識別】
-- 若用戶提到「4L」、「5L」、「大瓶」、「大包裝」、「大容量」→設定 **preferLargePack=true**
-- 預設為 false（優先推薦 1L 小包裝）
-- 這會影響同產品不同容量時的推薦順序
-
-【規則】
-- 用戶沒提車型→vehicleType=null
-- 用戶沒說用途→usageScenario=null
-- 只問認證/黏度/SKU→直接搜尋不追問
-- **強制規則**：用戶只提供車型但沒說需求（如「我開 2020 Focus」）→ **intentType="general_inquiry", needsProductRecommendation=false**。嚴禁在此情況下預設機油推薦！
-- **🔧 產品類別追問規則**：用戶說「產品推薦」但沒明確說是「機油」「添加劑」還是其他類別（如「2019 Elantra 產品推薦」「幫我推薦產品」）→ **productCategory=null, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]**。禁止自動假設為機油！
-
-【⚠️ 車型資訊智慧推論 - 減少追問！】
-你是汽機車專家，請用你的知識來推論車型資訊，**盡量避免不必要的追問**：
-
-1. **燃油類型推論**：
-   - 若該車型/年份在台灣市場只有單一燃油版本→直接推論 fuelType，不要追問
-   - 例如：Toyota Prius 是油電、Porsche 911 是汽油
-   - **若該車型在台灣市場同時有汽油和柴油版本**（如 Hyundai Elantra、BMW X5），才需追問
-   - ⚠️ 注意：很多車型在台灣都有汽油/柴油雙版本，請謹慎判斷
-
-2. **變速箱推論**：
-   - 若該車型/年份只有自排→直接推論，不要追問
-   - 若該車型/年份只有手排→直接推論，不要追問
-   - **只有當需要區分變速箱類型才能推薦正確產品時**（如變速箱油），才追問
-
-3. **年份推論**：
-   - 若用戶只說車型沒說年份，但該車型規格多年不變→直接用通用規格推薦
-   - 若年份會影響認證需求（如 2019 前後 API SP vs SN）→才需追問
-
-4. **⚠️⚠️⚠️ 黏度推論 - 極重要！禁止追問用戶黏度偏好！**
-   - 使用你的汽車知識，根據車主手冊規範推論該車型建議的黏度
-   - 將推論的黏度填入 vehicles[0].viscosity（如 "5W-30"、"0W-20"）
-   - ⛔ **絕對禁止**將「黏度」或「黏度偏好」加入 needsMoreInfo！
-   - 黏度是專業規格，應由 LLM 推論，不應讓用戶選擇
-   - 例如：2018 Hyundai Elantra → 5W-30；VW Golf R → 0W-20 (VW 508 00)
-
-5. **追問原則**：
-   - needsMoreInfo 只放「無法推論且會影響推薦結果」的資訊
-   - ⛔ 禁止放入：黏度、黏度偏好、viscosity
-   - 能推論的就推論，不要什麼都追問
-   - 症狀類問題（添加劑）通常不需要變速箱資訊
-
-【⚠️ 對話歷史繼承規則 - 極重要！】
-如果「對話上下文」中已經包含車型資訊（如車型、年份、燃油類型），你**必須**：
-1. 將已知車型資訊填入 vehicles 陣列，**不要再追問已知資訊**
-2. needsMoreInfo 只能包含「對話中尚未提及」的資訊
-3. 例如：對話中已說「C300 2020 汽油」，用戶問「怠速會抖怎麼辦」→ 直接使用已知車型，不要追問！
-
-【⚠️ 症狀推論規則 - 當知識庫無匹配時】
-如果用戶描述的症狀在「症狀與添加劑產品對照表」中找不到精確匹配：
-1. 使用你的汽車知識推論可能的解決方案類型（如：清潔劑、添加劑、止漏劑等）
-2. 在 searchKeywords 中加入推論的關鍵字（如：Engine Flush, Fuel Additive, Oil Additive, Injection Cleaner 等）
-3. 設定 productCategory = "添加劑"
-4. 設定 needsProductRecommendation = true
-5. **不要因為知識庫沒有匹配就放棄推薦！**
-
+【LAYER 3: 輸入與輸出】
 ${contextSummary}${symptomContext}用戶問題：「${message}」
 ${symptomRefPrompt}
 ${symptomGuide}
+
 返回格式：
 ${responseFormat}
 ${dynamicRules}
+
+【🔴 結尾強調 - 再次提醒！🔴】
+1. 用戶說「產品推薦」沒說類別 → productCategory=null
+2. 歐系車必須推論車廠認證
+3. ⛔ 禁止追問黏度偏好！黏度由你推論！
 只返回 JSON。`;
 
     try {
