@@ -947,12 +947,43 @@ ${fallbackNotice}
             }
         }
 
+        // 輔助函式：精簡認證列表（解決認證過長問題）
+        function truncateCert(certStr) {
+            if (!certStr || certStr === 'N/A') return 'N/A';
+
+            // 分割認證（支援逗號或分號分隔）
+            const certs = certStr.split(/[,;]/).map(c => c.trim()).filter(c => c);
+
+            // 如果認證少於 5 個，全部顯示
+            if (certs.length <= 5) return certStr;
+
+            // 優先保留車廠認證和 API/ACEA 規範
+            // 簡單啟發式：保留前 3 個和包含 API/ACEA 的項目
+            const priorityCerts = [];
+            const otherCerts = [];
+
+            certs.forEach(c => {
+                if (/API|ACEA|JASO|ILSAC/i.test(c)) {
+                    priorityCerts.push(c);
+                } else {
+                    otherCerts.push(c);
+                }
+            });
+
+            // 組合結果：優先顯示通用規範，再補上幾個重要車廠認證
+            // 最多顯示 5 個
+            const finalCerts = [...priorityCerts, ...otherCerts].slice(0, 5);
+
+            return finalCerts.join(', ') + (certs.length > 5 ? ' ... (等)' : '');
+        }
+
         context += `### ${i + 1}. ${p.title || '未命名產品'}
 - 產品編號: ${pid || 'N/A'}
 - 容量/尺寸: ${p.size || 'N/A'}
 - 系列/次分類: ${p.word1 || 'N/A'}
 - 黏度: ${p.word2 || 'N/A'}
-- 認證/規格: ${p.cert || 'N/A'}
+- 認證/規格: ${truncateCert(p.cert)}
+- 分類: ${p.sort || 'N/A'}
 - 分類: ${p.sort || 'N/A'}
 - 建議售價: ${p.price || '請洽店家詢價'}
 - 產品連結: ${url}
