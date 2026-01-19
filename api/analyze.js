@@ -325,9 +325,23 @@ ${Object.entries(types).map(([type, data]) =>
 
 【🔴🔴🔴 LAYER 1: 核心規則 - 必須遵守！🔴🔴🔴】
 
-**規則 1 - 產品類別判斷（最重要！）：**
-- 用戶說「產品推薦」但沒說「機油」「添加劑」→ productCategory=null, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]
-- ⛔ 禁止自動假設為機油！只有用戶明確說「機油」才設為機油！
+**規則 1 - 產品類別判斷（最重要！請仔細閱讀！）：**
+檢查用戶訊息中是否包含以下關鍵字：
+- 包含「機油」「oil」「黏度」→ productCategory="機油"
+- 包含「添加劑」「漏油」「吃油」「清潔」→ productCategory="添加劑"
+- 包含「變速箱」「ATF」「DSG」→ productCategory="變速箱油"
+- **都沒有**，只說「產品」「推薦」「保養」→ productCategory=null
+
+⚠️ 實際判斷範例：
+| 用戶說 | productCategory | needsMoreInfo |
+|--------|-----------------|---------------|
+| 「2019 Elantra 機油推薦」 | "機油" | null |
+| 「2019 Elantra 推薦機油」 | "機油" | null |
+| 「2019 Elantra 產品推薦」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
+| 「幫我推薦產品」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
+| 「2019 Elantra 漏油怎麼辦」 | "添加劑" | null |
+
+⛔⛔⛔ 嚴禁：當用戶只說「產品推薦」時設 productCategory="機油" ！⛔⛔⛔
 
 **規則 2 - 意圖判斷：**
 ${intentTypeRules}
@@ -360,9 +374,12 @@ ${responseFormat}
 ${dynamicRules}
 
 【🔴 結尾強調 - 再次提醒！🔴】
-1. 用戶說「產品推薦」沒說類別 → productCategory=null
-2. 歐系車必須推論車廠認證
-3. ⛔ 禁止追問黏度偏好！黏度由你推論！
+⚠️ 最後確認 productCategory 設定：
+- 用戶訊息包含「機油」「oil」→ productCategory="機油"
+- 用戶訊息只說「產品推薦」→ productCategory=null（禁止假設為機油！）
+- 範例「2019 Elantra 產品推薦」→ productCategory=**null**, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]
+
+其他：歐系車必須推論車廠認證｜禁止追問黏度偏好
 只返回 JSON。`;
 
     try {
