@@ -1048,6 +1048,7 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
 - 容量: ${p.size || 'N/A'}
 - 黏度: ${p.word2 || 'N/A'}
 - 認證: ${p.cert || 'N/A'}
+- 建議售價: ${p.price || '請洽店家詢價'}
 - 產品連結: ${url}
 
 `;
@@ -1076,6 +1077,7 @@ function formatMultiVehicleProducts(motorcycleProducts, carProducts) {
 - 容量: ${p.size || 'N/A'}
 - 黏度: ${p.word2 || 'N/A'}
 - 認證: ${p.cert || 'N/A'}
+- 建議售價: ${p.price || '請洽店家詢價'}
 - 產品連結: ${url}
 
 `;
