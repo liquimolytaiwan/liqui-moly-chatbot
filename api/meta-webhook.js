@@ -17,6 +17,9 @@ const APP_SECRET = process.env.META_APP_SECRET;
 
 const { WIX_API_URL, AI_DISCLAIMER } = require('../lib/constants');
 
+// 啟用日誌等級控制（透過 LOG_LEVEL 環境變數）
+require('../lib/logger').patchConsole();
+
 // Vercel API URL（用於呼叫現有的 chat 邏輯）
 const VERCEL_API_URL = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`

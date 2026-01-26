@@ -18,6 +18,9 @@
 const { loadJSON } = require('../lib/knowledge-cache');
 const { matchVehicle } = require('../lib/vehicle-matcher');
 const { buildJasoRulesPrompt, buildSearchKeywordRulesPrompt } = require('../lib/motorcycle-rules');
+
+// 啟用日誌等級控制（透過 LOG_LEVEL 環境變數）
+require('../lib/logger').patchConsole();
 const { detectCertification } = require('../lib/certification-matcher');
 const { CORS_HEADERS, LOG_TAGS, GEMINI_ENDPOINT } = require('../lib/constants');
 const { getCategoryToSort, getOilOnlyKeywords } = require('../lib/search-helper');

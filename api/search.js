@@ -18,6 +18,9 @@
 // 導入統一服務模組（CommonJS）- 從 lib 資料夾載入
 const { searchWithCertUpgrade, searchWithViscosityFallback, searchWithCertPriority, getScooterCertScore, isAPICertification } = require('../lib/certification-matcher.js');
 const { searchMotorcycleOil, filterMotorcycleProducts, getSyntheticScore, sortMotorcycleProducts, isScooter } = require('../lib/motorcycle-rules.js');
+
+// 啟用日誌等級控制（透過 LOG_LEVEL 環境變數）
+require('../lib/logger').patchConsole();
 const {
     WIX_API_URL,
     PRODUCT_BASE_URL,
@@ -1010,7 +1013,6 @@ ${fallbackNotice}
 - 系列/次分類: ${p.word1 || 'N/A'}
 - 黏度: ${p.word2 || 'N/A'}
 - 認證/規格: ${truncateCert(p.cert)}
-- 分類: ${p.sort || 'N/A'}
 - 分類: ${p.sort || 'N/A'}
 - 建議售價: ${p.price || '請洽店家詢價'}
 - 產品連結: ${url}

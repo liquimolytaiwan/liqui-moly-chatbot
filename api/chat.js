@@ -12,6 +12,9 @@ const { processWithRAG } = require('../lib/rag-pipeline');
 const { validateAIResponse } = require('../lib/response-validator');
 const { GEMINI_ENDPOINT, PRODUCT_BASE_URL, CORS_HEADERS, LOG_TAGS, AI_DISCLAIMER } = require('../lib/constants');
 
+// 啟用日誌等級控制（透過 LOG_LEVEL 環境變數）
+require('../lib/logger').patchConsole();
+
 module.exports = async function handler(req, res) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {

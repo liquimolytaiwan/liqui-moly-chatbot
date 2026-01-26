@@ -100,6 +100,17 @@ liqui-moly-chatbot/
 | `META_PAGE_ACCESS_TOKEN` | Facebook Page Access Token |
 | `META_VERIFY_TOKEN` | Webhook 驗證 Token |
 | `WIX_API_KEY` | Wix API Key（用於 CMS 操作）|
+| `LOG_LEVEL` | 日誌等級：`debug`（預設）、`info`、`warn`、`error`、`none` |
+
+### 日誌等級說明
+
+在 Vercel 設定 `LOG_LEVEL` 環境變數可控制日誌輸出：
+
+- `debug`：顯示所有日誌（開發環境預設）
+- `info`：顯示 info、warn、error
+- `warn`：顯示 warn、error（生產環境建議）
+- `error`：只顯示 error
+- `none`：關閉所有日誌
 
 ## 部署
 
