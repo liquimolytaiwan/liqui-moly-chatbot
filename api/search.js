@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
 }
 
 // ============================================
-// 從 Wix 取得產品列表 (使用快取)
+// 從 Wix 取得產品列表 (使用快取 + 重試機制)
 // ============================================
 async function getProducts() {
     const now = Date.now();
@@ -95,21 +95,36 @@ async function getProducts() {
         return productsCache;
     }
 
-    try {
-        console.log(`${LOG_TAGS.SEARCH} Fetching products from Wix...`);
-        const response = await fetch(`${WIX_API_URL}/products`);
-        const data = await response.json();
+    // 重試機制參數
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // 1 秒
 
-        if (data.success && data.products) {
-            productsCache = data.products;
-            cacheTimestamp = now;
-            console.log(`${LOG_TAGS.SEARCH} Fetched and cached products:`, productsCache.length);
-            return productsCache;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            console.log(`${LOG_TAGS.SEARCH} Fetching products from Wix (attempt ${attempt}/${MAX_RETRIES})...`);
+            const response = await fetch(`${WIX_API_URL}/products`, {
+                signal: AbortSignal.timeout(10000)  // 10 秒超時
+            });
+            const data = await response.json();
+
+            if (data.success && data.products) {
+                productsCache = data.products;
+                cacheTimestamp = now;
+                console.log(`${LOG_TAGS.SEARCH} Fetched and cached products:`, productsCache.length);
+                return productsCache;
+            }
+        } catch (e) {
+            console.error(`${LOG_TAGS.SEARCH} Fetch attempt ${attempt} failed:`, e.message);
+
+            // 如果還有重試機會，等待後重試
+            if (attempt < MAX_RETRIES) {
+                console.log(`${LOG_TAGS.SEARCH} Retrying in ${RETRY_DELAY}ms...`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
         }
-    } catch (e) {
-        console.error(`${LOG_TAGS.SEARCH} Failed to fetch products:`, e);
     }
 
+    console.error(`${LOG_TAGS.SEARCH} All ${MAX_RETRIES} fetch attempts failed, using cache if available`);
     return productsCache || [];
 }
 
