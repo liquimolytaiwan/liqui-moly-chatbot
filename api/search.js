@@ -125,6 +125,42 @@ function searchProducts(products, query, searchInfo) {
         const productCategory = searchInfo?.productCategory || '機油';
 
         // ============================================
+        // -1. SKU 精確查詢優先處理（最高優先級）
+        // ============================================
+        // 當用戶輸入產品編號（如 LM2316）時，直接從資料庫精確查詢
+        const skuQueryMatch = query.match(/^(?:LM|lm)?[ -]?([0-9]{4,5})$/);
+        if (skuQueryMatch) {
+            const skuNum = skuQueryMatch[1];
+            const fullSku = `LM${skuNum}`;
+            console.log(`${LOG_TAGS.SEARCH} 🎯 Pure SKU query detected: ${fullSku}`);
+
+            // 精確匹配 partno
+            const exactProduct = products.find(p =>
+                p.partno && (p.partno.toUpperCase() === fullSku.toUpperCase() || p.partno === skuNum)
+            );
+
+            if (exactProduct) {
+                // 找到產品，回傳詳細資訊
+                console.log(`${LOG_TAGS.SEARCH} ✅ Found exact product: ${exactProduct.title}`);
+                return formatSKUQueryResult(exactProduct, fullSku);
+            } else {
+                // 找不到產品，回傳明確的「查無此產品」訊息
+                console.log(`${LOG_TAGS.SEARCH} ❌ Product not found: ${fullSku}`);
+                return `## ❌ 查無產品 ${fullSku}
+
+資料庫中找不到產品編號 ${fullSku}。
+
+請確認產品編號是否正確，或嘗試：
+1. 輸入完整產品名稱搜尋
+2. 描述您的需求讓我推薦適合的產品
+3. 瀏覽官網產品頁面：https://www.liqui-moly-tw.com/products
+
+---
+⚠️ 此為資料庫查詢結果，請勿編造任何產品資訊。`;
+            }
+        }
+
+        // ============================================
         // 0. 認證搜尋優先處理（當用戶明確詢問認證時）
         // ============================================
         const certSearchRequest = searchInfo?.certificationSearch;
@@ -785,6 +821,49 @@ function getAdditivePriorityScore(product, symptomSeverity, fuelType, usageScena
     }
 
     return score;
+}
+
+// ============================================
+// 格式化 SKU 精確查詢結果（單一產品詳情）
+// ============================================
+/**
+ * 將 SKU 精確查詢結果格式化為詳細產品資訊
+ * @param {Object} product - 產品物件
+ * @param {string} queriedSku - 查詢的 SKU
+ * @returns {string} - 格式化的產品資訊
+ */
+function formatSKUQueryResult(product, queriedSku) {
+    const url = product.partno
+        ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}`
+        : (product.productPageUrl || '');
+
+    let result = `## ✅ 產品資訊：${queriedSku}\n\n`;
+    result += `**產品名稱**：${product.title || '未知'}\n`;
+    result += `**產品編號**：${product.partno || queriedSku}\n`;
+
+    if (product.size) {
+        result += `**容量**：${product.size}\n`;
+    }
+    if (product.word2) {
+        result += `**黏度/規格**：${product.word2}\n`;
+    }
+    if (product.cert) {
+        result += `**認證**：${product.cert}\n`;
+    }
+    if (product.sort) {
+        result += `**類別**：${product.sort}\n`;
+    }
+    if (product.content) {
+        result += `\n**產品說明**：\n${product.content}\n`;
+    }
+    if (product.price) {
+        result += `\n**建議售價**：NT$ ${product.price}（實際售價請洽店家詢價）\n`;
+    }
+
+    result += `\n**產品連結**：${url}\n`;
+    result += `\n---\n⚠️ 以上資訊來自產品資料庫。AI 請直接使用此資訊回覆，禁止編造任何額外規格或資訊。`;
+
+    return result;
 }
 
 // ============================================
