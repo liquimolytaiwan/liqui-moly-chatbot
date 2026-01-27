@@ -152,6 +152,41 @@ function getConditionalRules(message, contextText = '') {
  * AI 分析用戶問題 - 純 AI 主導版本
  */
 async function analyzeUserQuery(apiKey, message, conversationHistory = []) {
+    // ============================================
+    // 🚨 SKU 快速偵測（最高優先級，在 AI 分析之前執行）
+    // ============================================
+    // 如果用戶只輸入產品編號（如 LM3444、有LM3444嗎），直接返回產品查詢意圖
+    // 避免 AI 誤把 SKU 當成車型
+    const skuQuickMatch = message.match(/(?:LM|lm|Lm)[ -]?([0-9]{4,5})/);
+    if (skuQuickMatch) {
+        const skuNum = skuQuickMatch[1];
+        const fullSku = `LM${skuNum}`;
+
+        // 過濾年份（2019-2030 範圍）
+        const num = parseInt(skuNum, 10);
+        const isYear = skuNum.length === 4 && num >= 2019 && num <= 2030;
+
+        if (!isYear) {
+            console.log(`${LOG_TAGS.ANALYZE} 🎯 SKU Quick Detection: ${fullSku} - Bypassing AI analysis`);
+
+            // 直接返回產品查詢意圖，不呼叫 AI
+            return {
+                intentType: 'product_inquiry',
+                productCategory: '產品查詢',
+                needsProductRecommendation: true,
+                searchKeywords: [fullSku, skuNum],
+                vehicles: [],
+                needsMoreInfo: [],
+                isSKUQuery: true,  // 標記為 SKU 查詢
+                queriedSKU: fullSku,
+                _skipAI: true  // 標記跳過 AI
+            };
+        }
+    }
+
+    // ============================================
+    // 一般 AI 分析流程
+    // ============================================
     // 準備對話上下文
     let contextSummary = '';
     let symptomContext = '';  // 症狀上下文
