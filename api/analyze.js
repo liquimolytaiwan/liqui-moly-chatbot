@@ -33,6 +33,9 @@ const additiveGuide = loadJSON('additive-guide.json') || [];
 const searchReference = loadJSON('search-reference.json') || {};
 const aiAnalysisRules = loadJSON('ai-analysis-rules.json') || {};
 
+// 🔴 SKU 對照表（用於顯示產品名稱）
+const skuToProduct = searchReference.sku_to_product || {};
+
 console.log(`${LOG_TAGS.ANALYZE} Knowledge loaded via unified cache`);
 console.log(`${LOG_TAGS.ANALYZE} Additive Guide: ${Array.isArray(additiveGuide) ? additiveGuide.length : 0} items`);
 
@@ -669,9 +672,23 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
     // === 2. 添加劑症狀匹配（知識庫輔助，AI 推論為主）===
     const vehicleType = result.vehicles?.[0]?.vehicleType || result.vehicleType;
     const fuelType = result.vehicles?.[0]?.fuelType || result.fuelType;
+    // 🔴 新增：取得變速箱類型
+    const transmissionType = result.vehicles?.[0]?.transmissionType || result.transmissionType;
 
-    // 先嘗試知識庫匹配（傳入 vehicleType 和 fuelType 進行過濾）
-    const additiveResult = matchAdditiveGuide(lowerMessage, vehicleType, fuelType);
+    // 先嘗試知識庫匹配（傳入 vehicleType、fuelType 和 transmissionType 進行過濾）
+    const additiveResult = matchAdditiveGuide(lowerMessage, vehicleType, fuelType, transmissionType);
+
+    // 🔴 輔助函式：為選項加入產品名稱
+    const addProductNames = (options) => {
+        if (!options) return options;
+        return options.map(opt => ({
+            ...opt,
+            solutionsWithNames: (opt.solutions || []).map(sku => ({
+                sku: sku,
+                name: skuToProduct[sku] || sku
+            }))
+        }));
+    };
 
     // 🔴 處理需要追問車型的情況
     if (additiveResult.needsVehicleType) {
@@ -681,21 +698,39 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
         if (!result.needsMoreInfo) result.needsMoreInfo = [];
         result.needsMoreInfo.push(`請問您的車輛是汽車還是機車？（不同車種的「${additiveResult.detectedSymptom}」問題有不同的解決方案）`);
 
-        // 儲存偵測到的症狀供後續使用
+        // 儲存偵測到的症狀供後續使用（含產品名稱）
         result.additiveGuideMatch = {
             matched: false,
             needsVehicleType: true,
             detectedSymptom: additiveResult.detectedSymptom,
-            carOptions: additiveResult.carOptions,
-            bikeOptions: additiveResult.bikeOptions
+            carOptions: addProductNames(additiveResult.carOptions),
+            bikeOptions: addProductNames(additiveResult.bikeOptions)
+        };
+        result.productCategory = '添加劑';
+
+    // 🔴 新增：處理需要追問變速箱類型的情況
+    } else if (additiveResult.needsTransmissionType) {
+        // 症狀同時存在於手排和自排分類，需要先追問
+        console.log(`${LOG_TAGS.ANALYZE} Symptom "${additiveResult.detectedSymptom}" requires transmission type clarification`);
+
+        if (!result.needsMoreInfo) result.needsMoreInfo = [];
+        result.needsMoreInfo.push(`請問您的車是手排變速箱還是自排變速箱？（不同變速箱類型的「${additiveResult.detectedSymptom}」問題需要使用不同的產品）`);
+
+        // 儲存偵測到的症狀供後續使用（含產品名稱）
+        result.additiveGuideMatch = {
+            matched: false,
+            needsTransmissionType: true,
+            detectedSymptom: additiveResult.detectedSymptom,
+            manualOptions: addProductNames(additiveResult.manualOptions),
+            autoOptions: addProductNames(additiveResult.autoOptions)
         };
         result.productCategory = '添加劑';
 
     } else if (additiveResult.items.length > 0) {
-        // 知識庫有匹配，使用知識庫推薦
+        // 知識庫有匹配，使用知識庫推薦（含產品名稱）
         result.additiveGuideMatch = {
             matched: true,
-            items: additiveResult.items,
+            items: addProductNames(additiveResult.items),
             detectedSymptom: additiveResult.detectedSymptom
         };
 
@@ -832,13 +867,15 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
 
 /**
  * 從 additive-guide.json 匹配症狀
+ * v2.2: 新增變速箱類型（手排/自排）追問邏輯
  * @param {string} message - 用戶訊息
  * @param {string} vehicleType - 車輛類型（汽車/機車）
  * @param {string} fuelType - 燃油類型（汽油/柴油）
- * @returns {Object} - 匹配結果，包含 items, needsVehicleType, detectedSymptom
+ * @param {string} transmissionType - 變速箱類型（手排/自排）
+ * @returns {Object} - 匹配結果，包含 items, needsVehicleType, needsTransmissionType, detectedSymptom
  */
-function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
-    if (!additiveGuide.length) return { items: [], needsVehicleType: false, detectedSymptom: null };
+function matchAdditiveGuide(message, vehicleType = null, fuelType = null, transmissionType = null) {
+    if (!additiveGuide.length) return { items: [], needsVehicleType: false, needsTransmissionType: false, detectedSymptom: null };
 
     const matched = [];
     const noProductMatched = [];
@@ -847,11 +884,20 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
     // 🔴 新增：當車型未知時，檢查症狀是否同時存在於汽車和機車
     const vehicleTypeUnknown = !vehicleType || (vehicleType !== '汽車' && vehicleType !== '摩托車' && vehicleType !== '機車');
 
+    // 🔴 新增：檢查變速箱類型是否已知（手排/自排/CVT）
+    const transmissionTypeUnknown = !transmissionType ||
+        (transmissionType !== '手排' && transmissionType !== '自排' && transmissionType !== 'CVT' &&
+         transmissionType !== '手排變速箱' && transmissionType !== '自排變速箱');
+
     // 如果車型未知，先檢查兩邊
     const targetAreas = vehicleTypeUnknown ? ['汽車', '機車'] : [vehicleType === '摩托車' ? '機車' : '汽車'];
 
     // 追蹤哪些症狀在哪些區域有匹配
     const symptomsByArea = { '汽車': [], '機車': [] };
+
+    // 🔴 新增：追蹤變速箱類型匹配（用於判斷是否需要追問）
+    const symptomsByTransmission = { '手排變速箱': [], '自排變速箱': [] };
+
     let detectedSymptom = null;
 
     // 🔴 完整症狀關鍵字對照表（台灣消費者常用語）
@@ -972,21 +1018,50 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
             const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
             if (item.type !== '通用' && itemArea !== targetArea) continue;
 
-            // 如果有指定 fuelType，只匹配對應的燃油類型
-            if (fuelType) {
+            // 🔴 檢查是否為變速箱相關症狀
+            const isTransmissionRelated = item.type === '手排變速箱' || item.type === '自排變速箱';
+
+            // 🔴 如果是變速箱相關且變速箱類型未知，記錄到 symptomsByTransmission
+            if (isTransmissionRelated && transmissionTypeUnknown) {
+                const transmissionKey = item.type; // '手排變速箱' or '自排變速箱'
+                symptomsByTransmission[transmissionKey].push({
+                    problem: item.problem,
+                    explanation: item.explanation,
+                    solutions: item.solutions || [],
+                    type: item.type,
+                    hasProduct: item.hasProduct !== false
+                });
+                continue; // 繼續收集，稍後判斷是否需要追問變速箱類型
+            }
+
+            // 🔴 如果是變速箱相關且變速箱類型已知，只匹配對應的變速箱類型
+            if (isTransmissionRelated && !transmissionTypeUnknown) {
+                const normalizedTransmission = transmissionType.includes('手排') ? '手排變速箱' : '自排變速箱';
+                if (item.type !== normalizedTransmission) continue;
+            }
+
+            // 如果有指定 fuelType，只匹配對應的燃油類型（排除變速箱項目）
+            if (fuelType && !isTransmissionRelated) {
                 const itemFuelType = item.type;
-                if (fuelType === '汽油' && itemFuelType !== '汽油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
+                if (fuelType === '汽油' && itemFuelType !== '汽油引擎' && itemFuelType !== '通用') {
                     continue;
                 }
-                if (fuelType === '柴油' && itemFuelType !== '柴油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
+                if (fuelType === '柴油' && itemFuelType !== '柴油引擎' && itemFuelType !== '通用') {
                     continue;
                 }
             }
+
+            // 🔴 新增：將 SKU 對應到產品名稱
+            const solutionsWithNames = (item.solutions || []).map(sku => ({
+                sku: sku,
+                name: skuToProduct[sku] || sku
+            }));
 
             const matchResult = {
                 problem: item.problem,
                 explanation: item.explanation,
                 solutions: item.solutions || [],
+                solutionsWithNames: solutionsWithNames,
                 type: item.type,
                 hasProduct: item.hasProduct !== false
             };
@@ -1010,6 +1085,7 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
             return {
                 items: [],
                 needsVehicleType: true,
+                needsTransmissionType: false,
                 detectedSymptom: detectedSymptom,
                 carOptions: carMatches.slice(0, 3),
                 bikeOptions: bikeMatches.slice(0, 3)
@@ -1026,6 +1102,34 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
         }
     }
 
+    // 🔴 變速箱類型未知時：判斷是否需要追問（手排/自排）
+    const manualMatches = symptomsByTransmission['手排變速箱'] || [];
+    const autoMatches = symptomsByTransmission['自排變速箱'] || [];
+
+    if (manualMatches.length > 0 || autoMatches.length > 0) {
+        // 如果手排和自排都有匹配，需要追問
+        if (manualMatches.length > 0 && autoMatches.length > 0) {
+            console.log(`${LOG_TAGS.ANALYZE} 變速箱症狀「${detectedSymptom}」在手排和自排都有匹配，需要追問變速箱類型`);
+            return {
+                items: [],
+                needsVehicleType: false,
+                needsTransmissionType: true,
+                detectedSymptom: detectedSymptom,
+                manualOptions: manualMatches.slice(0, 3),
+                autoOptions: autoMatches.slice(0, 3)
+            };
+        }
+
+        // 如果只有一種變速箱類型有匹配，直接使用該結果
+        if (manualMatches.length > 0) {
+            matched.push(...manualMatches.filter(m => m.hasProduct));
+            noProductMatched.push(...manualMatches.filter(m => !m.hasProduct));
+        } else if (autoMatches.length > 0) {
+            matched.push(...autoMatches.filter(m => m.hasProduct));
+            noProductMatched.push(...autoMatches.filter(m => !m.hasProduct));
+        }
+    }
+
     // 返回結果
     const result = matched.slice(0, 3);
 
@@ -1034,6 +1138,7 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
         return {
             items: noProductMatched.slice(0, 3),
             needsVehicleType: false,
+            needsTransmissionType: false,
             detectedSymptom: detectedSymptom
         };
     }
@@ -1041,6 +1146,7 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
     return {
         items: result,
         needsVehicleType: false,
+        needsTransmissionType: false,
         detectedSymptom: detectedSymptom
     };
 }

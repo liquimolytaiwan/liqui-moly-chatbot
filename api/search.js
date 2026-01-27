@@ -890,9 +890,19 @@ ${fallbackNotice}
 
 `;
             for (const item of additiveMatch.items) {
+                // 🔴 使用帶名稱的產品列表（如果有）
+                let productsDisplay = '';
+                if (item.solutionsWithNames && item.solutionsWithNames.length > 0) {
+                    productsDisplay = item.solutionsWithNames
+                        .map(s => `${s.sku} (${s.name})`)
+                        .join(', ');
+                } else {
+                    productsDisplay = item.solutions.join(', ');
+                }
+
                 context += `**症狀：${item.problem}**
 🔍 原因說明：${item.explanation}
-💊 推薦產品：${item.solutions.join(', ')}
+💊 推薦產品：${productsDisplay}
 
 `;
             }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1769505220437" clover="3.2.0">
-  <project timestamp="1769505220437" name="All files">
+<coverage generated="1769507367245" clover="3.2.0">
+  <project timestamp="1769507367245" name="All files">
     <metrics statements="1605" coveredstatements="240" conditionals="1497" coveredconditionals="215" methods="177" coveredmethods="38" elements="3279" coveredelements="493" complexity="0" loc="1605" ncloc="1605" packages="1" files="15" classes="15"/>
     <file name="agent-prompts.js" path="C:\Users\jerry_c\.gemini\antigravity\scratch\liqui-moly-chatbot\lib\agent-prompts.js">
       <metrics statements="154" coveredstatements="0" conditionals="141" coveredconditionals="0" methods="23" coveredmethods="0"/>
