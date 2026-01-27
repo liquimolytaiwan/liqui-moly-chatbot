@@ -283,6 +283,7 @@ ${JSON.stringify(searchReference.symptom_to_sku)}
         "vehicleType": "汽車/摩托車/null",
         "vehicleSubType": null,
         "fuelType": "汽油/柴油/null（需推論或追問）",
+        "transmissionType": "手排/自排/CVT/null（變速箱相關問題時必填）",
         "strokeType": null,
         "isElectricVehicle": false,
         "certifications": ["根據車廠推論的認證，如 VW 504 00"],
@@ -708,7 +709,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
         };
         result.productCategory = '添加劑';
 
-    // 🔴 新增：處理需要追問變速箱類型的情況
+        // 🔴 新增：處理需要追問變速箱類型的情況
     } else if (additiveResult.needsTransmissionType) {
         // 症狀同時存在於手排和自排分類，需要先追問
         console.log(`${LOG_TAGS.ANALYZE} Symptom "${additiveResult.detectedSymptom}" requires transmission type clarification`);
@@ -887,7 +888,7 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null, transm
     // 🔴 新增：檢查變速箱類型是否已知（手排/自排/CVT）
     const transmissionTypeUnknown = !transmissionType ||
         (transmissionType !== '手排' && transmissionType !== '自排' && transmissionType !== 'CVT' &&
-         transmissionType !== '手排變速箱' && transmissionType !== '自排變速箱');
+            transmissionType !== '手排變速箱' && transmissionType !== '自排變速箱');
 
     // 如果車型未知，先檢查兩邊
     const targetAreas = vehicleTypeUnknown ? ['汽車', '機車'] : [vehicleType === '摩托車' ? '機車' : '汽車'];
