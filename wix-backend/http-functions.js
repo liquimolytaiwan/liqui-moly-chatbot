@@ -346,6 +346,7 @@ export async function get_products(request) {
             category: p.sort,
             price: p.price,
             content: p.content,
+            use: p.use,  // 🚨 新增：使用方法/添加比例（含 2T/4T 資訊）
             url: p.partno ? `${PRODUCT_BASE_URL}${p.partno.toLowerCase()}` : null
         }));
 
