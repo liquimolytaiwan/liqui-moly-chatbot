@@ -842,7 +842,8 @@ function formatSKUQueryResult(product, queriedSku) {
         size: product.size,
         word2: product.word2,
         cert: product.cert,
-        price: product.price
+        price: product.price,
+        use: product.use  // 🚨 加入 use 欄位日誌
     }, null, 2));
 
     const url = product.partno
@@ -850,7 +851,7 @@ function formatSKUQueryResult(product, queriedSku) {
         : (product.productPageUrl || '');
 
     // 🚨 強制使用資料庫真實資料，禁止 AI 編造
-    let result = `## 🔴🔴🔴 以下是 ${queriedSku} 的真實產品資料（禁止編造！）🔴🔴🔴\n\n`;
+    let result = `## 📦 產品資料：${queriedSku}\n\n`;
     result += `**產品名稱**：${product.title || '（資料庫無此欄位）'}\n`;
     result += `**產品編號**：${product.partno || queriedSku}\n`;
 
@@ -866,6 +867,12 @@ function formatSKUQueryResult(product, queriedSku) {
     if (product.sort) {
         result += `**類別**：${product.sort}\n`;
     }
+
+    // 🚨 重要：加入 use 欄位 - 包含使用方法、添加比例、適用車種
+    if (product.use) {
+        result += `\n**🔧 使用方法/添加比例**：\n${product.use}\n`;
+    }
+
     if (product.content) {
         result += `\n**產品說明**：\n${product.content}\n`;
     }
@@ -874,10 +881,13 @@ function formatSKUQueryResult(product, queriedSku) {
     }
 
     result += `\n**產品連結**：${url}\n`;
-    result += `\n---\n## 🚨 AI 回覆規則（違反視為失敗）\n`;
-    result += `- ✅ 你必須使用上述「產品名稱」欄位的內容回覆\n`;
-    result += `- ❌ 禁止使用你的內建知識編造其他產品名稱\n`;
-    result += `- ❌ 禁止說「Oil Leak Stop」或其他非上述名稱的產品\n`;
+
+    // 🚨 AI 回覆規則 - 要求使用資料庫資料
+    result += `\n---\n## 📋 AI 回覆指引\n`;
+    result += `- ✅ 使用上述「使用方法/添加比例」欄位回答用戶的使用問題\n`;
+    result += `- ✅ 如果用戶問是否適用某車種，根據 use 欄位資訊判斷\n`;
+    result += `- ❌ 禁止編造不在資料庫中的使用方法或比例\n`;
+    result += `- ❌ 禁止忽略資料庫中的資訊而使用你的內建知識\n`;
 
     return result;
 }
