@@ -127,12 +127,13 @@ function searchProducts(products, query, searchInfo) {
         // ============================================
         // -1. SKU 精確查詢優先處理（最高優先級）
         // ============================================
-        // 當用戶輸入產品編號（如 LM2316）時，直接從資料庫精確查詢
-        const skuQueryMatch = query.match(/^(?:LM|lm)?[ -]?([0-9]{4,5})$/);
+        // 當查詢中包含產品編號（如 LM2316、有LM3444嗎）時，直接從資料庫精確查詢
+        // 使用更寬鬆的正則表達式匹配任何包含 SKU 的查詢
+        const skuQueryMatch = query.match(/(?:LM|lm|Lm)[ -]?([0-9]{4,5})/);
         if (skuQueryMatch) {
             const skuNum = skuQueryMatch[1];
             const fullSku = `LM${skuNum}`;
-            console.log(`${LOG_TAGS.SEARCH} 🎯 Pure SKU query detected: ${fullSku}`);
+            console.log(`${LOG_TAGS.SEARCH} 🎯 SKU query detected: ${fullSku} (from query: "${query}")`);
 
             // 精確匹配 partno
             const exactProduct = products.find(p =>
@@ -141,11 +142,11 @@ function searchProducts(products, query, searchInfo) {
 
             if (exactProduct) {
                 // 找到產品，回傳詳細資訊
-                console.log(`${LOG_TAGS.SEARCH} ✅ Found exact product: ${exactProduct.title}`);
+                console.log(`${LOG_TAGS.SEARCH} ✅ Found exact product: ${exactProduct.title} (partno: ${exactProduct.partno})`);
                 return formatSKUQueryResult(exactProduct, fullSku);
             } else {
                 // 找不到產品，回傳明確的「查無此產品」訊息
-                console.log(`${LOG_TAGS.SEARCH} ❌ Product not found: ${fullSku}`);
+                console.log(`${LOG_TAGS.SEARCH} ❌ Product not found in database: ${fullSku}`);
                 return `## ❌ 查無產品 ${fullSku}
 
 資料庫中找不到產品編號 ${fullSku}。
@@ -833,16 +834,28 @@ function getAdditivePriorityScore(product, symptomSeverity, fuelType, usageScena
  * @returns {string} - 格式化的產品資訊
  */
 function formatSKUQueryResult(product, queriedSku) {
+    // 🔍 調試：輸出完整產品物件以確認 Wix CMS 資料
+    console.log(`${LOG_TAGS.SEARCH} 📦 SKU Query - Product object from Wix CMS:`, JSON.stringify({
+        partno: product.partno,
+        title: product.title,
+        sort: product.sort,
+        size: product.size,
+        word2: product.word2,
+        cert: product.cert,
+        price: product.price
+    }, null, 2));
+
     const url = product.partno
         ? `${PRODUCT_BASE_URL}${product.partno.toLowerCase()}`
         : (product.productPageUrl || '');
 
-    let result = `## ✅ 產品資訊：${queriedSku}\n\n`;
-    result += `**產品名稱**：${product.title || '未知'}\n`;
+    // 🚨 強制使用資料庫真實資料，禁止 AI 編造
+    let result = `## 🔴🔴🔴 以下是 ${queriedSku} 的真實產品資料（禁止編造！）🔴🔴🔴\n\n`;
+    result += `**產品名稱**：${product.title || '（資料庫無此欄位）'}\n`;
     result += `**產品編號**：${product.partno || queriedSku}\n`;
 
     if (product.size) {
-        result += `**容量**：${product.size}\n`;
+        result += `**容量/尺寸**：${product.size}\n`;
     }
     if (product.word2) {
         result += `**黏度/規格**：${product.word2}\n`;
@@ -861,7 +874,10 @@ function formatSKUQueryResult(product, queriedSku) {
     }
 
     result += `\n**產品連結**：${url}\n`;
-    result += `\n---\n⚠️ 以上資訊來自產品資料庫。AI 請直接使用此資訊回覆，禁止編造任何額外規格或資訊。`;
+    result += `\n---\n## 🚨 AI 回覆規則（違反視為失敗）\n`;
+    result += `- ✅ 你必須使用上述「產品名稱」欄位的內容回覆\n`;
+    result += `- ❌ 禁止使用你的內建知識編造其他產品名稱\n`;
+    result += `- ❌ 禁止說「Oil Leak Stop」或其他非上述名稱的產品\n`;
 
     return result;
 }
