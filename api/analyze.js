@@ -347,8 +347,22 @@ ${Object.entries(types).map(([type, data]) =>
 | 「2019 Elantra 產品推薦」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
 | 「幫我推薦產品」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
 | 「2019 Elantra 漏油怎麼辦」 | "添加劑" | null |
+| 「我的車會吃機油」 | "添加劑" | ["請問是汽車還是機車？"] |
+| 「車子吃機油怎麼辦」 | "添加劑" | ["請問是汽車還是機車？"] |
 
 ⛔⛔⛔ 嚴禁：當用戶只說「產品推薦」時設 productCategory="機油" ！⛔⛔⛔
+
+🔴🔴🔴 添加劑/症狀查詢必須先確認車型！🔴🔴🔴
+當用戶描述症狀（吃機油、漏油、異音、抖動等）但未提供車型時：
+- 如果不知道是汽車還是機車 → needsMoreInfo 加入「請問是汽車還是機車？」
+- 如果知道是汽車但不知道燃油類型 → 檢查症狀是否汽柴油解法相同
+  - 相同（如活塞環吃機油）→ 不追問
+  - 不同（如怠速抖動）→ needsMoreInfo 加入「請問是汽油車還是柴油車？」
+
+⚠️ 關鍵：「吃機油」在汽車和機車的解決方案不同！
+- 汽車吃機油 → LM1019/LM2501/LM2502
+- 機車吃機油 → LM20597
+必須先確認是汽車還是機車才能推薦正確產品！
 
 **規則 2 - 意圖判斷：**
 ${intentTypeRules}
@@ -656,19 +670,38 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
     const vehicleType = result.vehicles?.[0]?.vehicleType || result.vehicleType;
     const fuelType = result.vehicles?.[0]?.fuelType || result.fuelType;
 
-    // 先嘗試知識庫匹配（傳入 fuelType 進行過濾）
-    const additiveMatches = matchAdditiveGuide(lowerMessage, vehicleType, fuelType);
+    // 先嘗試知識庫匹配（傳入 vehicleType 和 fuelType 進行過濾）
+    const additiveResult = matchAdditiveGuide(lowerMessage, vehicleType, fuelType);
 
-    if (additiveMatches.length > 0) {
+    // 🔴 處理需要追問車型的情況
+    if (additiveResult.needsVehicleType) {
+        // 症狀同時存在於汽車和機車分類，需要先追問
+        console.log(`${LOG_TAGS.ANALYZE} Symptom "${additiveResult.detectedSymptom}" requires vehicle type clarification`);
+
+        if (!result.needsMoreInfo) result.needsMoreInfo = [];
+        result.needsMoreInfo.push(`請問您的車輛是汽車還是機車？（不同車種的「${additiveResult.detectedSymptom}」問題有不同的解決方案）`);
+
+        // 儲存偵測到的症狀供後續使用
+        result.additiveGuideMatch = {
+            matched: false,
+            needsVehicleType: true,
+            detectedSymptom: additiveResult.detectedSymptom,
+            carOptions: additiveResult.carOptions,
+            bikeOptions: additiveResult.bikeOptions
+        };
+        result.productCategory = '添加劑';
+
+    } else if (additiveResult.items.length > 0) {
         // 知識庫有匹配，使用知識庫推薦
         result.additiveGuideMatch = {
             matched: true,
-            items: additiveMatches
+            items: additiveResult.items,
+            detectedSymptom: additiveResult.detectedSymptom
         };
 
         // 加入 SKU 到搜尋關鍵字（補充 AI 推論）
         if (!result.searchKeywords) result.searchKeywords = [];
-        for (const item of additiveMatches) {
+        for (const item of additiveResult.items) {
             for (const sku of item.solutions) {
                 if (!result.searchKeywords.includes(sku)) {
                     result.searchKeywords.push(sku);
@@ -676,7 +709,7 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
             }
         }
         result.productCategory = '添加劑';
-        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched: ${additiveMatches.length} items`);
+        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched: ${additiveResult.items.length} items`);
     } else {
         // 知識庫沒有匹配，但 AI 可能已推論出 searchKeywords
         // 不強制追問，讓 AI 推論的關鍵字去產品庫搜尋
@@ -802,16 +835,24 @@ function enhanceWithKnowledgeBase(result, message, conversationHistory) {
  * @param {string} message - 用戶訊息
  * @param {string} vehicleType - 車輛類型（汽車/機車）
  * @param {string} fuelType - 燃油類型（汽油/柴油）
- * @returns {Array} - 匹配結果，包含 type 欄位
+ * @returns {Object} - 匹配結果，包含 items, needsVehicleType, detectedSymptom
  */
 function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
-    if (!additiveGuide.length) return [];
+    if (!additiveGuide.length) return { items: [], needsVehicleType: false, detectedSymptom: null };
 
-    // 預設為汽車，除非明確是機車
-    const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
     const matched = [];
-    const noProductMatched = [];  // ⚠️ 新增：記錄無產品的匹配項
+    const noProductMatched = [];
     const lowerMessage = message.toLowerCase();
+
+    // 🔴 新增：當車型未知時，檢查症狀是否同時存在於汽車和機車
+    const vehicleTypeUnknown = !vehicleType || (vehicleType !== '汽車' && vehicleType !== '摩托車' && vehicleType !== '機車');
+
+    // 如果車型未知，先檢查兩邊
+    const targetAreas = vehicleTypeUnknown ? ['汽車', '機車'] : [vehicleType === '摩托車' ? '機車' : '汽車'];
+
+    // 追蹤哪些症狀在哪些區域有匹配
+    const symptomsByArea = { '汽車': [], '機車': [] };
+    let detectedSymptom = null;
 
     // 常見症狀關鍵字和變體（包含打字錯誤）
     const symptomAliases = {
@@ -832,19 +873,16 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
     };
 
     for (const item of additiveGuide) {
-        // 通用問題（如防鼠）不分汽機車，或是符合目標區域
-        if (item.type !== '通用' && item.area !== targetArea) continue;
-
         const problem = (item.problem || '').toLowerCase();
-        const explanation = (item.explanation || '').toLowerCase();
 
         // 檢查症狀別名是否匹配
         let isMatched = false;
+        let matchedSymptomKey = null;
         for (const [symptom, aliases] of Object.entries(symptomAliases)) {
             if (problem.includes(symptom.toLowerCase())) {
-                // 檢查用戶訊息是否包含任何別名
                 if (aliases.some(alias => lowerMessage.includes(alias.toLowerCase()))) {
                     isMatched = true;
+                    matchedSymptomKey = symptom;
                     break;
                 }
             }
@@ -853,30 +891,54 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
         // 直接關鍵字匹配（取問題的前6個字）
         if (!isMatched && problem.length >= 4) {
             const keywords = problem.split(/[導致,，()（）]/).filter(k => k.length >= 2);
-            isMatched = keywords.some(kw => lowerMessage.includes(kw.trim()));
+            if (keywords.some(kw => lowerMessage.includes(kw.trim()))) {
+                isMatched = true;
+                matchedSymptomKey = keywords[0];
+            }
         }
 
         if (isMatched) {
+            // 記錄偵測到的症狀
+            if (!detectedSymptom) detectedSymptom = matchedSymptomKey;
+
+            // 記錄此症狀在哪個區域有匹配
+            const itemArea = item.area || '汽車';
+            if (!symptomsByArea[itemArea]) symptomsByArea[itemArea] = [];
+
+            // 🔴 車型未知時：記錄所有區域的匹配，稍後判斷是否需要追問
+            if (vehicleTypeUnknown) {
+                symptomsByArea[itemArea].push({
+                    problem: item.problem,
+                    explanation: item.explanation,
+                    solutions: item.solutions || [],
+                    type: item.type,
+                    area: itemArea,
+                    hasProduct: item.hasProduct !== false
+                });
+                continue; // 繼續收集，稍後判斷
+            }
+
+            // 車型已知：只匹配目標區域
+            const targetArea = vehicleType === '摩托車' ? '機車' : '汽車';
+            if (item.type !== '通用' && itemArea !== targetArea) continue;
+
             // 如果有指定 fuelType，只匹配對應的燃油類型
             if (fuelType) {
                 const itemFuelType = item.type;
-                // 汽油車只能匹配汽油引擎或通用
                 if (fuelType === '汽油' && itemFuelType !== '汽油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
                     continue;
                 }
-                // 柴油車只能匹配柴油引擎或通用
                 if (fuelType === '柴油' && itemFuelType !== '柴油引擎' && itemFuelType !== '通用' && !itemFuelType.includes('手排') && !itemFuelType.includes('自排')) {
                     continue;
                 }
             }
 
-            // ⚠️ 修改：區分有產品和無產品的匹配項
             const matchResult = {
                 problem: item.problem,
                 explanation: item.explanation,
                 solutions: item.solutions || [],
                 type: item.type,
-                hasProduct: item.hasProduct !== false  // 預設為 true
+                hasProduct: item.hasProduct !== false
             };
 
             if (item.hasProduct === false) {
@@ -887,18 +949,50 @@ function matchAdditiveGuide(message, vehicleType = null, fuelType = null) {
         }
     }
 
-    // ⚠️ 修改：返回結構包含有產品和無產品的匹配項
-    // 如果只有無產品匹配，也要返回（讓 AI 誠實告知用戶）
-    const result = matched.slice(0, 3);
+    // 🔴 車型未知時：判斷是否需要追問
+    if (vehicleTypeUnknown) {
+        const carMatches = symptomsByArea['汽車'] || [];
+        const bikeMatches = symptomsByArea['機車'] || [];
 
-    // 將無產品匹配項也加入結果（標記 hasProduct=false）
-    if (noProductMatched.length > 0 && matched.length === 0) {
-        // 如果完全沒有產品可推薦，返回無產品匹配項
-        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched ${noProductMatched.length} items with hasProduct=false`);
-        return noProductMatched.slice(0, 3);
+        // 如果同一症狀在汽車和機車都有匹配，且解決方案不同 → 需要追問
+        if (carMatches.length > 0 && bikeMatches.length > 0) {
+            console.log(`${LOG_TAGS.ANALYZE} 症狀「${detectedSymptom}」在汽車和機車都有匹配，需要追問車型`);
+            return {
+                items: [],
+                needsVehicleType: true,
+                detectedSymptom: detectedSymptom,
+                carOptions: carMatches.slice(0, 3),
+                bikeOptions: bikeMatches.slice(0, 3)
+            };
+        }
+
+        // 如果只在一個區域有匹配，直接使用該區域的結果
+        if (carMatches.length > 0) {
+            matched.push(...carMatches.filter(m => m.hasProduct));
+            noProductMatched.push(...carMatches.filter(m => !m.hasProduct));
+        } else if (bikeMatches.length > 0) {
+            matched.push(...bikeMatches.filter(m => m.hasProduct));
+            noProductMatched.push(...bikeMatches.filter(m => !m.hasProduct));
+        }
     }
 
-    return result;
+    // 返回結果
+    const result = matched.slice(0, 3);
+
+    if (noProductMatched.length > 0 && matched.length === 0) {
+        console.log(`${LOG_TAGS.ANALYZE} AdditiveGuide matched ${noProductMatched.length} items with hasProduct=false`);
+        return {
+            items: noProductMatched.slice(0, 3),
+            needsVehicleType: false,
+            detectedSymptom: detectedSymptom
+        };
+    }
+
+    return {
+        items: result,
+        needsVehicleType: false,
+        detectedSymptom: detectedSymptom
+    };
 }
 
 /**
