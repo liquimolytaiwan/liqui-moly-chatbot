@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        const { message, conversationHistory = [], productContext = '', useMultiAgent = true } = req.body;
+        const { message, conversationHistory = [], productContext = '' } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'Missing message parameter' });
@@ -89,9 +89,9 @@ module.exports = async function handler(req, res) {
             return res.status(500).json({ error: 'API key not configured' });
         }
 
-        // === RAG 處理管線（支援 Multi-Agent）===
-        console.log(`${LOG_TAGS.CHAT} Starting RAG pipeline (Multi-Agent: ${useMultiAgent})...`);
-        const ragResult = await processWithRAG(message, conversationHistory, productContext, { useMultiAgent });
+        // === RAG 處理管線 (Multi-Agent) ===
+        console.log(`${LOG_TAGS.CHAT} Starting RAG pipeline (Multi-Agent)...`);
+        const ragResult = await processWithRAG(message, conversationHistory, productContext);
         const { intent, systemPrompt, agentType } = ragResult;
         console.log(`${LOG_TAGS.CHAT} Intent: ${intent.type}, Vehicle: ${intent.vehicleType}, Agent: ${agentType}`);
 
@@ -163,8 +163,7 @@ module.exports = async function handler(req, res) {
             _debug: process.env.NODE_ENV === 'development' ? {
                 intentType: intent.type,
                 vehicleType: intent.vehicleType,
-                agentType: agentType,           // v2.2: 使用的 Agent 類型
-                useMultiAgent: useMultiAgent,   // v2.2: Multi-Agent 模式
+                agentType: agentType,
                 promptLength: systemPrompt.length,
                 promptTokens: Math.round(systemPrompt.length / 4)
             } : undefined
