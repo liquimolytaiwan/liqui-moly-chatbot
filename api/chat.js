@@ -221,10 +221,13 @@ This is NON-NEGOTIABLE!`;
 
     // 第一次回答時，要求 AI 在回覆結尾加上警語（用用戶的語言）
     if (isFirstResponse) {
-        systemInstruction += `\n6. FIRST RESPONSE: Add a disclaimer at the END in ${langDisplayName} (e.g., "⚠️ AI responses are for reference only.")`;
+        systemInstruction += `\n6. FIRST RESPONSE ONLY: Add a short disclaimer at the END of your response in ${langDisplayName}:
+   - Chinese: "⚠️ AI 可能出錯，僅供參考。"
+   - English: "⚠️ AI may make mistakes. For reference only."
+   This disclaimer should ONLY appear in your FIRST response, nowhere else.`;
     } else {
-        // 非第一次回答時，明確告知不要加警語（防止 AI 從歷史記錄學習）
-        systemInstruction += `\n6. This is NOT the first response. Do NOT add any disclaimer or warning message.`;
+        // 🔴 非第一次回答時，強制禁止加警語（防止 AI 從歷史記錄學習）
+        systemInstruction += `\n6. 🚨 CRITICAL: This is NOT the first response! Do NOT add any disclaimer, warning, or "⚠️" message. The disclaimer was already shown in the first response. Adding it again is STRICTLY FORBIDDEN.`;
     }
 
     if (recentHistory && recentHistory.length > 0) {
