@@ -18,9 +18,10 @@ require('../lib/logger').patchConsole();
 /**
  * 偵測用戶訊息的語言
  * @param {string} message - 用戶訊息
+ * @param {Array} conversationHistory - 對話歷史（用於判斷用戶主要語言）
  * @returns {string} - 語言代碼 (zh-TW, en, ja, ko, etc.)
  */
-function detectUserLanguage(message) {
+function detectUserLanguage(message, conversationHistory = []) {
     if (!message) return 'zh-TW';
 
     // 檢測中文字符 (CJK Unified Ideographs)
@@ -36,7 +37,7 @@ function detectUserLanguage(message) {
     // 檢測阿拉伯文
     const hasArabic = /[\u0600-\u06ff]/.test(message);
 
-    // 優先判斷非 CJK 語言
+    // 優先判斷非 CJK 語言（這些語言有明確的字符特徵）
     if (hasCyrillic) return 'ru';
     if (hasThai) return 'th';
     if (hasArabic) return 'ar';
@@ -44,8 +45,36 @@ function detectUserLanguage(message) {
     if (hasJapanese) return 'ja';
     if (hasChinese) return 'zh-TW';
 
-    // 預設為英文（拉丁字母）
-    return 'en';
+    // === 當前訊息只有拉丁字母（可能是英文或車型名/產品編號）===
+
+    // 1. 檢查對話歷史中是否有中文訊息（表示用戶是繁體中文用戶）
+    if (conversationHistory && conversationHistory.length > 0) {
+        for (const msg of conversationHistory) {
+            if (msg.role === 'user' && msg.content && /[\u4e00-\u9fff]/.test(msg.content)) {
+                // 對話歷史中有中文，保持繁體中文回覆
+                return 'zh-TW';
+            }
+        }
+    }
+
+    // 2. 判斷是否為真正的外語句子（而非單純的車型名/產品編號）
+    // 車型名（如 CT200、Focus、BMW）和產品編號（如 LM2316）不應觸發語言切換
+    const englishWords = message.match(/[a-zA-Z]+/g) || [];
+
+    // 只有當訊息符合以下條件之一才判斷為英文：
+    // - 包含 4 個以上英文單字（可能是完整句子）
+    // - 訊息以句號、問號、驚嘆號結尾（句子結構）
+    // - 包含常見英文問候語或疑問詞
+    const hasEnglishSentence = englishWords.length >= 4 ||
+        /[.?!]$/.test(message.trim()) ||
+        /^(hello|hi|hey|what|how|where|when|why|can|could|would|please|thank)/i.test(message.trim());
+
+    if (hasEnglishSentence) {
+        return 'en';
+    }
+
+    // 3. 預設為繁體中文（台灣本地服務，車型名、產品編號等短輸入預設為台灣用戶）
+    return 'zh-TW';
 }
 
 /**
@@ -113,8 +142,8 @@ module.exports = async function handler(req, res) {
             console.log(`${LOG_TAGS.CHAT} First response detected - AI will add disclaimer`);
         }
 
-        // 🌐 偵測用戶語言（程式碼層級）
-        const detectedLanguage = detectUserLanguage(message);
+        // 🌐 偵測用戶語言（程式碼層級，考慮對話歷史）
+        const detectedLanguage = detectUserLanguage(message, conversationHistory);
         console.log(`${LOG_TAGS.CHAT} Detected user language: ${detectedLanguage} (${getLanguageDisplayName(detectedLanguage)})`);
 
         // 建構對話內容（傳入 isFirstResponse 讓 AI 知道要加警語，以及偵測到的語言）

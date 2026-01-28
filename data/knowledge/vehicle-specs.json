@@ -197,6 +197,30 @@
             }
         ]
     },
+    "Lexus": {
+        "_note": "Lexus 油電車系列（與 Toyota 共用平台）",
+        "CT200h": [
+            {
+                "years": "2011+",
+                "fuel": "油電混合",
+                "type": "汽車",
+                "certification": [
+                    "API SP",
+                    "ILSAC GF-6A"
+                ],
+                "viscosity": "0W-20",
+                "aliases": [
+                    "ct200",
+                    "ct 200",
+                    "ct200h",
+                    "ct 200h",
+                    "lexus ct",
+                    "ct hybrid"
+                ],
+                "note": "CT200h 油電車使用 0W-20 低黏度機油（與 Prius 相同 2ZR-FXE 引擎）"
+            }
+        ]
+    },
     "Volvo": {
         "Common": [
             {
