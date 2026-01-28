@@ -79,97 +79,9 @@ async function handler(req, res) {
 }
 
 // ============================================
-// 條件規則定義（動態載入，解決 Lost in the Middle）
+// 條件規則定義已移至 lib/prompt-rules.js
+// 使用 buildAnalysisPrompt() 和 getPromptRules() 取代
 // ============================================
-
-const CONDITIONAL_RULES = {
-    // 電動車規則
-    EV: `【純電動車識別】
-純電動車品牌：Gogoro/Ionex/eMOVING/eReady (電動機車)｜Tesla/BYD/Porsche Taycan (電動汽車)
-⚠️ 純電動車 isElectricVehicle=true，不需要傳統機油！
-→ 產品類別設為「其他油品」或「煞車系統」
-→ 推薦：齒輪油(Gear Oil)、煞車油(Brake Fluid DOT 4/5.1)`,
-
-    // 添加劑/症狀規則
-    ADDITIVE: `【產品適用部位識別】
-1. **引擎機油添加劑**（加在引擎機油，與變速箱無關）：
-   - Cera Tec/MoS2/Oil Additive/Engine Flush → 只需知道車型，不問變速箱！
-2. **變速箱專用產品**（才需問變速箱類型）：
-   - ATF/DSG/Gear Oil/ATF Additive
-⚠️ 若用戶問機油添加劑 → 禁止追問變速箱類型！`,
-
-    // 變速箱認證規則
-    TRANSMISSION: `【變速箱油認證推論 - 必須精確！】
-
-⚠️ **追問規則（資訊不足時必須追問）**：
-- 只知道品牌（如 "BMW"）→ needsMoreInfo=[「請問是哪個車型和年份？不同變速箱規格需要不同的油品。」]
-- 只知道車型沒說變速箱類型 → needsMoreInfo=[「請問是手排、自排還是 DSG？」]
-- 知道品牌+車型+年份+變速箱類型 → 使用 LLM 知識推論認證
-
-**歐系車變速箱對應**：
-- VW/Audi/Skoda DSG 6速濕式（DQ250）→ 認證 "DSG"，searchKeywords=["Top Tec ATF 1800", "DSG"]
-- VW/Audi/Skoda DSG 7速乾式（DQ200）→ 認證 "DSG Dry"，searchKeywords=["Top Tec ATF 1700", "DSG"]
-- BMW ZF 6HP（E9x/E6x 等 2015 前）→ 認證 "ZF LifeguardFluid 6"
-- BMW ZF 8HP（F3x/G2x 等 2015 後）→ 認證 "ZF LifeguardFluid 8"
-- Benz 7G-Tronic（W204/W212 等）→ 認證 "MB 236.14"
-- Benz 9G-Tronic（W205/W213 等）→ 認證 "MB 236.17"
-
-**日韓系車**：
-- Toyota 自排（大部分）→ 認證 "Toyota WS"
-- Honda 自排 → 認證 "Honda ATF"
-- Hyundai/Kia 自排 → 認證 "SP-IV"
-
-**美系車**：
-- Ford 6F/6R → 認證 "Mercon LV"
-- GM 6AT/8AT/10AT → 認證 "Dexron VI"
-
-⚠️ 將推論認證加入 certifications 和 searchKeywords！
-⚠️ 若無法確定變速箱型號，必須加入 needsMoreInfo 追問！`,
-
-
-    // 機油推論規則
-    OIL: `【車型資訊智慧推論】
-1. **燃油類型（必問！）**：
-   - 台灣常見車型（Focus, Elantra, Golf, Tucson, Santa Fe, BMW, Benz）通常都有汽/柴油雙版本
-   - **除非用戶明確說「汽油」或「柴油」，否則必須將「燃油類型」加入 needsMoreInfo**
-   - 範例：「2019 Elantra 機油」→ needsMoreInfo=["請問是汽油還是柴油引擎？"]
-
-2. **年份推論**：年份會影響認證需求時才追問
-3. **⚠️ 黏度推論**：使用汽車知識推論，⛔ 禁止追問用戶黏度偏好！`
-};
-
-/**
- * 根據訊息內容動態載入條件規則
- * @param {string} message - 用戶訊息
- * @param {string} contextText - 對話上下文
- * @returns {string} - 條件規則字串
- */
-function getConditionalRules(message, contextText = '') {
-    const rules = [];
-    const combined = `${message} ${contextText}`.toLowerCase();
-
-    // 電動車規則
-    if (/gogoro|ionex|emoving|ereader|tesla|byd|taycan|電動車|電動機車|純電/i.test(combined)) {
-        rules.push(CONDITIONAL_RULES.EV);
-    }
-
-    // 添加劑規則
-    if (/漏油|吃油|異音|過熱|抖動|添加劑|cera\s*tec|mos2|機油精|oil\s*additive|engine\s*flush|止漏|清潔/i.test(combined)) {
-        rules.push(CONDITIONAL_RULES.ADDITIVE);
-    }
-
-    // 變速箱規則
-    if (/變速箱|atf|dsg|手排|自排|齒輪油|gear\s*oil|cvt/i.test(combined)) {
-        rules.push(CONDITIONAL_RULES.TRANSMISSION);
-    }
-
-    // 機油推論規則（預設載入，因為很常用）
-    if (rules.length === 0 || /機油|oil|推薦/i.test(combined)) {
-        rules.push(CONDITIONAL_RULES.OIL);
-    }
-
-    return rules.length > 0 ? '\n' + rules.join('\n\n') : '';
-}
 
 /**
  * AI 分析用戶問題 - 純 AI 主導版本
