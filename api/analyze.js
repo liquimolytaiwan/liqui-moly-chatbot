@@ -98,11 +98,33 @@ const CONDITIONAL_RULES = {
 ⚠️ 若用戶問機油添加劑 → 禁止追問變速箱類型！`,
 
     // 變速箱認證規則
-    TRANSMISSION: `【變速箱油認證推論】
-歐系：VW/Audi/Skoda→DSG Oil｜BMW→ZF LifeguardFluid 6/8｜Benz→MB 236.14/236.15
-日韓系：Toyota→Toyota WS｜Honda→Honda ATF｜Hyundai/Kia→SP-IV
-美系：Ford→Mercon V/LV｜GM→Dexron VI
-⚠️ 將推論認證加入 certifications 和 searchKeywords`,
+    TRANSMISSION: `【變速箱油認證推論 - 必須精確！】
+
+⚠️ **追問規則（資訊不足時必須追問）**：
+- 只知道品牌（如 "BMW"）→ needsMoreInfo=[「請問是哪個車型和年份？不同變速箱規格需要不同的油品。」]
+- 只知道車型沒說變速箱類型 → needsMoreInfo=[「請問是手排、自排還是 DSG？」]
+- 知道品牌+車型+年份+變速箱類型 → 使用 LLM 知識推論認證
+
+**歐系車變速箱對應**：
+- VW/Audi/Skoda DSG 6速濕式（DQ250）→ 認證 "DSG"，searchKeywords=["Top Tec ATF 1800", "DSG"]
+- VW/Audi/Skoda DSG 7速乾式（DQ200）→ 認證 "DSG Dry"，searchKeywords=["Top Tec ATF 1700", "DSG"]
+- BMW ZF 6HP（E9x/E6x 等 2015 前）→ 認證 "ZF LifeguardFluid 6"
+- BMW ZF 8HP（F3x/G2x 等 2015 後）→ 認證 "ZF LifeguardFluid 8"
+- Benz 7G-Tronic（W204/W212 等）→ 認證 "MB 236.14"
+- Benz 9G-Tronic（W205/W213 等）→ 認證 "MB 236.17"
+
+**日韓系車**：
+- Toyota 自排（大部分）→ 認證 "Toyota WS"
+- Honda 自排 → 認證 "Honda ATF"
+- Hyundai/Kia 自排 → 認證 "SP-IV"
+
+**美系車**：
+- Ford 6F/6R → 認證 "Mercon LV"
+- GM 6AT/8AT/10AT → 認證 "Dexron VI"
+
+⚠️ 將推論認證加入 certifications 和 searchKeywords！
+⚠️ 若無法確定變速箱型號，必須加入 needsMoreInfo 追問！`,
+
 
     // 機油推論規則
     OIL: `【車型資訊智慧推論】
