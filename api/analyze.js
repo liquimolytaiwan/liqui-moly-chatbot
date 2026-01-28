@@ -18,6 +18,7 @@
 const { loadJSON } = require('../lib/knowledge-cache');
 const { matchVehicle } = require('../lib/vehicle-matcher');
 const { buildJasoRulesPrompt, buildSearchKeywordRulesPrompt } = require('../lib/motorcycle-rules');
+const { buildAnalysisPrompt, getConditionalRules: getPromptRules } = require('../lib/prompt-rules');
 
 // 啟用日誌等級控制（透過 LOG_LEVEL 環境變數）
 require('../lib/logger').patchConsole();
@@ -385,85 +386,18 @@ ${Object.entries(types).map(([type, data]) =>
         }
     }
 
-    // === 動態載入條件規則 ===
-    const conditionalRules = getConditionalRules(message, contextSummary);
+    // === 動態載入條件規則（使用新模組）===
+    // 注意：保留原有的 symptomGuide 和 dynamicRules 作為額外資訊
 
-    // === 三層架構 Prompt（解決 Lost in the Middle）===
-    const analysisPrompt = `你是汽機車專家。分析用戶問題並返回 JSON。
-
-【🔴🔴🔴 LAYER 1: 核心規則 - 必須遵守！🔴🔴🔴】
-
-**規則 1 - 產品類別判斷（最重要！請仔細閱讀！）：**
-檢查用戶訊息中是否包含以下關鍵字：
-- 包含「機油」「oil」「黏度」→ productCategory="機油"
-- 包含「添加劑」「漏油」「吃油」「清潔」→ productCategory="添加劑"
-- 包含「變速箱」「ATF」「DSG」→ productCategory="變速箱油"
-- **都沒有**，只說「產品」「推薦」「保養」→ productCategory=null
-
-⚠️ 實際判斷範例：
-| 用戶說 | productCategory | needsMoreInfo |
-|--------|-----------------|---------------|
-| 「2019 Elantra 機油推薦」 | "機油" | null |
-| 「2019 Elantra 推薦機油」 | "機油" | null |
-| 「2019 Elantra 產品推薦」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
-| 「幫我推薦產品」 | **null** | ["請問您想找機油、添加劑，還是其他保養產品？"] |
-| 「2019 Elantra 漏油怎麼辦」 | "添加劑" | null |
-| 「我的車會吃機油」 | "添加劑" | ["請問是汽車還是機車？"] |
-| 「車子吃機油怎麼辦」 | "添加劑" | ["請問是汽車還是機車？"] |
-
-⛔⛔⛔ 嚴禁：當用戶只說「產品推薦」時設 productCategory="機油" ！⛔⛔⛔
-
-🔴🔴🔴 添加劑/症狀查詢必須先確認車型！🔴🔴🔴
-當用戶描述症狀（吃機油、漏油、異音、抖動等）但未提供車型時：
-- 如果不知道是汽車還是機車 → needsMoreInfo 加入「請問是汽車還是機車？」
-- 如果知道是汽車但不知道燃油類型 → 檢查症狀是否汽柴油解法相同
-  - 相同（如活塞環吃機油）→ 不追問
-  - 不同（如怠速抖動）→ needsMoreInfo 加入「請問是汽油車還是柴油車？」
-
-⚠️ 關鍵：「吃機油」在汽車和機車的解決方案不同！
-- 汽車吃機油 → LM1019/LM2501/LM2502
-- 機車吃機油 → LM20597
-必須先確認是汽車還是機車才能推薦正確產品！
-
-**規則 2 - 意圖判斷：**
-${intentTypeRules}
-${scenarioRules}
-
-**規則 3 - 車廠認證推論：**
-**規則 3 - 車廠認證處理：**
-- 若用戶明確提到認證（如 "229.71"），請提取至 certifications
-- **不需要**自行背誦車廠規格（如 Ford 用什麼油），請專注於識別準確的車型與年份
-- 系統後端會根據你識別的車型自動匹配認證資料
-
-**規則 4 - 基本判斷：**
-- 用戶只提供車型但沒說需求 → intentType="general_inquiry", needsProductRecommendation=false
-- 對話中已有車型資訊 → 直接使用，不重複追問
-- 全合成/賽道/跑山 → recommendSynthetic="full"
-- 大瓶/4L/5L → preferLargePack=true
-
-**規則 5 - 產品別名：**
-魔護→Molygen｜頂技→Top Tec｜特技→Special Tec｜油路清→Engine Flush｜機油精→Oil Additive｜Cera Tec→機油添加劑
-
-【LAYER 2: 情境規則（動態載入）】
-${conditionalRules}
-
-【LAYER 3: 輸入與輸出】
-${contextSummary}${symptomContext}用戶問題：「${message}」
-${symptomRefPrompt}
-${symptomGuide}
-
-返回格式：
-${responseFormat}
-${dynamicRules}
-
-【🔴 結尾強調 - 再次提醒！🔴】
-⚠️ 最後確認 productCategory 設定：
-- 用戶訊息包含「機油」「oil」→ productCategory="機油"
-- 用戶訊息只說「產品推薦」→ productCategory=null（禁止假設為機油！）
-- 範例「2019 Elantra 產品推薦」→ productCategory=**null**, needsMoreInfo=["請問您想找機油、添加劑，還是其他保養產品？"]
-
-其他：歐系車必須推論車廠認證｜禁止追問黏度偏好
-只返回 JSON。`;
+    // === 使用精簡化 Prompt（Sandwich Pattern）===
+    const analysisPrompt = buildAnalysisPrompt({
+        message,
+        contextSummary,
+        symptomContext,
+        symptomGuide: symptomGuide + '\n' + symptomRefPrompt + '\n' + dynamicRules,
+        responseFormat,
+        intentTypeRules: intentTypeRules + scenarioRules
+    });
 
     try {
         const response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
